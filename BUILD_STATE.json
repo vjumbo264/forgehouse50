@@ -118,9 +118,9 @@
     {
       "id": "task-10",
       "title": "Profile page; WhatsApp join button (env var URL) + share button",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "Profile page live (profile.html 200 after CF .html-normalization 308->/profile; all 9 pages final 200). /api/auth/me returns name/avatar/role/stats(points,streak,chapters,reading_seconds,observations,questions)/badges for profile render. profile.html renders identity card, programme progress bar, stats grid, full badge catalogue (earned/locked), admin link when role=admin, logout. WhatsApp: index.html has share button (wa.me/?text= programme link) and join-group button reading whatsapp_group_url from /api/config env var; env var currently empty (placeholder OK per spec) so join button hidden, share button works."
     },
     {
       "id": "task-11",
