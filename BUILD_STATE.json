@@ -1,5 +1,5 @@
 {
-  "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
+  "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
   "last_updated_utc": "2026-09-06",
@@ -71,12 +71,14 @@
       "id": "task-04",
       "title": "Reading-day calendar generator: 50 days from Mon 2026-09-07 skipping Tue/Fri; map 260 NT chapters; seed reading_days + reading_assignments",
       "status": "done",
-      "commits": [],
+      "commits": [
+        "8e63507"
+      ],
       "notes": "seed/calendar.mjs generates calendar from functions/lib/calendar.mjs (single source of truth). Generated seed/seed.sql: 50 reading days from 2026-09-07, skips every Tue/Fri, 260 chapters (6/day days1-10, 5/day after), ends Day 50 = 2026-11-15 (Sunday). Cross-verified with independent Python calc. Applied to D1 via API: verified live days=50, bad_weekdays=0, chapters=260, last_day=2026-11-15. Fixed ARCHITECTURE.md end-date (was 2026-11-19 estimate)."
     },
     {
       "id": "task-05",
-      "title": "Auth: signup \u2192 OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) \u2192 verify \u2192 login \u2192 session cookie \u2192 logout",
+      "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout",
       "status": "pending",
       "commits": [],
       "notes": ""
@@ -132,7 +134,7 @@
     },
     {
       "id": "task-13",
-      "title": "E2E verification on live app (register\u2192verify\u2192login\u2192read\u2192complete\u2192note\u2192progress\u2192leaderboard); verify Tue/Fri exclusion; then set build_complete true",
+      "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true",
       "status": "pending",
       "commits": [],
       "notes": ""
@@ -143,6 +145,11 @@
       "session": 1,
       "date_utc": "2026-09-06",
       "summary": "Session start. Verified GitHub PAT (login vjumbo264) and Cloudflare token (account access OK). Repo vjumbo264/forgehouse50 created public via API. Seeding BUILD_STATE.json. Completed task-01..04. Live app deployed and verified. Auth/notes/points/leaderboard/admin APIs written (task-05..11 logic largely implemented in functions/api). Next: task-05..12 validation + README, then task-13 E2E live verification."
+    },
+    {
+      "session": 2,
+      "date_utc": "2026-09-06",
+      "summary": "Resumed. tasks-01..04 confirmed done. Found production Pages deployment config was missing PROGRAMME_START_DATE + WHATSAPP_GROUP_URL (present only in preview); added via PATCH, RESEND_API_KEY preserved. Discovered Resend free-tier restriction: onboarding@resend.dev may only send to the account owner email (vjumbo264@gmail.com); OTP emails to other recipients return 403 until a domain is verified at resend.com. Not blocking: E2E OTP verification is done by reading the code from D1 (operator-owned DB); a real-email delivery test uses the owner address. Proceeding to validate task-05 onward live."
     }
   ]
 }
