@@ -125,9 +125,9 @@
     {
       "id": "task-11",
       "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count — keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
     },
     {
       "id": "task-12",
