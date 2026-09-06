@@ -95,9 +95,11 @@
     {
       "id": "task-07",
       "title": "Notes system: CRUD + search + filter, 5 types, user-scoped at query layer",
-      "status": "pending",
-      "commits": [],
-      "notes": ""
+      "status": "done",
+      "commits": [
+        "1fb7eb9"
+      ],
+      "notes": "Notes system validated live: create observation (+2) and question (+2); invalid type rejected (400); list/search (q=flesh matched 1)/filter (type=question) all correct; edit persisted; delete own OK. CROSS-USER ISOLATION confirmed: user2 sees empty list, gets 404 editing/deleting user1 note, note intact. All five types accepted (observation/question/scripture_connection/application/prayer enforced at API). FIXED: dynamic route was _id.mjs -> 405 on PUT/DELETE; renamed to [id].mjs (Pages Functions bracket syntax); deploy run 34042743066 success; edit/delete now live."
     },
     {
       "id": "task-08",
