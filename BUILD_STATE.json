@@ -86,9 +86,11 @@
     {
       "id": "task-06",
       "title": "Bible content service abstraction with mock data; Reading page: text, translation selector, audio stub, font size, dark/light, bookmarks, highlights, Mark Complete",
-      "status": "pending",
-      "commits": [],
-      "notes": ""
+      "status": "done",
+      "commits": [
+        "7cde213"
+      ],
+      "notes": "Reading flow validated live: /api/translations lists mock-web provider (multi-source shape); /api/read/day?n=1 returns Matthew 1-6 (6 ch, 24 min); /api/read/passage serves real public-domain WEB sample for John 1; bookmark add/list, highlight add/list, reading-time heartbeat (+120s), audio complete (+5 pts once) all OK; mark-complete day1 awarded 13 pts (10 reading + 3 streak); repeat mark-complete awarded 0 (idempotency guard works). FIXED: frontend read.html fetched /api/read/highlights (plural) but only singular route existed (returned HTML 404 fallback); added functions/api/read/highlights.mjs re-exporting canonical handlers; deployed run 34042613609 success; plural endpoint now returns JSON. Reading page UI (font-size, dark/light, audio stub, translation selector) present in read.html; full visual UI check deferred to task-13 E2E."
     },
     {
       "id": "task-07",
