@@ -111,9 +111,9 @@
     {
       "id": "task-09",
       "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call — 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
     },
     {
       "id": "task-10",
