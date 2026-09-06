@@ -104,9 +104,9 @@
     {
       "id": "task-08",
       "title": "Home/Dashboard + Progress pages: all stats, streaks, programme bar, day 1-50 breakdown",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "Dashboard + Progress validated live. /api/today on 2026-09-06 (Sunday): status=rest, is_reading_day=false, next_reading_day=Day1 2026-09-07 Matthew 1-6 (6ch, 24min); stats show days_completed=1, chapters=6, reading_seconds=120, notes=1, observations=1, audio_sessions=1, streak 1/1, points=22; programme 50 days/260 ch. /api/progress: 50 days, totals chapters=6 percent=2.3 days=1 streak 1/1 reading=120s; day1 completed with notes_count=1; day50=Revelation 18-22 on 2026-11-15. Tue/Fri exclusion verified across full plan (bad=[]). index.html renders banner/stat grid/progress bar/CTA/next-day/WhatsApp; progress.html renders totals + 50 day rows. Visual UI check deferred to task-13 E2E."
     },
     {
       "id": "task-09",
