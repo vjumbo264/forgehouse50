@@ -1,7 +1,7 @@
 {
   "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
-  "build_complete": false,
+  "build_complete": true,
   "last_updated_utc": "2026-09-06",
   "programme": {
     "start_date": "2026-09-07",
@@ -139,9 +139,11 @@
     {
       "id": "task-13",
       "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true",
-      "status": "pending",
-      "commits": [],
-      "notes": ""
+      "status": "done",
+      "commits": [
+        "c70cde1"
+      ],
+      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains — OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
     }
   ],
   "session_history": [
@@ -154,6 +156,11 @@
       "session": 2,
       "date_utc": "2026-09-06",
       "summary": "Resumed. tasks-01..04 confirmed done. Found production Pages deployment config was missing PROGRAMME_START_DATE + WHATSAPP_GROUP_URL (present only in preview); added via PATCH, RESEND_API_KEY preserved. Discovered Resend free-tier restriction: onboarding@resend.dev may only send to the account owner email (vjumbo264@gmail.com); OTP emails to other recipients return 403 until a domain is verified at resend.com. Not blocking: E2E OTP verification is done by reading the code from D1 (operator-owned DB); a real-email delivery test uses the owner address. Proceeding to validate task-05 onward live."
+    },
+    {
+      "session": 2,
+      "date_utc": "2026-09-06",
+      "summary": "Completed remaining work. Validated tasks 05-11 live on forgehouse50.pages.dev; fixed two Pages Functions routing bugs (highlights plural alias; notes dynamic route _id.mjs -> [id].mjs); added admin manage endpoint (assignment replace + badge grant/revoke) and admin UI action controls; wrote README (phone-only). Fixed Pages production env (added PROGRAMME_START_DATE + WHATSAPP_GROUP_URL). Ran full E2E first-priority flow with a fresh user; verified Tue/Fri exclusion (0 violations, 260 chapters, 2026-09-07 to 2026-11-15). All 13 tasks done. build_complete=true. Known free-tier note: Resend test sender only delivers to account owner until domain verified."
     }
   ]
 }
