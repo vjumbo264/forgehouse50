@@ -1,5 +1,5 @@
 {
-  "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
+  "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
   "last_updated_utc": "2026-09-06",
@@ -8,33 +8,128 @@
     "start_weekday": "Monday",
     "reading_days_total": 50,
     "nt_chapters_total": 260,
-    "excluded_weekdays": ["Tuesday", "Friday"],
+    "excluded_weekdays": [
+      "Tuesday",
+      "Friday"
+    ],
     "excluded_reason": "Tuesday Fasting & Prayer; Friday Fasting & Prayer + Bible Study"
   },
   "infra": {
-    "github_repo": { "status": "created", "visibility": "public", "default_branch": "main" },
-    "cloudflare_pages_project": { "status": "pending", "name": "forgehouse50" },
-    "cloudflare_d1_database": { "status": "pending", "name": "forgehouse50-db" },
-    "github_actions_deploy": { "status": "pending" },
+    "github_repo": {
+      "status": "created",
+      "visibility": "public",
+      "default_branch": "main"
+    },
+    "cloudflare_pages_project": {
+      "status": "pending",
+      "name": "forgehouse50"
+    },
+    "cloudflare_d1_database": {
+      "status": "pending",
+      "name": "forgehouse50-db"
+    },
+    "github_actions_deploy": {
+      "status": "pending"
+    },
     "secrets": {
       "RESEND_API_KEY": "to be stored as Cloudflare Worker/Pages secret; never in code",
       "BIBLE_API_KEY": "operator adds later per README; build must not block on it"
     }
   },
   "tasks": [
-    { "id": "task-01", "title": "Create public GitHub repo and seed BUILD_STATE.json; verify push to origin/main", "status": "in_progress", "commits": [], "notes": "Repo created via GitHub API on 2026-09-06. Seeding this file next; push verification pending." },
-    { "id": "task-02", "title": "D1 schema: profiles, reading_days, reading_assignments, reading_progress, notes, bookmarks, highlights, badges, user_badges, points, audio_progress, leaderboard_snapshots, otp_codes, sessions. Document per-table access rules in ARCHITECTURE.md", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-03", "title": "Scaffold frontend (Pages-deployable) + Pages Functions API; create Cloudflare Pages project and D1 database via API; connect GitHub auto-deploy", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-04", "title": "Reading-day calendar generator: 50 days from Mon 2026-09-07 skipping Tue/Fri; map 260 NT chapters; seed reading_days + reading_assignments", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-05", "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-06", "title": "Bible content service abstraction with mock data; Reading page: text, translation selector, audio stub, font size, dark/light, bookmarks, highlights, Mark Complete", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-07", "title": "Notes system: CRUD + search + filter, 5 types, user-scoped at query layer", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-08", "title": "Home/Dashboard + Progress pages: all stats, streaks, programme bar, day 1-50 breakdown", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-09", "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-10", "title": "Profile page; WhatsApp join button (env var URL) + share button", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-11", "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-12", "title": "README: add Bible API key from phone/browser, OTP/Resend setup, first-priority user flow guide", "status": "pending", "commits": [], "notes": "" },
-    { "id": "task-13", "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true", "status": "pending", "commits": [], "notes": "" }
+    {
+      "id": "task-01",
+      "title": "Create public GitHub repo and seed BUILD_STATE.json; verify push to origin/main",
+      "status": "done",
+      "commits": [
+        "cfede1d37e"
+      ],
+      "notes": "Repo vjumbo264/forgehouse50 created public via GitHub API. Seed pushed to origin/main and verified via API + raw fetch (HTTP 200)."
+    },
+    {
+      "id": "task-02",
+      "title": "D1 schema: profiles, reading_days, reading_assignments, reading_progress, notes, bookmarks, highlights, badges, user_badges, points, audio_progress, leaderboard_snapshots, otp_codes, sessions. Document per-table access rules in ARCHITECTURE.md",
+      "status": "in_progress",
+      "commits": [],
+      "notes": "schema.sql written (14 tables incl. badge catalogue seed) and validated locally in SQLite: all tables create cleanly, 10 badges seeded. ARCHITECTURE.md documents per-table access rules (Worker query layer is the enforcement boundary since D1 has no RLS). Committing now; will mark done once push verified."
+    },
+    {
+      "id": "task-03",
+      "title": "Scaffold frontend (Pages-deployable) + Pages Functions API; create Cloudflare Pages project and D1 database via API; connect GitHub auto-deploy",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-04",
+      "title": "Reading-day calendar generator: 50 days from Mon 2026-09-07 skipping Tue/Fri; map 260 NT chapters; seed reading_days + reading_assignments",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-05",
+      "title": "Auth: signup \u2192 OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) \u2192 verify \u2192 login \u2192 session cookie \u2192 logout",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-06",
+      "title": "Bible content service abstraction with mock data; Reading page: text, translation selector, audio stub, font size, dark/light, bookmarks, highlights, Mark Complete",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-07",
+      "title": "Notes system: CRUD + search + filter, 5 types, user-scoped at query layer",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-08",
+      "title": "Home/Dashboard + Progress pages: all stats, streaks, programme bar, day 1-50 breakdown",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-09",
+      "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-10",
+      "title": "Profile page; WhatsApp join button (env var URL) + share button",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-11",
+      "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-12",
+      "title": "README: add Bible API key from phone/browser, OTP/Resend setup, first-priority user flow guide",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    },
+    {
+      "id": "task-13",
+      "title": "E2E verification on live app (register\u2192verify\u2192login\u2192read\u2192complete\u2192note\u2192progress\u2192leaderboard); verify Tue/Fri exclusion; then set build_complete true",
+      "status": "pending",
+      "commits": [],
+      "notes": ""
+    }
   ],
   "session_history": [
     {
