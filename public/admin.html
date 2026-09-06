@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForgeHouse 50 — Admin</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="wrap">
+  <div id="top"></div>
+  <div id="gate"></div>
+  <div id="stats"></div>
+  <h2>Participants</h2>
+  <div id="participants"></div>
+</div>
+<script src="/app.js"></script>
+<script>
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+  document.getElementById('top').innerHTML = FH.topbar('Admin Dashboard');
+  if (me.role !== 'admin') {
+    document.getElementById('gate').innerHTML = '<div class="card error">Admin access required.</div>';
+    return;
+  }
+
+  const { data: s } = await FH.api('/api/admin/stats');
+  if (s) document.getElementById('stats').innerHTML = `
+    <div class="grid2">
+      <div class="stat"><div class="v">${s.total_participants}</div><div class="l">Participants</div></div>
+      <div class="stat"><div class="v">${s.active_participants}</div><div class="l">Active</div></div>
+      <div class="stat"><div class="v">${s.completed_today}</div><div class="l">Read today</div></div>
+      <div class="stat"><div class="v">${s.average_completion_percent}%</div><div class="l">Avg completion</div></div>
+      <div class="stat"><div class="v">${s.total_chapters_completed}</div><div class="l">Chapters read</div></div>
+      <div class="stat"><div class="v">${s.users_behind_schedule}</div><div class="l">Behind</div></div>
+    </div>`;
+
+  const { data: p } = await FH.api('/api/admin/participants');
+  document.getElementById('participants').innerHTML = (p?.participants || []).map(u => `
+    <div class="card flat" style="padding:12px 14px">
+      <div class="between">
+        <div><strong>${FH.esc(u.name || 'Member')}</strong> <span class="small muted">${FH.esc(u.email)}</span></div>
+        <span class="pill">${u.points} pts</span>
+      </div>
+      <div class="small muted" style="margin-top:4px">${u.days_completed}/50 days · ${u.chapters} ch · ${FH.fmtTime(u.reading_seconds)} · ${u.notes_count} notes</div>
+    </div>`).join('') || '<div class="card muted small center">No participants yet.</div>';
+})();
+</script>
+</body>
+<script>FH.nav('profile')</script>
+</html>

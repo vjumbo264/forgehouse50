@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForgeHouse 50 — Read</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="wrap">
+  <div id="top"></div>
+  <div id="day-head"></div>
+  <div class="card flat between" style="gap:6px">
+    <div class="row">
+      <button class="iconbtn" id="fs-dec" title="Smaller text">A−</button>
+      <button class="iconbtn" id="fs-inc" title="Larger text">A+</button>
+      <select id="translation" style="width:auto;margin:0;padding:7px 10px;font-size:13px"></select>
+    </div>
+    <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage">🔖</button>
+  </div>
+  <div id="passage" class="card scripture fs-medium"><p class="muted">Loading passage…</p></div>
+  <div class="card flat">
+    <div class="between small muted"><span>Audio</span><span id="audio-note">Stub — licensed audio coming soon</span></div>
+    <div class="row" style="margin-top:8px">
+      <button class="iconbtn" id="audio-play" disabled>▶ Play</button>
+      <div class="bar" style="flex:1"><i style="width:0%"></i></div>
+      <button class="btn ghost small" id="audio-done" style="display:none">Mark audio complete</button>
+    </div>
+  </div>
+  <div id="mark-area"></div>
+  <div class="card flat small muted" id="attrib"></div>
+</div>
+<script src="/app.js"></script>
+<script>
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+  document.getElementById('top').innerHTML = FH.topbar('Daily Reading');
+
+  const params = new URLSearchParams(location.search);
+  const dayN = parseInt(params.get('day') || '1', 10);
+
+  // Load day + translations
+  const [{ data: day }, { data: tr }] = await Promise.all([
+    FH.api('/api/read/day?n=' + dayN), FH.api('/api/translations')]);
+  if (!day) { document.getElementById('passage').innerHTML = '<p class="error">Could not load this reading day.</p>'; return; }
+
+  const assignText = day.assignments.map(a =>
+    a.chapter_start === a.chapter_end ? `${a.book} ${a.chapter_start}` : `${a.book} ${a.chapter_start}–${a.chapter_end}`).join(' · ');
+  document.getElementById('day-head').innerHTML = `
+    <div class="between"><div>
+      <span class="pill">Reading Day ${day.day_number}</span>
+      <h1 style="margin:8px 0 2px">${FH.esc(assignText)}</h1>
+      <div class="muted small">${day.date} · ${day.chapter_count} chapters · ~${day.est_minutes} min</div>
+    </div></div>`;
+
+  const sel = document.getElementById('translation');
+  sel.innerHTML = (tr.translations || []).map(t => `<option value="${FH.esc(t.id)}">${FH.esc(t.name)}</option>`).join('');
+
+  // Load passage text (first assignment range covers all for display simplicity: fetch each assignment)
+  async function loadPassage() {
+    const translation = sel.value;
+    const parts = [];
+    for (const a of day.assignments) {
+      const { data } = await FH.api(`/api/read/passage?book=${encodeURIComponent(a.book)}&chapter_start=${a.chapter_start}&chapter_end=${a.chapter_end}&translation=${encodeURIComponent(translation)}`);
+      if (data) parts.push(data);
+    }
+    renderPassage(parts);
+  }
+
+  let highlights = [];
+  async function loadHighlights() {
+    const first = day.assignments[0];
+    const { data } = await FH.api(`/api/read/highlights?book=${encodeURIComponent(first.book)}&chapter=${first.chapter_start}`);
+    highlights = data?.highlights || [];
+  }
+
+  function renderPassage(parts) {
+    const cont = document.getElementById('passage');
+    cont.innerHTML = parts.map(p => {
+      let curCh = null;
+      const verses = p.verses.map(v => {
+        const hl = highlights.find(h => h.chapter === v.chapter && v.verse >= h.verse_start && v.verse <= h.verse_end);
+        const chHead = v.chapter !== curCh ? `<h3 style="color:var(--accent);margin:18px 0 8px">${FH.esc(p.reference.split(' ')[0])} ${v.chapter}</h3>` : '';
+        curCh = v.chapter;
+        return `${chHead}<p class="v ${hl ? 'hl-' + hl.color : ''}" data-ch="${v.chapter}" data-v="${v.verse}"><span class="vn">${v.verse}</span>${FH.esc(v.text)}</p>`;
+      }).join('');
+      return verses;
+    }).join('');
+    document.getElementById('attrib').textContent = parts[0]?.attribution || '';
+  }
+
+  await loadHighlights();
+  await loadPassage();
+  sel.addEventListener('change', loadPassage);
+
+  // Tap a verse to highlight (cycles amber → none) — simple, mobile-friendly
+  document.getElementById('passage').addEventListener('click', async (e) => {
+    const p = e.target.closest('p.v');
+    if (!p) return;
+    const ch = parseInt(p.dataset.ch, 10), v = parseInt(p.dataset.v, 10);
+    const book = day.assignments[0].book;
+    const existing = highlights.find(h => h.chapter === ch && v >= h.verse_start && v <= h.verse_end);
+    if (existing) {
+      await FH.api('/api/read/highlight', { method: 'DELETE', body: { id: existing.id } });
+      highlights = highlights.filter(h => h.id !== existing.id);
+      p.className = 'v';
+    } else {
+      await FH.api('/api/read/highlight', { method: 'POST', body: { book, chapter: ch, verse_start: v, verse_end: v, color: 'amber' } });
+      highlights.push({ chapter: ch, verse_start: v, verse_end: v, color: 'amber' });
+      p.className = 'v hl-amber';
+    }
+  });
+
+  // Font size
+  const sizes = ['fs-small', 'fs-medium', 'fs-large'];
+  let fsIdx = +(localStorage.getItem('fh50_fs') ?? 1);
+  function applyFs() {
+    const el = document.getElementById('passage');
+    el.classList.remove(...sizes); el.classList.add(sizes[fsIdx]);
+    localStorage.setItem('fh50_fs', fsIdx);
+  }
+  applyFs();
+  document.getElementById('fs-dec').onclick = () => { fsIdx = Math.max(0, fsIdx - 1); applyFs(); };
+  document.getElementById('fs-inc').onclick = () => { fsIdx = Math.min(sizes.length - 1, fsIdx + 1); applyFs(); };
+
+  // Bookmark (first verse of passage)
+  document.getElementById('bookmark-btn').onclick = async () => {
+    const a = day.assignments[0];
+    await FH.api('/api/read/bookmark', { method: 'POST', body: { book: a.book, chapter: a.chapter_start, day_number: dayN } });
+    document.getElementById('bookmark-btn').textContent = '✅ Saved';
+  };
+
+  // Reading-time heartbeat (30s)
+  setInterval(() => {
+    if (document.visibilityState === 'visible')
+      FH.api('/api/read/time', { method: 'POST', body: { day_number: dayN, seconds: 30 } });
+  }, 30000);
+
+  // Mark complete
+  function renderMarkArea() {
+    const done = !!day.progress.completed;
+    document.getElementById('mark-area').innerHTML = done
+      ? `<div class="card center"><span class="check" style="font-size:18px">✓ Reading complete</span>
+          <div class="small muted" style="margin-top:4px">Points awarded. Well done.</div>
+          <a class="btn ghost" style="margin-top:12px" href="/notes.html?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note →</a></div>`
+      : `<button class="btn" id="mark-btn">Mark Complete · Day ${dayN}</button>`;
+    if (!done) document.getElementById('mark-btn').onclick = async () => {
+      const btn = document.getElementById('mark-btn'); btn.disabled = true;
+      const { ok, data } = await FH.api('/api/read/complete', { method: 'POST', body: { day_number: dayN } });
+      if (ok) { day.progress.completed = 1; renderMarkArea(); }
+      else { btn.disabled = false; }
+    };
+  }
+  renderMarkArea();
+
+  // Prev / next day navigation
+  const navRow = document.createElement('div');
+  navRow.className = 'between';
+  navRow.style.margin = '14px 0';
+  navRow.innerHTML = `
+    ${dayN > 1 ? `<a class="btn ghost small" href="/read.html?day=${dayN - 1}">← Day ${dayN - 1}</a>` : '<span></span>'}
+    ${dayN < 50 ? `<a class="btn ghost small" href="/read.html?day=${dayN + 1}">Day ${dayN + 1} →</a>` : '<span></span>'}`;
+  document.getElementById('mark-area').appendChild(navRow);
+})();
+</script>
+</body>
+<script>FH.nav('read')</script>
+</html>

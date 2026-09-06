@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForgeHouse 50 — Profile</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="wrap">
+  <div id="top"></div>
+  <div id="identity"></div>
+  <div id="stats"></div>
+  <div id="badges"></div>
+  <div id="all-badges"></div>
+  <div id="admin-link"></div>
+  <button class="btn ghost" id="logout">Log out</button>
+</div>
+<script src="/app.js"></script>
+<script>
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+  document.getElementById('top').innerHTML = FH.topbar('Profile');
+  const s = me.stats;
+
+  document.getElementById('identity').innerHTML = `
+    <div class="card row">
+      <div class="avatar" style="width:56px;height:56px;font-size:24px">${FH.esc((me.name || me.email)[0].toUpperCase())}</div>
+      <div><h1 style="margin:0">${FH.esc(me.name || 'Member')}</h1>
+      <div class="small muted">${FH.esc(me.email)}${me.role === 'admin' ? ' · <span class="pill">admin</span>' : ''}</div></div>
+    </div>`;
+
+  const pct = Math.min(100, Math.round(s.days_completed / 50 * 100));
+  document.getElementById('stats').innerHTML = `
+    <div class="card">
+      <div class="between small muted"><span>Programme progress</span><span>${s.days_completed}/50 days</span></div>
+      <div class="bar" style="margin:8px 0 12px"><i style="width:${pct}%"></i></div>
+      <div class="grid3">
+        <div class="stat"><div class="v">${s.points}</div><div class="l">Points</div></div>
+        <div class="stat"><div class="v">${s.streak_current}</div><div class="l">Streak</div></div>
+        <div class="stat"><div class="v">${s.chapters}</div><div class="l">Chapters</div></div>
+      </div>
+      <div class="grid3" style="margin-top:10px">
+        <div class="stat"><div class="v">${FH.fmtTime(s.reading_seconds)}</div><div class="l">Reading time</div></div>
+        <div class="stat"><div class="v">${s.observations}</div><div class="l">Observations</div></div>
+        <div class="stat"><div class="v">${s.questions}</div><div class="l">Questions</div></div>
+      </div>
+    </div>`;
+
+  const CATALOGUE = [
+    ['streak-7', '7-Day Streak'], ['streak-14', '14-Day Streak'], ['streak-25', '25-Day Streak'],
+    ['finisher-50', '50-Day Finisher'], ['chapters-100', '100 Chapters'], ['chapters-200', '200 Chapters'],
+    ['chapters-260', '260 Chapters'], ['audio-50', '50 Audio Sessions'],
+    ['observations-25', '25 Observations'], ['questions-25', '25 Questions'],
+  ];
+  const earned = new Set((me.badges || []).map(b => b.id));
+  document.getElementById('badges').innerHTML = `<h2>Badges <span class="small muted">(${earned.size}/${CATALOGUE.length})</span></h2>
+    <div>${CATALOGUE.map(([id, name]) => `<span class="badge ${earned.has(id) ? 'earned' : ''}">${earned.has(id) ? '★' : '☆'} ${name}</span>`).join('')}</div>`;
+
+  if (me.role === 'admin') {
+    document.getElementById('admin-link').innerHTML = `<a class="btn ghost" style="margin:10px 0" href="/admin.html">Admin dashboard →</a>`;
+  }
+
+  document.getElementById('logout').onclick = async () => {
+    await FH.api('/api/auth/logout', { method: 'POST' });
+    location.href = '/login.html';
+  };
+})();
+</script>
+</body>
+<script>FH.nav('profile')</script>
+</html>
