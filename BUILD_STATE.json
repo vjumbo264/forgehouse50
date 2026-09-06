@@ -79,9 +79,9 @@
     {
       "id": "task-05",
       "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "Auth validated live on forgehouse50.pages.dev: signup creates unverified profile + 10-min OTP; wrong OTP rejected (\"Incorrect code\"), correct OTP consumed (single-use, re-use returns \"No active verification code\"), 30-day HttpOnly+Secure+SameSite=Lax session cookie issued; /api/auth/me resolves session with stats; login rejects wrong password (401 \"Invalid email or password\", no enumeration) and accepts correct; logout destroys session (me -> 401). OTP codes are single-use, expire in 10 min, max 5 attempts. Resend: free-tier onboarding@resend.dev can only deliver to account owner (vjumbo264@gmail.com) until a domain is verified; E2E OTP read from D1 directly. Password hashing PBKDF2-SHA256 100k iters via Web Crypto (documented in auth.mjs)."
     },
     {
       "id": "task-06",
