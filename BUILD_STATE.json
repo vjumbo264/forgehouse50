@@ -21,15 +21,18 @@
       "default_branch": "main"
     },
     "cloudflare_pages_project": {
-      "status": "pending",
-      "name": "forgehouse50"
+      "status": "created",
+      "name": "forgehouse50",
+      "url": "https://forgehouse50.pages.dev"
     },
     "cloudflare_d1_database": {
-      "status": "pending",
-      "name": "forgehouse50-db"
+      "status": "created+schema+seed applied",
+      "name": "forgehouse50-db",
+      "uuid": "351aca36-14e4-4c6f-8e13-127caae5b72f"
     },
     "github_actions_deploy": {
-      "status": "pending"
+      "status": "active",
+      "first_run": "success (id 34035667031)"
     },
     "secrets": {
       "RESEND_API_KEY": "to be stored as Cloudflare Worker/Pages secret; never in code",
@@ -58,16 +61,18 @@
     {
       "id": "task-03",
       "title": "Scaffold frontend (Pages-deployable) + Pages Functions API; create Cloudflare Pages project and D1 database via API; connect GitHub auto-deploy",
-      "status": "in_progress",
-      "commits": [],
-      "notes": "Scaffolding no-build static frontend + Pages Functions; creating D1 database and Pages project via Cloudflare API next."
+      "status": "done",
+      "commits": [
+        "a65c90c"
+      ],
+      "notes": "Scaffolded no-build static frontend (public/) + Pages Functions API (functions/), wrangler.toml, .gitignore. Created D1 forgehouse50-db (uuid 351aca36...) + Pages project forgehouse50 via Cloudflare API. Bound D1 (binding DB), set WHATSAPP_GROUP_URL + PROGRAMME_START_DATE env vars and RESEND_API_KEY as secret_text. Set GitHub Actions secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID. Deploy workflow (.github/workflows/deploy.yml) pushed; first run succeeded (run id 34035667031). LIVE: forgehouse50.pages.dev homepage 200, /api/config OK, /api/today 401 unauthenticated as expected. All 29 .mjs modules pass node --check."
     },
     {
       "id": "task-04",
       "title": "Reading-day calendar generator: 50 days from Mon 2026-09-07 skipping Tue/Fri; map 260 NT chapters; seed reading_days + reading_assignments",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "seed/calendar.mjs generates calendar from functions/lib/calendar.mjs (single source of truth). Generated seed/seed.sql: 50 reading days from 2026-09-07, skips every Tue/Fri, 260 chapters (6/day days1-10, 5/day after), ends Day 50 = 2026-11-15 (Sunday). Cross-verified with independent Python calc. Applied to D1 via API: verified live days=50, bad_weekdays=0, chapters=260, last_day=2026-11-15. Fixed ARCHITECTURE.md end-date (was 2026-11-19 estimate)."
     },
     {
       "id": "task-05",
@@ -137,7 +142,7 @@
     {
       "session": 1,
       "date_utc": "2026-09-06",
-      "summary": "Session start. Verified GitHub PAT (login vjumbo264) and Cloudflare token (account access OK). Repo vjumbo264/forgehouse50 created public via API. Seeding BUILD_STATE.json."
+      "summary": "Session start. Verified GitHub PAT (login vjumbo264) and Cloudflare token (account access OK). Repo vjumbo264/forgehouse50 created public via API. Seeding BUILD_STATE.json. Completed task-01..04. Live app deployed and verified. Auth/notes/points/leaderboard/admin APIs written (task-05..11 logic largely implemented in functions/api). Next: task-05..12 validation + README, then task-13 E2E live verification."
     }
   ]
 }

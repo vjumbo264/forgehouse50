@@ -39,7 +39,7 @@ BUILD_STATE.json            persistent build checkpoint (the project's memory)
 - Start: 2026-09-07 (Monday).
 - A day is a **reading day** unless its weekday is Tuesday or Friday.
 - Exactly 50 reading days are generated; the programme ends when Reading
-  Day 50 completes (2026-11-19, a Thursday).
+  Day 50 completes (2026-11-15, a Sunday).
 - The 260 NT chapters are distributed as evenly as possible (5 or 6 per day,
   first 10 days get 6), and split into contiguous per-book assignments that
   never split a chapter.
