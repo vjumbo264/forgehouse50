@@ -132,9 +132,9 @@
     {
       "id": "task-12",
       "title": "README: add Bible API key from phone/browser, OTP/Resend setup, first-priority user flow guide",
-      "status": "pending",
+      "status": "done",
       "commits": [],
-      "notes": ""
+      "notes": "README.md written (139 lines): programme rules (Tue/Fri skip, 2026-09-07 start), stack table, first-priority user flow guide, phone-only admin sections (add BIBLE_API_KEY / WHATSAPP_GROUP_URL via Pages dashboard or Termux curl PATCH; OTP/Resend setup incl. free-tier owner-only delivery limitation + domain verification path; promote admin via D1 console SQL; GitHub Actions secrets), repo layout, not-yet-built list. No local CLI assumed anywhere."
     },
     {
       "id": "task-13",
