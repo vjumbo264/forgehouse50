@@ -49,16 +49,18 @@
     {
       "id": "task-02",
       "title": "D1 schema: profiles, reading_days, reading_assignments, reading_progress, notes, bookmarks, highlights, badges, user_badges, points, audio_progress, leaderboard_snapshots, otp_codes, sessions. Document per-table access rules in ARCHITECTURE.md",
-      "status": "in_progress",
-      "commits": [],
-      "notes": "schema.sql written (14 tables incl. badge catalogue seed) and validated locally in SQLite: all tables create cleanly, 10 badges seeded. ARCHITECTURE.md documents per-table access rules (Worker query layer is the enforcement boundary since D1 has no RLS). Committing now; will mark done once push verified."
+      "status": "done",
+      "commits": [
+        "a6342b2"
+      ],
+      "notes": "schema.sql (14 tables + badge seed) validated in local SQLite and pushed. ARCHITECTURE.md documents per-table access rules; enforcement lives in the Pages Functions query layer (D1 has no RLS)."
     },
     {
       "id": "task-03",
       "title": "Scaffold frontend (Pages-deployable) + Pages Functions API; create Cloudflare Pages project and D1 database via API; connect GitHub auto-deploy",
-      "status": "pending",
+      "status": "in_progress",
       "commits": [],
-      "notes": ""
+      "notes": "Scaffolding no-build static frontend + Pages Functions; creating D1 database and Pages project via Cloudflare API next."
     },
     {
       "id": "task-04",
