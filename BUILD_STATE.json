@@ -326,7 +326,7 @@
   },
   "profile_content_cleanup_v1": {
     "started_utc": "2026-09-08",
-    "work_complete": false,
+    "work_complete": true,
     "scope": "Follow-on: (A) remove mock Bible content layer + mock translation entirely; (B) preset profile avatar icons (picker in signup + profile settings, D1 avatar_id, display on profile/leaderboard/admin); (C) real WHATSAPP_GROUP_URL in production Pages env; (D) diagnose and fix empty homepage. No other profile-editing capability added (email/password/name stay as-is).",
     "tasks": [
       {
@@ -377,23 +377,26 @@
       {
         "id": "task-p07",
         "title": "Set real WHATSAPP_GROUP_URL in PRODUCTION Pages deployment config (https://chat.whatsapp.com/KNt6BxuzOWwFZ9p4LL2Dfq?s=cl&p=a&mlu=4&ilr=4); verify join button + share button resolve live",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": "2026-09-08: DIAGNOSIS \u2014 prior session only ever set WHATSAPP_GROUP_URL in the PREVIEW deployment config with an EMPTY value; production had no WHATSAPP_GROUP_URL key at all (production env_vars was BREVO_API_KEY only). FIX \u2014 Pages API PATCH set WHATSAPP_GROUP_URL (plain_text) to the real group invite URL in BOTH production and preview; BREVO_API_KEY and preview PROGRAMME_START_DATE confirmed preserved after PATCH. NEXT \u2014 push this BUILD_STATE commit to trigger a production deploy so the running Pages Functions pick up the new env var, then verify /api/config -> whatsapp_group_url returns the real URL live. UPDATE 2026-09-08: first API PATCH succeeded but the push-triggered wrangler deploy (2d32c23) then WIPED the production var again \u2014 wrangler pages deploy rewrites plain-text env_vars from wrangler.toml, which declared none, and the active deployment 39b7c200 predates the re-patch so /api/config still returned empty. DURABLE FIX: declare WHATSAPP_GROUP_URL under [vars] in wrangler.toml so every future deploy carries it; push triggers redeploy; then re-verify /api/config live."
+        "notes": "2026-09-08: DIAGNOSIS \u2014 prior session only ever set WHATSAPP_GROUP_URL in the PREVIEW deployment config with an EMPTY value; production had no WHATSAPP_GROUP_URL key at all (production env_vars was BREVO_API_KEY only). FIX \u2014 Pages API PATCH set WHATSAPP_GROUP_URL (plain_text) to the real group invite URL in BOTH production and preview; BREVO_API_KEY and preview PROGRAMME_START_DATE confirmed preserved after PATCH. NEXT \u2014 push this BUILD_STATE commit to trigger a production deploy so the running Pages Functions pick up the new env var, then verify /api/config -> whatsapp_group_url returns the real URL live. UPDATE 2026-09-08: first API PATCH succeeded but the push-triggered wrangler deploy (2d32c23) then WIPED the production var again \u2014 wrangler pages deploy rewrites plain-text env_vars from wrangler.toml, which declared none, and the active deployment 39b7c200 predates the re-patch so /api/config still returned empty. DURABLE FIX: declare WHATSAPP_GROUP_URL under [vars] in wrangler.toml so every future deploy carries it; push triggers redeploy; then re-verify /api/config live. VERIFIED LIVE 2026-09-08 (commit c5cded9, Actions run success): /api/config now returns the real whatsapp_group_url in production; project deployment_configs retain WHATSAPP_GROUP_URL in BOTH production and preview after the wrangler deploy (durable, because wrangler.toml [vars] now carries it). Headless render confirmed both buttons live: the \"Join ForgeHouse WhatsApp Group\" button href = the real group invite URL, and the \"Share\" button = https://wa.me/?text=<invite text + site URL>.",
+        "completed_utc": "2026-09-08"
       },
       {
         "id": "task-p08",
         "title": "Live E2E verification pass: homepage for real user, translation selector shows only real VerseWell translations, fresh signup picks avatar (visible on Profile/Leaderboard), existing user changes avatar in Profile settings, both WhatsApp buttons open real group link; confirm no email/account-editing UI added",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "LIVE E2E VERIFIED 2026-09-08 via headless Chromium (session minted in D1 for verified member fh50.vw.e2e@proton.me): (1) LOGGED-IN homepage 200 renders fully with zero pageerrors \u2014 correct non-reading-day state (\"Tuesday / Fasting & Prayer / No reading today \u2014 see you on the next reading day\"), progress stats, CTA \"Read Next Assignment \u2192 Day 2 (2026-09-09 \u00b7 Matthew 7\u201312)\", both WhatsApp buttons; (2) LOGGED-OUT visitor redirected to /login (intended logged-out state); (3) /api/translations returns exactly 12 entries, ALL versewell:true, ZERO mock entries; (4) avatar flow \u2014 profile.html picker renders 34 buttons with current selection pre-marked, clicking dove-blue shows \"Saved \u2713\" and persists (GET /api/auth/me -> avatar_id dove-blue), identity card updates live; leaderboard entries carry avatar_id (VW E2E rank 3 shows flame-red then dove-blue after change); signup.html renders 34 picker buttons with default dove-amber pre-selected alongside name/email/password inputs (OTP flow untouched); (5) POST /api/auth/avatar guards \u2014 invalid id rejected, unauthenticated request -> 401; (6) NO other profile-editing UI added (repo scan for email/password/name-change flows: clean; avatar endpoint header comment confirms avatar-only scope).",
+        "completed_utc": "2026-09-08"
       },
       {
         "id": "task-p09",
         "title": "Final commit/push; set profile_content_cleanup_v1.work_complete=true (task-p04 blocked-exception documented if guard had failed)",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Final state commit. All tasks p01-p08 done. Repo-wide mock scan: only historical comments remain noting the mock layer was removed (task-p04) \u2014 no functional dead code; functions/lib/bible.mjs confirmed deleted. profile_content_cleanup_v1 complete.",
+        "completed_utc": "2026-09-08"
       }
     ],
     "session_history": [
@@ -407,6 +410,7 @@
         "date_utc": "2026-09-08",
         "summary": "task-p02/p03 done: diagnosed + fixed empty homepage (eager banners object literal dereferenced data.today=null on non-reading days -> TypeError aborted IIFE -> empty render; converted to lazy builders; verified live headless logged-in + logged-out). task-p04 done: mock Bible layer + mock translation removed entirely; clear 503 unavailable states; docs scrubbed; all .mjs parse. Next: task-p05 avatars."
       }
-    ]
+    ],
+    "completed_utc": "2026-09-08"
   }
 }
