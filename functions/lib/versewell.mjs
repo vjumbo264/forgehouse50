@@ -16,10 +16,6 @@
 
 let BASE = 'https://versewell.pages.dev/static-data';
 
-// TEMPORARY (task-v06 fallback test): force a wrong VerseWell URL to prove
-// the mock-fallback path live. Reverted immediately after verification.
-BASE = 'https://versewell.pages.dev/static-data-DELIBERATELY-WRONG';
-
 // Optional per-environment override (e.g. VERSEWELL_BASE Pages env var) —
 // used to prove the mock-fallback path by pointing at a wrong URL.
 export function configureVersewell(env) {
