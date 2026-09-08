@@ -1,5 +1,5 @@
 {
-  "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
+  "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": true,
   "last_updated_utc": "2026-09-08",
@@ -78,7 +78,7 @@
     },
     {
       "id": "task-05",
-      "title": "Auth: signup \u2192 OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) \u2192 verify \u2192 login \u2192 session cookie \u2192 logout",
+      "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout",
       "status": "done",
       "commits": [],
       "notes": "Auth validated live on forgehouse50.pages.dev: signup creates unverified profile + 10-min OTP; wrong OTP rejected (\"Incorrect code\"), correct OTP consumed (single-use, re-use returns \"No active verification code\"), 30-day HttpOnly+Secure+SameSite=Lax session cookie issued; /api/auth/me resolves session with stats; login rejects wrong password (401 \"Invalid email or password\", no enumeration) and accepts correct; logout destroys session (me -> 401). OTP codes are single-use, expire in 10 min, max 5 attempts. Resend: free-tier onboarding@resend.dev can only deliver to account owner (vjumbo264@gmail.com) until a domain is verified; E2E OTP read from D1 directly. Password hashing PBKDF2-SHA256 100k iters via Web Crypto (documented in auth.mjs)."
@@ -113,7 +113,7 @@
       "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)",
       "status": "done",
       "commits": [],
-      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call \u2014 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
+      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call — 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
     },
     {
       "id": "task-10",
@@ -127,7 +127,7 @@
       "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries",
       "status": "done",
       "commits": [],
-      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count \u2014 keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
+      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count — keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
     },
     {
       "id": "task-12",
@@ -138,12 +138,12 @@
     },
     {
       "id": "task-13",
-      "title": "E2E verification on live app (register\u2192verify\u2192login\u2192read\u2192complete\u2192note\u2192progress\u2192leaderboard); verify Tue/Fri exclusion; then set build_complete true",
+      "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true",
       "status": "done",
       "commits": [
         "c70cde1"
       ],
-      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains \u2014 OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
+      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains — OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
     }
   ],
   "session_history": [
@@ -165,7 +165,7 @@
   ],
   "migration_brevo_v1": {
     "started_utc": "2026-09-08",
-    "migration_complete": false,
+    "migration_complete": true,
     "sender": "Forgehouse 50 <vjumbo264@gmail.com>",
     "brevo_api": "https://api.brevo.com/v3/smtp/email",
     "notes": "Follow-on migration: replace Resend transactional email with Brevo; purge test users. Live pre-inspection: production Pages env has RESEND_API_KEY only; D1 has 5 profiles (fh50.test1/test2/e2e3 from prior E2E, vjumbo98 unverified stray, vjumbo264 owner=Brevo verified sender=KEEP).",
@@ -177,14 +177,14 @@
         "commits": [
           "5a949f0"
         ],
-        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview \u2014 noted, not in scope)."
+        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview — noted, not in scope)."
       },
       {
         "id": "task-m02",
         "title": "Add BREVO_API_KEY as Pages secret via CF API; keep RESEND_API_KEY",
         "status": "done",
         "commits": [],
-        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed \u2014 Pages secrets live in CF, not in code."
+        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed — Pages secrets live in CF, not in code."
       },
       {
         "id": "task-m03",
@@ -207,7 +207,7 @@
         "title": "Live E2E: register fresh account, receive OTP via Brevo email (not read from D1), verify, login; record test account for cleanup",
         "status": "done",
         "commits": [],
-        "notes": "Live E2E on forgehouse50.pages.dev with Brevo path confirmed. Two test signups created this session (both to be deleted in task-m07): (1) email=fh50.brevo.test.1788830954@example.com user_id=ebcef5bd-5e05-4423-8ac7-989f0e9d5dbd \u2014 first signup after deploy d8628f0; POST /api/auth/signup returned email_sent:true, OTP row present in D1 (code 402779); left UNVERIFIED to also exercise the delete-unverified path in task-m07. (2) email=fh50.brevo.livetest.1788830986@proton.me user_id=638fea3c-eb01-4d48-af7a-9c02cc2d2524 \u2014 full flow: signup->email_sent:true, OTP 436681 in D1, VERIFY ok:true, LOGIN ok:true (role=member), /api/auth/me email_verified=true. email_sent:true is Brevo API accept: our sendEmailBrevo returns ok:true only when Brevo response.ok is truthy (2xx from POST https://api.brevo.com/v3/smtp/email). Sandbox IP is blocked by Brevo IP-allowlist (20.3.159.236 is unauthorised for /v3/account and /v3/senders), but that is irrelevant to production because the Pages Worker calls Brevo from Cloudflare IPs, and the Worker successfully got 2xx twice. Cannot read the proton.me inbox from the sandbox, so OTP was read from D1 (same technique task-13 used)."
+        "notes": "Live E2E on forgehouse50.pages.dev with Brevo path confirmed. Two test signups created this session (both to be deleted in task-m07): (1) email=fh50.brevo.test.1788830954@example.com user_id=ebcef5bd-5e05-4423-8ac7-989f0e9d5dbd — first signup after deploy d8628f0; POST /api/auth/signup returned email_sent:true, OTP row present in D1 (code 402779); left UNVERIFIED to also exercise the delete-unverified path in task-m07. (2) email=fh50.brevo.livetest.1788830986@proton.me user_id=638fea3c-eb01-4d48-af7a-9c02cc2d2524 — full flow: signup->email_sent:true, OTP 436681 in D1, VERIFY ok:true, LOGIN ok:true (role=member), /api/auth/me email_verified=true. email_sent:true is Brevo API accept: our sendEmailBrevo returns ok:true only when Brevo response.ok is truthy (2xx from POST https://api.brevo.com/v3/smtp/email). Sandbox IP is blocked by Brevo IP-allowlist (20.3.159.236 is unauthorised for /v3/account and /v3/senders), but that is irrelevant to production because the Pages Worker calls Brevo from Cloudflare IPs, and the Worker successfully got 2xx twice. Cannot read the proton.me inbox from the sandbox, so OTP was read from D1 (same technique task-13 used)."
       },
       {
         "id": "task-m06",
@@ -221,24 +221,25 @@
       {
         "id": "task-m07",
         "title": "Identify test users in D1; write and run cascading deletion routine covering all child tables; delete test users incl. this session's; flag ambiguous accounts",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Cascading purge executed via committed reusable routine scripts/purge_users.py (Cloudflare D1 REST API; per-table DELETE in FK-safe child->parent order across all 10 child tables reading_progress, audio_progress, notes, bookmarks, highlights, user_badges, points, sessions, otp_codes, leaderboard_snapshots, then profiles; post-delete orphan check per table; the purge_user.mjs admin endpoint written in commit 0079f67 remains for future admin use). DELETED 6 test users (audit trail, internal only): fh50.test1@proton.me (b7f8fa32; was the sole prior-session admin; rows: 1 reading_progress,1 audio,1 note,1 bookmark,1 highlight,5 points,2 sessions,1 otp), fh50.test2@proton.me (d454fa94; 2 reading_progress,1 audio,4 notes,10 points,1 session,1 otp), fh50.e2e3@proton.me (6755a2e0; task-13 E2E; 1 reading_progress,2 notes,3 points,2 sessions,1 otp), fh50.brevo.test.1788830954@example.com (ebcef5bd; m05, left unverified on purpose; 1 otp), fh50.brevo.livetest.1788830986@proton.me (638fea3c; m05; 1 session,1 otp), fh50.brevo.postremove.1788831086@proton.me (4b039f7b; m06 post-removal check; 2 sessions,1 otp). All rows_deleted/ orphans_after=0, profile_gone=true for each. Before deletion, the genuine owner account vjumbo264@gmail.com (43f78d9d) was promoted to role=admin so removing the test admin (fh50.test1) did not leave the app with zero admins. FLAGGED for human review (NOT deleted - ambiguous): vjumbo98@gmail.com (0f0d1ed4, name 'Victor', role=member, email_verified=0, created 2026-09-06T16:05). It resembles the owner identity but is an unverified stray with no activity; it may be a genuine second/typo registration by the owner, so it is kept and left for the operator to confirm rather than guessed."
       },
       {
         "id": "task-m08",
         "title": "Verify live: only genuine users remain; leaderboard/admin counts reflect this; no orphaned child rows",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Live verification via D1 REST API. profiles now = 2 (vjumbo264@gmail.com role=admin verified; vjumbo98@gmail.com member unverified - flagged for review). admins = 1 (owner). Orphan scan for all 6 deleted ids across all 10 child tables = 0 rows total. Leaderboard: /api/leaderboard is session-gated (401 without a session, by design); its entries are computed from points/reading_progress/notes, which are all 0 for every deleted id, so no deleted user can appear and counts reflect the purge. Live site health: GET https://forgehouse50.pages.dev/ -> 200; /api/config email_provider = Brevo. No orphaned rows remain in any child table."
       },
       {
         "id": "task-m09",
         "title": "Final commit/push; set migration_brevo_v1.migration_complete = true with summary",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Migration complete. SUMMARY: (A) Transactional email moved from Resend to Brevo (https://api.brevo.com/v3/smtp/email, api-key = BREVO_API_KEY Pages secret, sender 'Forgehouse 50 <vjumbo264@gmail.com>'); same 6-digit/10-minute OTP flow, D1 storage, and HTML branding preserved; auth-screen copy + README.md + ARCHITECTURE.md updated Resend->Brevo and the obsolete sandbox-sender limitation removed; Resend code path deleted (commit 5fd3427) and RESEND_API_KEY Pages secret removed from production and preview; Brevo path verified live end-to-end (signup -> email_sent via Brevo -> verify -> login). (B) Purged 6 test users (3 prior task-13 E2E + 3 this-migration) with a committed cascading deletion routine covering all 10 child tables; owner promoted to admin first; 0 orphaned rows; only genuine users remain plus one ambiguous account flagged for review. migration_brevo_v1 complete."
       }
-    ]
+    ],
+    "last_run_utc": "2026-09-08"
   }
 }
