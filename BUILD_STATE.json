@@ -346,14 +346,16 @@
       {
         "id": "task-p03",
         "title": "Fix homepage per task-p02 diagnosis; verify live for logged-in user with real progress and logged-out visitor",
-        "status": "in_progress",
-        "commits": [],
-        "notes": "Fix: today-banner object literal converted to lazy per-status builder functions; only the builder matching data.status runs, so non-reading days never dereference data.today. banners[data.status] || '' fallback kept for unknown statuses."
+        "status": "done",
+        "commits": [
+          "c545e7c"
+        ],
+        "notes": "Fix deployed via GitHub Actions (run for c545e7cb = success) and verified live in headless Chromium 2026-09-08: LOGGED-IN user (verified member session) now renders the full homepage with zero pageerrors — Tuesday 'Fasting & Prayer' banner, stats grid (Chapters/Complete/Streak/Reading/Notes/Questions), Programme progress 0/50 days, 'Read Next Assignment →' CTA, 'Next reading day: Day 2 · 2026-09-09 · Matthew 7–12', Share button, bottom nav. Body text 350 chars (was 98/nav-only), wrap innerHTML 1884 (was 468). LOGGED-OUT visitor correctly JS-redirects to /login (200, login form renders) — intended behavior, unchanged. Non-reading-day state now displays correctly instead of crashing; reading-day branch unchanged and still guarded."
       },
       {
         "id": "task-p04",
         "title": "Remove mock Bible content layer + mock translation entirely (Part A): delete mock module/data + code paths, replace mock-fallback with clear 'scripture temporarily unavailable' state, remove mock from translation selector, scrub docs/seed references. Guard satisfied per task-p01.",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
