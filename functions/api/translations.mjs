@@ -5,9 +5,10 @@
 // still works.
 import { json } from '../lib/http.mjs';
 import { listTranslations } from '../lib/bible.mjs';
-import { versewellProvider } from '../lib/versewell.mjs';
+import { versewellProvider, configureVersewell } from '../lib/versewell.mjs';
 
-export async function onRequestGet() {
+export async function onRequestGet({ env }) {
+  configureVersewell(env);
   const mock = listTranslations();
   const live = await versewellProvider.listTranslations();
   if (!live || live.length === 0) {

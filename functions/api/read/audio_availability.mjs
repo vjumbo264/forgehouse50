@@ -6,9 +6,10 @@
 // calls this once per passage load.
 import { json, badRequest } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
-import { isVersewellId, versewellCode, versewellProvider } from '../../lib/versewell.mjs';
+import { isVersewellId, versewellCode, versewellProvider, configureVersewell } from '../../lib/versewell.mjs';
 
 export async function onRequestGet({ request, env }) {
+  configureVersewell(env);
   const { response } = await requireUser(request, env);
   if (response) return response;
 

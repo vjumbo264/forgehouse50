@@ -14,7 +14,15 @@
 //     into verse text (the historical upstream bug), the intro is dropped.
 //   * Anything that fails returns null so callers can fall back to mock.
 
-const BASE = 'https://versewell.pages.dev/static-data';
+let BASE = 'https://versewell.pages.dev/static-data';
+
+// Optional per-environment override (e.g. VERSEWELL_BASE Pages env var) —
+// used to prove the mock-fallback path by pointing at a wrong URL.
+export function configureVersewell(env) {
+  if (env && typeof env.VERSEWELL_BASE === 'string' && env.VERSEWELL_BASE) {
+    BASE = env.VERSEWELL_BASE.replace(/\/+$/, '');
+  }
+}
 const TEXT_TTL_MS = 5 * 60 * 1000;   // 5 min — chapter text/translations
 const AUDIO_TTL_MS = 60 * 1000;      // 60s — audio availability grows live
 
