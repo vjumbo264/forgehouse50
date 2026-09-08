@@ -1,5 +1,5 @@
 {
-  "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
+  "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": true,
   "last_updated_utc": "2026-09-08",
@@ -78,7 +78,7 @@
     },
     {
       "id": "task-05",
-      "title": "Auth: signup \u2192 OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) \u2192 verify \u2192 login \u2192 session cookie \u2192 logout",
+      "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout",
       "status": "done",
       "commits": [],
       "notes": "Auth validated live on forgehouse50.pages.dev: signup creates unverified profile + 10-min OTP; wrong OTP rejected (\"Incorrect code\"), correct OTP consumed (single-use, re-use returns \"No active verification code\"), 30-day HttpOnly+Secure+SameSite=Lax session cookie issued; /api/auth/me resolves session with stats; login rejects wrong password (401 \"Invalid email or password\", no enumeration) and accepts correct; logout destroys session (me -> 401). OTP codes are single-use, expire in 10 min, max 5 attempts. Resend: free-tier onboarding@resend.dev can only deliver to account owner (vjumbo264@gmail.com) until a domain is verified; E2E OTP read from D1 directly. Password hashing PBKDF2-SHA256 100k iters via Web Crypto (documented in auth.mjs)."
@@ -113,7 +113,7 @@
       "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)",
       "status": "done",
       "commits": [],
-      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call \u2014 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
+      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call — 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
     },
     {
       "id": "task-10",
@@ -127,7 +127,7 @@
       "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries",
       "status": "done",
       "commits": [],
-      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count \u2014 keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
+      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count — keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
     },
     {
       "id": "task-12",
@@ -138,12 +138,12 @@
     },
     {
       "id": "task-13",
-      "title": "E2E verification on live app (register\u2192verify\u2192login\u2192read\u2192complete\u2192note\u2192progress\u2192leaderboard); verify Tue/Fri exclusion; then set build_complete true",
+      "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true",
       "status": "done",
       "commits": [
         "c70cde1"
       ],
-      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains \u2014 OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
+      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains — OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
     }
   ],
   "session_history": [
@@ -177,14 +177,14 @@
         "commits": [
           "5a949f0"
         ],
-        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview \u2014 noted, not in scope)."
+        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview — noted, not in scope)."
       },
       {
         "id": "task-m02",
         "title": "Add BREVO_API_KEY as Pages secret via CF API; keep RESEND_API_KEY",
         "status": "done",
         "commits": [],
-        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed \u2014 Pages secrets live in CF, not in code."
+        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed — Pages secrets live in CF, not in code."
       },
       {
         "id": "task-m03",
@@ -207,7 +207,7 @@
         "title": "Live E2E: register fresh account, receive OTP via Brevo email (not read from D1), verify, login; record test account for cleanup",
         "status": "done",
         "commits": [],
-        "notes": "Live E2E on forgehouse50.pages.dev with Brevo path confirmed. Two test signups created this session (both to be deleted in task-m07): (1) email=fh50.brevo.test.1788830954@example.com user_id=ebcef5bd-5e05-4423-8ac7-989f0e9d5dbd \u2014 first signup after deploy d8628f0; POST /api/auth/signup returned email_sent:true, OTP row present in D1 (code 402779); left UNVERIFIED to also exercise the delete-unverified path in task-m07. (2) email=fh50.brevo.livetest.1788830986@proton.me user_id=638fea3c-eb01-4d48-af7a-9c02cc2d2524 \u2014 full flow: signup->email_sent:true, OTP 436681 in D1, VERIFY ok:true, LOGIN ok:true (role=member), /api/auth/me email_verified=true. email_sent:true is Brevo API accept: our sendEmailBrevo returns ok:true only when Brevo response.ok is truthy (2xx from POST https://api.brevo.com/v3/smtp/email). Sandbox IP is blocked by Brevo IP-allowlist (20.3.159.236 is unauthorised for /v3/account and /v3/senders), but that is irrelevant to production because the Pages Worker calls Brevo from Cloudflare IPs, and the Worker successfully got 2xx twice. Cannot read the proton.me inbox from the sandbox, so OTP was read from D1 (same technique task-13 used)."
+        "notes": "Live E2E on forgehouse50.pages.dev with Brevo path confirmed. Two test signups created this session (both to be deleted in task-m07): (1) email=fh50.brevo.test.1788830954@example.com user_id=ebcef5bd-5e05-4423-8ac7-989f0e9d5dbd — first signup after deploy d8628f0; POST /api/auth/signup returned email_sent:true, OTP row present in D1 (code 402779); left UNVERIFIED to also exercise the delete-unverified path in task-m07. (2) email=fh50.brevo.livetest.1788830986@proton.me user_id=638fea3c-eb01-4d48-af7a-9c02cc2d2524 — full flow: signup->email_sent:true, OTP 436681 in D1, VERIFY ok:true, LOGIN ok:true (role=member), /api/auth/me email_verified=true. email_sent:true is Brevo API accept: our sendEmailBrevo returns ok:true only when Brevo response.ok is truthy (2xx from POST https://api.brevo.com/v3/smtp/email). Sandbox IP is blocked by Brevo IP-allowlist (20.3.159.236 is unauthorised for /v3/account and /v3/senders), but that is irrelevant to production because the Pages Worker calls Brevo from Cloudflare IPs, and the Worker successfully got 2xx twice. Cannot read the proton.me inbox from the sandbox, so OTP was read from D1 (same technique task-13 used)."
       },
       {
         "id": "task-m06",
@@ -302,7 +302,7 @@
         "title": "Final commit/push; set versewell_integration_v1.integration_complete=true; summarize exactly which translations and audio chapters were confirmed working at verification time",
         "status": "done",
         "commits": [],
-        "notes": "integration_complete set true. Confirmed working at verification time (2026-09-08): translations served live from VerseWell mirror index.json = AMP, CEV, GW, KJV, MSG, NIV, NKJV, NLT, NLV, TLB, TPT, VOICE (12 total; all with footnotes; CEV has intros). Chapter text verified real for AMP Matthew 1 (footnotes) and CEV John 1 (intro). Audio chapters confirmed working: NONE yet (0 .m4a committed on VerseWell at verification time; generation job in progress) \u2014 availability is a live request-time check and will populate automatically without a ForgeHouse 50 redeploy."
+        "notes": "integration_complete set true. Confirmed working at verification time (2026-09-08): translations served live from VerseWell mirror index.json = AMP, CEV, GW, KJV, MSG, NIV, NKJV, NLT, NLV, TLB, TPT, VOICE (12 total; all with footnotes; CEV has intros). Chapter text verified real for AMP Matthew 1 (footnotes) and CEV John 1 (intro). Audio chapters confirmed working: NONE yet (0 .m4a committed on VerseWell at verification time; generation job in progress) — availability is a live request-time check and will populate automatically without a ForgeHouse 50 redeploy."
       }
     ],
     "session_history": [
@@ -341,7 +341,7 @@
         "title": "Live-diagnose empty homepage (Part D): identify real root cause with evidence before fixing",
         "status": "done",
         "commits": [],
-        "notes": "ROOT CAUSE FOUND with evidence (headless Chromium, logged-in session minted for verified member fh50.vw.e2e@proton.me): public/index.html built the today-banner as an EAGER object literal whose `reading` branch interpolates data.today.day_number / data.today.assignment.summary. On any non-reading day (Tue/Fri/rest) /api/today returns today:null, so constructing the literal throws 'TypeError: Cannot read properties of null (reading day_number)' INSIDE the page IIFE -> the whole IIFE aborts and, since ALL homepage content is injected by JS (topbar, banner, stats, progress bar, CTA, next-day, WhatsApp), the body renders completely EMPTY except the bottom nav. Reproduced live 2026-09-08 (a Tuesday): logged-in page loaded / 200 but pageerror exactly as above, wrap innerHTML 468 chars (nav only). NOT a data-flow bug: /api/today authenticated -> 200 with status=tuesday_prayer, next_reading_day=Day2 2026-09-09 Matthew 7-12, stats zeroed; reading_days seed intact (50 days 2026-09-07..2026-11-15, 260 chapters); app.js/app.css 200 and byte-identical to repo; /api/auth/me 200. Bug predates Brevo/VerseWell work (banner object was in the original build; task-13 E2E ran on Sunday 2026-09-06 = rest day, but curl-HTML checks used then don't execute JS so the eager-eval crash was never observed; it only surfaces in a real browser on a non-reading day). Logged-out behavior confirmed correct-by-design: JS redirect to /login (200, login form renders) \u2014 no issue there. Same eager-eval pattern searched across all pages: confined to index.html; lines 57-58/64-65 already guarded with && / ?."
+        "notes": "ROOT CAUSE FOUND with evidence (headless Chromium, logged-in session minted for verified member fh50.vw.e2e@proton.me): public/index.html built the today-banner as an EAGER object literal whose `reading` branch interpolates data.today.day_number / data.today.assignment.summary. On any non-reading day (Tue/Fri/rest) /api/today returns today:null, so constructing the literal throws 'TypeError: Cannot read properties of null (reading day_number)' INSIDE the page IIFE -> the whole IIFE aborts and, since ALL homepage content is injected by JS (topbar, banner, stats, progress bar, CTA, next-day, WhatsApp), the body renders completely EMPTY except the bottom nav. Reproduced live 2026-09-08 (a Tuesday): logged-in page loaded / 200 but pageerror exactly as above, wrap innerHTML 468 chars (nav only). NOT a data-flow bug: /api/today authenticated -> 200 with status=tuesday_prayer, next_reading_day=Day2 2026-09-09 Matthew 7-12, stats zeroed; reading_days seed intact (50 days 2026-09-07..2026-11-15, 260 chapters); app.js/app.css 200 and byte-identical to repo; /api/auth/me 200. Bug predates Brevo/VerseWell work (banner object was in the original build; task-13 E2E ran on Sunday 2026-09-06 = rest day, but curl-HTML checks used then don't execute JS so the eager-eval crash was never observed; it only surfaces in a real browser on a non-reading day). Logged-out behavior confirmed correct-by-design: JS redirect to /login (200, login form renders) — no issue there. Same eager-eval pattern searched across all pages: confined to index.html; lines 57-58/64-65 already guarded with && / ?."
       },
       {
         "id": "task-p03",
@@ -350,28 +350,28 @@
         "commits": [
           "c545e7c"
         ],
-        "notes": "Fix deployed via GitHub Actions (run for c545e7cb = success) and verified live in headless Chromium 2026-09-08: LOGGED-IN user (verified member session) now renders the full homepage with zero pageerrors \u2014 Tuesday 'Fasting & Prayer' banner, stats grid (Chapters/Complete/Streak/Reading/Notes/Questions), Programme progress 0/50 days, 'Read Next Assignment \u2192' CTA, 'Next reading day: Day 2 \u00b7 2026-09-09 \u00b7 Matthew 7\u201312', Share button, bottom nav. Body text 350 chars (was 98/nav-only), wrap innerHTML 1884 (was 468). LOGGED-OUT visitor correctly JS-redirects to /login (200, login form renders) \u2014 intended behavior, unchanged. Non-reading-day state now displays correctly instead of crashing; reading-day branch unchanged and still guarded."
+        "notes": "Fix deployed via GitHub Actions (run for c545e7cb = success) and verified live in headless Chromium 2026-09-08: LOGGED-IN user (verified member session) now renders the full homepage with zero pageerrors — Tuesday 'Fasting & Prayer' banner, stats grid (Chapters/Complete/Streak/Reading/Notes/Questions), Programme progress 0/50 days, 'Read Next Assignment →' CTA, 'Next reading day: Day 2 · 2026-09-09 · Matthew 7–12', Share button, bottom nav. Body text 350 chars (was 98/nav-only), wrap innerHTML 1884 (was 468). LOGGED-OUT visitor correctly JS-redirects to /login (200, login form renders) — intended behavior, unchanged. Non-reading-day state now displays correctly instead of crashing; reading-day branch unchanged and still guarded."
       },
       {
         "id": "task-p04",
         "title": "Remove mock Bible content layer + mock translation entirely (Part A): delete mock module/data + code paths, replace mock-fallback with clear 'scripture temporarily unavailable' state, remove mock from translation selector, scrub docs/seed references. Guard satisfied per task-p01.",
         "status": "done",
         "commits": [],
-        "notes": "Mock layer removed entirely (guard satisfied per task-p01 \u2014 VerseWell confirmed live). Changes: (1) DELETED functions/lib/bible.mjs (the mock provider id 'mock-web', SAMPLE public-domain passages, PLACEHOLDER_PARAGRAPHS, PROVIDERS registry, getProvider/listTranslations). (2) functions/api/read/passage.mjs rewritten \u2014 no bible.mjs import; non-versewell translation -> 400 'Unknown translation'; VerseWell getPassage null -> 503 {error, unavailable:true} via new lib/http.mjs unavailable() helper; source field always 'versewell'. No mock fallthrough remains. (3) functions/api/translations.mjs \u2014 selector returns ONLY live VerseWell versions; on mirror failure returns {translations:[], versewell_live:false} (no mock entry ever). (4) functions/api/read/audio_availability.mjs \u2014 non-versewell translation now returns source:'none' (was 'mock'). (5) public/read.html \u2014 selector comment/logic no longer references mock; empty/failed translations list shows a plain 'Scripture is temporarily unavailable' state and disables the selector; loadPassage now detects a failed/empty passage fetch and renders a clear 'Scripture is temporarily unavailable for this passage' state instead of silently rendering nothing (no mock fallback). (6) lib/versewell.mjs comments updated (no more 'fall back to mock'). (7) ARCHITECTURE.md 'Bible content' section rewritten (mock layer documented as removed), 'Fallback rules' -> 'Unavailable-state rules' (503 unavailable, selector only-live), secrets table dropped stale BIBLE_API_KEY row, WHATSAPP_GROUP_URL note updated; README.md VerseWell section updated (mock layer documented as removed, BIBLE_API_KEY note rewritten). Verification: grep confirms no live code references bible.mjs/mock-web/getProvider/source:'mock' (remaining matches are doc notes recording the removal + the legit versewell listTranslations). All .mjs pass node --check. Live verification of the selector/passage deferred to task-p08 E2E after deploy."
+        "notes": "Mock layer removed entirely (guard satisfied per task-p01 — VerseWell confirmed live). Changes: (1) DELETED functions/lib/bible.mjs (the mock provider id 'mock-web', SAMPLE public-domain passages, PLACEHOLDER_PARAGRAPHS, PROVIDERS registry, getProvider/listTranslations). (2) functions/api/read/passage.mjs rewritten — no bible.mjs import; non-versewell translation -> 400 'Unknown translation'; VerseWell getPassage null -> 503 {error, unavailable:true} via new lib/http.mjs unavailable() helper; source field always 'versewell'. No mock fallthrough remains. (3) functions/api/translations.mjs — selector returns ONLY live VerseWell versions; on mirror failure returns {translations:[], versewell_live:false} (no mock entry ever). (4) functions/api/read/audio_availability.mjs — non-versewell translation now returns source:'none' (was 'mock'). (5) public/read.html — selector comment/logic no longer references mock; empty/failed translations list shows a plain 'Scripture is temporarily unavailable' state and disables the selector; loadPassage now detects a failed/empty passage fetch and renders a clear 'Scripture is temporarily unavailable for this passage' state instead of silently rendering nothing (no mock fallback). (6) lib/versewell.mjs comments updated (no more 'fall back to mock'). (7) ARCHITECTURE.md 'Bible content' section rewritten (mock layer documented as removed), 'Fallback rules' -> 'Unavailable-state rules' (503 unavailable, selector only-live), secrets table dropped stale BIBLE_API_KEY row, WHATSAPP_GROUP_URL note updated; README.md VerseWell section updated (mock layer documented as removed, BIBLE_API_KEY note rewritten). Verification: grep confirms no live code references bible.mjs/mock-web/getProvider/source:'mock' (remaining matches are doc notes recording the removal + the legit versewell listTranslations). All .mjs pass node --check. Live verification of the selector/passage deferred to task-p08 E2E after deploy."
       },
       {
         "id": "task-p05",
         "title": "Add preset avatar asset set (SVG, 15-30 options, shipped in repo) + avatar_id column on profiles via lightweight non-destructive D1 migration",
         "status": "done",
         "commits": [],
-        "notes": "Preset avatar asset set + avatar_id column done. ASSET SET: 34 distinct preset avatars as a well-defined enum of initials-free inline SVG icon glyphs (18 icons x themed color combos) in public/app.js (FH.AVATARS, FH.AVATAR_ICONS, FH.AVATAR_COLORS, FH.avatarHtml(avatar_id,name,size) with legacy initial-letter fallback when avatar_id is null/unknown). Inline SVG = no external image hosting, shipped in repo, crisp at any size. Backend source of truth: functions/lib/avatars.mjs (AVATAR_IDS, DEFAULT_AVATAR_ID='dove-amber', isValidAvatarId, normalizeAvatarId \u2014 invalid/missing always defaults, signup never blocks). D1 MIGRATION: schema.sql profiles gains 'avatar_id TEXT' (NULL = initial fallback); applied to live D1 via non-destructive ALTER TABLE profiles ADD COLUMN avatar_id TEXT \u2014 verified columns after = 10 incl avatar_id, all 4 existing profile rows intact (no data loss). Existing users default to initial-letter fallback until they pick one (FH.avatarHtml handles null); first preset is the signup default for new users. New endpoint functions/api/auth/avatar.mjs: POST {avatar_id} validated against AVATAR_IDS, persisted to D1 immediately (the ONLY profile edit; no email/password/name editing added). avatar_id threaded through: lib/auth.mjs session SELECT, /api/auth/me response, signup INSERT/UPDATE, leaderboard query+response, admin participants query."
+        "notes": "Preset avatar asset set + avatar_id column done. ASSET SET: 34 distinct preset avatars as a well-defined enum of initials-free inline SVG icon glyphs (18 icons x themed color combos) in public/app.js (FH.AVATARS, FH.AVATAR_ICONS, FH.AVATAR_COLORS, FH.avatarHtml(avatar_id,name,size) with legacy initial-letter fallback when avatar_id is null/unknown). Inline SVG = no external image hosting, shipped in repo, crisp at any size. Backend source of truth: functions/lib/avatars.mjs (AVATAR_IDS, DEFAULT_AVATAR_ID='dove-amber', isValidAvatarId, normalizeAvatarId — invalid/missing always defaults, signup never blocks). D1 MIGRATION: schema.sql profiles gains 'avatar_id TEXT' (NULL = initial fallback); applied to live D1 via non-destructive ALTER TABLE profiles ADD COLUMN avatar_id TEXT — verified columns after = 10 incl avatar_id, all 4 existing profile rows intact (no data loss). Existing users default to initial-letter fallback until they pick one (FH.avatarHtml handles null); first preset is the signup default for new users. New endpoint functions/api/auth/avatar.mjs: POST {avatar_id} validated against AVATAR_IDS, persisted to D1 immediately (the ONLY profile edit; no email/password/name editing added). avatar_id threaded through: lib/auth.mjs session SELECT, /api/auth/me response, signup INSERT/UPDATE, leaderboard query+response, admin participants query."
       },
       {
         "id": "task-p06",
         "title": "Wire avatar selection into signup flow (non-blocking, sensible default) and Profile settings (changeable any time, persisted to D1 immediately); surface avatar on Profile, Leaderboard, admin participant views",
         "status": "done",
         "commits": [],
-        "notes": "Frontend wiring implemented in same change-set: signup.html gains a non-blocking preset avatar grid (default pre-selected; submitted as avatar_id; OTP flow untouched); profile.html shows chosen avatar (was initial letter) + 'Your avatar' picker card saving via POST /api/auth/avatar with live identity-card refresh; leaderboard.html renders FH.avatarHtml per entry; admin.html participant rows show the avatar. All files pass node --check. Live verification (fresh signup picks avatar; existing user changes avatar; visibility on Profile/Leaderboard/admin) runs in task-p08 after deploy. DEPLOY CONFIRMED 2026-09-08: GitHub Actions run for 2e476068 (the p05/p06 avatar commit) completed success \u2014 avatar code is live. Remaining live E2E checks run in task-p08.",
+        "notes": "Frontend wiring implemented in same change-set: signup.html gains a non-blocking preset avatar grid (default pre-selected; submitted as avatar_id; OTP flow untouched); profile.html shows chosen avatar (was initial letter) + 'Your avatar' picker card saving via POST /api/auth/avatar with live identity-card refresh; leaderboard.html renders FH.avatarHtml per entry; admin.html participant rows show the avatar. All files pass node --check. Live verification (fresh signup picks avatar; existing user changes avatar; visibility on Profile/Leaderboard/admin) runs in task-p08 after deploy. DEPLOY CONFIRMED 2026-09-08: GitHub Actions run for 2e476068 (the p05/p06 avatar commit) completed success — avatar code is live. Remaining live E2E checks run in task-p08.",
         "completed_utc": "2026-09-08"
       },
       {
@@ -379,7 +379,7 @@
         "title": "Set real WHATSAPP_GROUP_URL in PRODUCTION Pages deployment config (https://chat.whatsapp.com/KNt6BxuzOWwFZ9p4LL2Dfq?s=cl&p=a&mlu=4&ilr=4); verify join button + share button resolve live",
         "status": "done",
         "commits": [],
-        "notes": "2026-09-08: DIAGNOSIS \u2014 prior session only ever set WHATSAPP_GROUP_URL in the PREVIEW deployment config with an EMPTY value; production had no WHATSAPP_GROUP_URL key at all (production env_vars was BREVO_API_KEY only). FIX \u2014 Pages API PATCH set WHATSAPP_GROUP_URL (plain_text) to the real group invite URL in BOTH production and preview; BREVO_API_KEY and preview PROGRAMME_START_DATE confirmed preserved after PATCH. NEXT \u2014 push this BUILD_STATE commit to trigger a production deploy so the running Pages Functions pick up the new env var, then verify /api/config -> whatsapp_group_url returns the real URL live. UPDATE 2026-09-08: first API PATCH succeeded but the push-triggered wrangler deploy (2d32c23) then WIPED the production var again \u2014 wrangler pages deploy rewrites plain-text env_vars from wrangler.toml, which declared none, and the active deployment 39b7c200 predates the re-patch so /api/config still returned empty. DURABLE FIX: declare WHATSAPP_GROUP_URL under [vars] in wrangler.toml so every future deploy carries it; push triggers redeploy; then re-verify /api/config live. VERIFIED LIVE 2026-09-08 (commit c5cded9, Actions run success): /api/config now returns the real whatsapp_group_url in production; project deployment_configs retain WHATSAPP_GROUP_URL in BOTH production and preview after the wrangler deploy (durable, because wrangler.toml [vars] now carries it). Headless render confirmed both buttons live: the \"Join ForgeHouse WhatsApp Group\" button href = the real group invite URL, and the \"Share\" button = https://wa.me/?text=<invite text + site URL>.",
+        "notes": "2026-09-08: DIAGNOSIS — prior session only ever set WHATSAPP_GROUP_URL in the PREVIEW deployment config with an EMPTY value; production had no WHATSAPP_GROUP_URL key at all (production env_vars was BREVO_API_KEY only). FIX — Pages API PATCH set WHATSAPP_GROUP_URL (plain_text) to the real group invite URL in BOTH production and preview; BREVO_API_KEY and preview PROGRAMME_START_DATE confirmed preserved after PATCH. NEXT — push this BUILD_STATE commit to trigger a production deploy so the running Pages Functions pick up the new env var, then verify /api/config -> whatsapp_group_url returns the real URL live. UPDATE 2026-09-08: first API PATCH succeeded but the push-triggered wrangler deploy (2d32c23) then WIPED the production var again — wrangler pages deploy rewrites plain-text env_vars from wrangler.toml, which declared none, and the active deployment 39b7c200 predates the re-patch so /api/config still returned empty. DURABLE FIX: declare WHATSAPP_GROUP_URL under [vars] in wrangler.toml so every future deploy carries it; push triggers redeploy; then re-verify /api/config live. VERIFIED LIVE 2026-09-08 (commit c5cded9, Actions run success): /api/config now returns the real whatsapp_group_url in production; project deployment_configs retain WHATSAPP_GROUP_URL in BOTH production and preview after the wrangler deploy (durable, because wrangler.toml [vars] now carries it). Headless render confirmed both buttons live: the \"Join ForgeHouse WhatsApp Group\" button href = the real group invite URL, and the \"Share\" button = https://wa.me/?text=<invite text + site URL>.",
         "completed_utc": "2026-09-08"
       },
       {
@@ -387,7 +387,7 @@
         "title": "Live E2E verification pass: homepage for real user, translation selector shows only real VerseWell translations, fresh signup picks avatar (visible on Profile/Leaderboard), existing user changes avatar in Profile settings, both WhatsApp buttons open real group link; confirm no email/account-editing UI added",
         "status": "done",
         "commits": [],
-        "notes": "LIVE E2E VERIFIED 2026-09-08 via headless Chromium (session minted in D1 for verified member fh50.vw.e2e@proton.me): (1) LOGGED-IN homepage 200 renders fully with zero pageerrors \u2014 correct non-reading-day state (\"Tuesday / Fasting & Prayer / No reading today \u2014 see you on the next reading day\"), progress stats, CTA \"Read Next Assignment \u2192 Day 2 (2026-09-09 \u00b7 Matthew 7\u201312)\", both WhatsApp buttons; (2) LOGGED-OUT visitor redirected to /login (intended logged-out state); (3) /api/translations returns exactly 12 entries, ALL versewell:true, ZERO mock entries; (4) avatar flow \u2014 profile.html picker renders 34 buttons with current selection pre-marked, clicking dove-blue shows \"Saved \u2713\" and persists (GET /api/auth/me -> avatar_id dove-blue), identity card updates live; leaderboard entries carry avatar_id (VW E2E rank 3 shows flame-red then dove-blue after change); signup.html renders 34 picker buttons with default dove-amber pre-selected alongside name/email/password inputs (OTP flow untouched); (5) POST /api/auth/avatar guards \u2014 invalid id rejected, unauthenticated request -> 401; (6) NO other profile-editing UI added (repo scan for email/password/name-change flows: clean; avatar endpoint header comment confirms avatar-only scope).",
+        "notes": "LIVE E2E VERIFIED 2026-09-08 via headless Chromium (session minted in D1 for verified member fh50.vw.e2e@proton.me): (1) LOGGED-IN homepage 200 renders fully with zero pageerrors — correct non-reading-day state (\"Tuesday / Fasting & Prayer / No reading today — see you on the next reading day\"), progress stats, CTA \"Read Next Assignment → Day 2 (2026-09-09 · Matthew 7–12)\", both WhatsApp buttons; (2) LOGGED-OUT visitor redirected to /login (intended logged-out state); (3) /api/translations returns exactly 12 entries, ALL versewell:true, ZERO mock entries; (4) avatar flow — profile.html picker renders 34 buttons with current selection pre-marked, clicking dove-blue shows \"Saved ✓\" and persists (GET /api/auth/me -> avatar_id dove-blue), identity card updates live; leaderboard entries carry avatar_id (VW E2E rank 3 shows flame-red then dove-blue after change); signup.html renders 34 picker buttons with default dove-amber pre-selected alongside name/email/password inputs (OTP flow untouched); (5) POST /api/auth/avatar guards — invalid id rejected, unauthenticated request -> 401; (6) NO other profile-editing UI added (repo scan for email/password/name-change flows: clean; avatar endpoint header comment confirms avatar-only scope).",
         "completed_utc": "2026-09-08"
       },
       {
@@ -395,7 +395,7 @@
         "title": "Final commit/push; set profile_content_cleanup_v1.work_complete=true (task-p04 blocked-exception documented if guard had failed)",
         "status": "done",
         "commits": [],
-        "notes": "Final state commit. All tasks p01-p08 done. Repo-wide mock scan: only historical comments remain noting the mock layer was removed (task-p04) \u2014 no functional dead code; functions/lib/bible.mjs confirmed deleted. profile_content_cleanup_v1 complete.",
+        "notes": "Final state commit. All tasks p01-p08 done. Repo-wide mock scan: only historical comments remain noting the mock layer was removed (task-p04) — no functional dead code; functions/lib/bible.mjs confirmed deleted. profile_content_cleanup_v1 complete.",
         "completed_utc": "2026-09-08"
       }
     ],
@@ -412,5 +412,89 @@
       }
     ],
     "completed_utc": "2026-09-08"
+  },
+  "pwa_and_avatars_v1": {
+    "started_utc": "2026-09-08",
+    "work_complete": false,
+    "scope": "Follow-on: (A) convert ForgeHouse 50 to an installable PWA using the attached logo (icon set, manifest, iOS meta tags, service worker, live installability verification); (B) replace the preset avatar set (inline-SVG icon glyphs from profile_content_cleanup_v1) with illustration-style circular scene/subject avatars, reusing the existing avatar_id mechanism, migrating any dangling avatar_ids, and removing old assets. Repo is Cloudflare Pages static frontend (public/) + Pages Functions; static assets live under public/, so logo committed at public/branding/forgehouse50-logo-source.png.",
+    "tasks": [
+      {
+        "id": "task-w01",
+        "title": "Commit attached logo to static-assets path (public/branding/forgehouse50-logo-source.png); append pwa_and_avatars_v1 task list to BUILD_STATE.json; commit and push; verify push landed before any other work",
+        "status": "in_progress",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w02",
+        "title": "Generate full PWA icon set (192/512 standard + maskable, favicon, apple-touch-icon 180) from the source logo, committed into repo",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w03",
+        "title": "Create/update web app manifest (name, short_name, icons w/ purposes, start_url, display standalone, theme/background colors from existing tokens, scope); wire manifest link + iOS PWA meta tags into app HTML head/layout",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w04",
+        "title": "Service worker: cache-first for static app shell/icons/fonts, network-first or stale-while-revalidate for VerseWell/API content; sufficient for PWA installability",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w05",
+        "title": "Live verification of Part A: manifest validates, installability criteria met, install shows correct ForgeHouse 50 icon/name on at least one platform",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w06",
+        "title": "Design/source new illustration-style circular avatar asset set (15-30 options, bold flat-illustration style, colored circular backgrounds, appropriate for Christian reading programme); commit to repo replacing old preset asset location",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w07",
+        "title": "Wire existing avatar-selection mechanism (signup step + Profile settings) to new asset set; migrate any existing user avatar_id pointing at removed old presets to valid new default",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w08",
+        "title": "Remove old preset avatar assets and dead code/data referencing them",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w09",
+        "title": "Live E2E verification: fresh signup shows new avatar picker; existing user changes avatar in Profile; avatars render on Profile/Leaderboard/admin with no broken images; PWA installs with ForgeHouse 50 logo+name",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-w10",
+        "title": "Final commit/push; set pwa_and_avatars_v1.work_complete=true summarizing live verification for both parts",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      }
+    ],
+    "session_history": [
+      {
+        "session": 5,
+        "date_utc": "2026-09-08",
+        "summary": "Session start (PWA + illustration avatars). Pulled forgehouse50 (HEAD 49ed32f; build_complete, migration_brevo_v1, versewell_integration_v1, profile_content_cleanup_v1 all complete). No pwa_and_avatars_v1 section existed - appending seed per state-determination rule and pushing with the logo commit first to prove push access. Current avatar system: 34 inline-SVG icon-glyph presets (FH.AVATARS in public/app.js + functions/lib/avatars.mjs source of truth, AVATAR_IDS, DEFAULT_AVATAR_ID='dove-amber'), avatar_id TEXT column on profiles (already live in D1), POST /api/auth/avatar, pickers in signup.html + profile.html, rendered via FH.avatarHtml on Profile/Leaderboard/admin. No standalone avatar image files exist - the old set is pure inline SVG code, so replacement is a code/data swap plus new static image assets."
+      }
+    ]
   }
 }
