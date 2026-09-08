@@ -15,7 +15,7 @@ Prayer + Bible Study).
 | Frontend   | Astro (static build) on **Cloudflare Pages**       | Pages-native, zero Vercel/Next-specific APIs, fast mobile TTI |
 | API        | **Cloudflare Pages Functions** (`functions/api/*`) | Runs on Workers runtime beside the static site; one deploy |
 | Database   | **Cloudflare D1** (SQLite)                         | Free tier, SQL, bound directly to Pages Functions |
-| Email      | **Resend** (`onboarding@resend.dev`)               | OTP transactional mail; `RESEND_API_KEY` is a Pages secret |
+| Email      | **Brevo** transactional email                      | OTP mail via `POST https://api.brevo.com/v3/smtp/email` from verified single sender `Forgehouse 50 <vjumbo264@gmail.com>`; `BREVO_API_KEY` is a Pages secret |
 | CI/CD      | **GitHub Actions** → `wrangler pages deploy`       | Push to `main` deploys automatically |
 | Auth       | In-house: email+password (PBKDF2-SHA256 via Web Crypto), 6-digit OTP, signed session cookie backed by `sessions` table | No external auth vendor, free-tier only |
 
@@ -73,7 +73,7 @@ build-blocking defect.
 
 1. `POST /api/auth/signup` — validate email/password, create `profiles` row
    (`email_verified=0`), generate 6-digit OTP (10-min expiry), store in
-   `otp_codes`, send custom HTML email via Resend.
+   `otp_codes`, send custom HTML email via Brevo.
 2. `POST /api/auth/verify` — check OTP (max 5 attempts, must be unexpired &
    unconsumed), mark `email_verified=1`, create session, set cookie.
 3. `POST /api/auth/login` — verify PBKDF2 hash, require `email_verified=1`,
@@ -114,7 +114,7 @@ scraped or shipped. Audio is a stub player until a licensed source exists.
 
 | Name | Where | Notes |
 |---|---|---|
-| `RESEND_API_KEY` | Pages project secret (API: `PATCH /pages/projects/{name}`, `deployment_configs.production.env_vars` type `secret_text`) | Never in code/logs |
+| `BREVO_API_KEY` | Pages project secret (API: `PATCH /pages/projects/{name}`, `deployment_configs.production.env_vars` type `secret_text`) | Never in code/logs; used by `functions/lib/email.mjs` as the `api-key` header on Brevo requests |
 | `BIBLE_API_KEY` | Same mechanism — operator adds later per README | Build never blocks on it |
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | GitHub Actions secrets | Used by deploy workflow |
 | `WHATSAPP_GROUP_URL` | Pages env var (plain text is fine) | Placeholder until a real group link exists |

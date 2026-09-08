@@ -189,21 +189,23 @@
       {
         "id": "task-m03",
         "title": "Implement Brevo transactional email in functions/lib/email.mjs; replace Resend call in OTP send path; sender = Forgehouse 50 <vjumbo264@gmail.com>",
-        "status": "in_progress",
-        "commits": [],
-        "notes": ""
+        "status": "done",
+        "commits": [
+          "b9eab45"
+        ],
+        "notes": "functions/lib/email.mjs rewritten: sendEmail() dispatches by EMAIL_PROVIDER env (default brevo); sendEmailBrevo posts to https://api.brevo.com/v3/smtp/email with header api-key=BREVO_API_KEY, body {sender:{name:\"Forgehouse 50\",email:\"vjumbo264@gmail.com\"}, to:[{email}], subject, htmlContent}. Legacy sendEmailResend retained behind flag for rollback safety, removed in task-m06. Existing HTML template preserved (footer line updated from \"sent via Resend\" to \"Sent from ForgeHouse 50\"). /api/config email_provider now returns \"Brevo\". Signup file comment updated. All .mjs pass node --check."
       },
       {
         "id": "task-m04",
         "title": "Update auth-screen copy + README.md + ARCHITECTURE.md references from Resend to Brevo; remove obsolete sandbox-sender note",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Copy updates: signup.html no longer names Resend (now says \"You will receive a 6-digit verification code by email. It expires in 10 minutes.\"); verify.html no longer names Resend (still keeps the \"Resend code\" link which means issue-a-new-code, unrelated to the provider). README.md Email row = Brevo with verified sender Forgehouse 50 <vjumbo264@gmail.com>; the \"OTP / Resend email setup\" section rewritten as \"OTP / Brevo email setup\" explaining Brevo API, secret name BREVO_API_KEY, and that the previous free-tier owner-only sandbox limitation no longer applies. ARCHITECTURE.md stack table Email row updated; auth-flow step 1 says \"via Brevo\"; secrets table row swapped from RESEND_API_KEY to BREVO_API_KEY. All remaining \"resend\" mentions are the resend-OTP endpoint (functions/api/auth/resend.mjs, public/verify.html handler, README/ARCH mentions of the resend flow) or the deliberate legacy fallback in lib/email.mjs slated for task-m06 removal."
       },
       {
         "id": "task-m05",
         "title": "Live E2E: register fresh account, receive OTP via Brevo email (not read from D1), verify, login; record test account for cleanup",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },

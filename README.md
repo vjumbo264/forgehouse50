@@ -21,7 +21,7 @@ all **260 chapters of the New Testament in exactly 50 reading days**.
 | API        | **Cloudflare Pages Functions** (Workers runtime)       |
 | Database   | **Cloudflare D1** (SQLite) — see `schema.sql`          |
 | Auth       | In-house: email + password (PBKDF2-SHA256), 6-digit OTP email verification, 30-day HttpOnly session cookie |
-| Email      | **Resend** (`onboarding@resend.dev` sender)            |
+| Email      | **Brevo** transactional email (verified sender `Forgehouse 50 <vjumbo264@gmail.com>`) |
 | CI/CD      | **GitHub Actions** → auto-deploy to Pages on push to `main` |
 
 Architecture, per-table data-access rules, and the points/badge system are
@@ -35,7 +35,7 @@ REGISTER → VERIFY OTP → LOGIN → SEE TODAY'S READING → READ → MARK COMP
 WRITE NOTE → SEE PROGRESS → SEE LEADERBOARD.
 
 1. **Register** at `/signup` with name, email, password (min 8 chars).
-2. **Verify**: a 6-digit code is emailed via Resend; enter it at `/verify`
+2. **Verify**: a 6-digit code is emailed via Brevo; enter it at `/verify`
    (10-minute expiry, 5 attempts max, codes are single-use).
 3. **Log in** at `/login`. A 30-day session cookie keeps you signed in.
 4. **Home** shows today's assignment (or the Fasting & Prayer notice on
@@ -83,19 +83,20 @@ curl -X PATCH "https://api.cloudflare.com/client/v4/accounts/ACCOUNT_ID/pages/pr
 The same recipe works for `WHATSAPP_GROUP_URL` (plain_text, not secret) to
 light up the **Join ForgeHouse WhatsApp Group** button.
 
-### OTP / Resend email setup
+### OTP / Brevo email setup
 
 - OTP codes (6 digits, 10-minute expiry, single-use, max 5 attempts) are stored
-  in the D1 `otp_codes` table and sent via **Resend** from
-  `onboarding@resend.dev`. No custom domain verification is needed for that
-  sender.
-- The Resend key lives only as the Pages secret **`RESEND_API_KEY`**
+  in the D1 `otp_codes` table and sent via **Brevo** transactional email
+  (`POST https://api.brevo.com/v3/smtp/email`) from the verified single sender
+  **`Forgehouse 50 <vjumbo264@gmail.com>`**. Brevo has that sender verified;
+  no domain authentication is required.
+- The Brevo key lives only as the Pages secret **`BREVO_API_KEY`**
   (Settings → Variables and Secrets). It is never in the repo.
-- **Free-tier limitation:** with the default Resend test sender, email can only
-  be delivered to the Resend account owner's own email address. To email all
-  participants, verify a domain at https://resend.com/domains (DNS records can
-  be added from a phone browser wherever your DNS is hosted) and update the
-  `from:` address in `functions/lib/email.mjs`.
+- Delivery works to **any recipient email** — there is no sandbox/owner-only
+  limitation. The previous Resend free-tier restriction no longer applies.
+- To change the sender, verify a new single sender (or a domain) in the Brevo
+  dashboard and update the `SENDER_EMAIL` / `SENDER_NAME` constants at the top
+  of `functions/lib/email.mjs`.
 
 ### Making someone an admin
 
