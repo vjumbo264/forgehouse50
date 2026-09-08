@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Notes</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0f1216">
+<meta name="theme-color" content="#f4f7fc">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -18,110 +18,68 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-  <div class="card">
-    <h3>New note</h3>
-    <select id="n-type">
-      <option value="observation">Observation</option>
-      <option value="question">Question</option>
-      <option value="scripture_connection">Scripture Connection</option>
-      <option value="application">Application</option>
-      <option value="prayer">Prayer</option>
-    </select>
-    <div class="grid2">
-      <input id="n-book" placeholder="Book (e.g. John)">
-      <input id="n-chapter" type="number" min="1" placeholder="Chapter">
-    </div>
-    <div class="grid2">
-      <input id="n-verse" type="number" min="1" placeholder="Verse (optional)">
-      <input id="n-day" type="number" min="1" max="50" placeholder="Reading day (optional)">
-    </div>
-    <textarea id="n-body" rows="3" placeholder="Write your note… (private to you)"></textarea>
-    <div class="error" id="n-err"></div>
-    <button class="btn" id="n-save">Save note</button>
-  </div>
-  <div class="row" style="margin:10px 0">
-    <input id="q" placeholder="Search your notes…" style="flex:1;margin:0">
-    <select id="f-type" style="width:auto;margin:0">
-      <option value="">All types</option>
-      <option value="observation">Observations</option>
-      <option value="question">Questions</option>
-      <option value="scripture_connection">Scripture Connections</option>
-      <option value="application">Applications</option>
-      <option value="prayer">Prayers</option>
-    </select>
-  </div>
-  <div id="list"></div>
+  <main>
+    <!-- New note editor -->
+    <section class="card" aria-labelledby="new-note-h">
+      <h3 id="new-note-h">New note</h3>
+      <p class="small muted" style="margin-top:2px">Private to you. Never shown on the leaderboard or to admins.</p>
+
+      <div class="field" style="margin-top:var(--s-4)">
+        <label id="type-label">Note type</label>
+        <div class="type-grid" id="n-type-grid" role="radiogroup" aria-labelledby="type-label"></div>
+        <!-- Canonical value posted as note_type; kept in sync with the tiles. -->
+        <select id="n-type" class="sr-only" tabindex="-1" aria-hidden="true">
+          <option value="observation">Observation</option>
+          <option value="question">Question</option>
+          <option value="scripture_connection">Scripture Connection</option>
+          <option value="application">Application</option>
+          <option value="prayer">Prayer</option>
+        </select>
+      </div>
+
+      <div class="grid2">
+        <div class="field"><label for="n-book">Book</label>
+          <input id="n-book" placeholder="e.g. John"></div>
+        <div class="field"><label for="n-chapter">Chapter</label>
+          <input id="n-chapter" type="number" min="1" placeholder="1"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="n-verse">Verse <span class="muted">(optional)</span></label>
+          <input id="n-verse" type="number" min="1" placeholder="—"></div>
+        <div class="field"><label for="n-day">Reading day <span class="muted">(optional)</span></label>
+          <input id="n-day" type="number" min="1" max="50" placeholder="—"></div>
+      </div>
+      <div class="field">
+        <label for="n-body">Your note</label>
+        <textarea id="n-body" rows="4" placeholder="What did you notice, question, or want to apply?"></textarea>
+      </div>
+      <div class="error" id="n-err"></div>
+      <button class="btn" id="n-save">Save note</button>
+    </section>
+
+    <!-- Search + filter -->
+    <section aria-label="Search and filter notes">
+      <div class="section-title"><h2>My notes</h2><span class="small muted" id="n-count"></span></div>
+      <div class="row wrap" style="gap:var(--s-2)">
+        <label for="q" class="sr-only">Search your notes</label>
+        <input id="q" class="input-sm" placeholder="Search your notes…" style="flex:2;min-width:150px">
+        <label for="f-type" class="sr-only">Filter by type</label>
+        <select id="f-type" class="input-sm" style="flex:1;min-width:130px">
+          <option value="">All types</option>
+          <option value="observation">Observations</option>
+          <option value="question">Questions</option>
+          <option value="scripture_connection">Scripture Connections</option>
+          <option value="application">Applications</option>
+          <option value="prayer">Prayers</option>
+        </select>
+      </div>
+    </section>
+
+    <section id="list" aria-live="polite"></section>
+  </main>
 </div>
 <script src="/app.js"></script>
-<script>
-(async () => {
-  const me = await FH.requireAuth();
-  if (!me) return;
-  document.getElementById('top').innerHTML = FH.topbar('My Notes — private to you');
-
-  const params = new URLSearchParams(location.search);
-  if (params.get('day')) document.getElementById('n-day').value = params.get('day');
-  if (params.get('book')) document.getElementById('n-book').value = params.get('book');
-  if (params.get('chapter')) document.getElementById('n-chapter').value = params.get('chapter');
-
-  async function load() {
-    const q = document.getElementById('q').value.trim();
-    const type = document.getElementById('f-type').value;
-    const qs = new URLSearchParams(); if (q) qs.set('q', q); if (type) qs.set('type', type);
-    const { data } = await FH.api('/api/notes?' + qs);
-    const list = document.getElementById('list');
-    if (!data?.notes?.length) { list.innerHTML = '<div class="card muted center small">No notes yet. Your observations and questions appear here.</div>'; return; }
-    list.innerHTML = data.notes.map(n => `
-      <div class="card note-item" data-id="${n.id}">
-        <div class="between"><span class="pill">${FH.esc(n.note_type.replace('_', ' '))}</span>
-        <span class="small muted">${FH.esc(n.book)} ${n.chapter}${n.verse ? ':' + n.verse : ''}${n.day_number ? ' · Day ' + n.day_number : ''}</span></div>
-        <p style="margin:8px 0" class="note-body">${FH.esc(n.body)}</p>
-        <div class="between small muted"><span>${new Date(n.updated_at).toLocaleDateString()}</span>
-        <span><button class="iconbtn edit">Edit</button> <button class="iconbtn del">Delete</button></span></div>
-      </div>`).join('');
-
-    list.querySelectorAll('.del').forEach(b => b.onclick = async (e) => {
-      const id = e.target.closest('.note-item').dataset.id;
-      await FH.api('/api/notes/' + id, { method: 'DELETE' });
-      load();
-    });
-    list.querySelectorAll('.edit').forEach(b => b.onclick = (e) => {
-      const card = e.target.closest('.note-item');
-      const id = card.dataset.id;
-      const bodyEl = card.querySelector('.note-body');
-      const old = bodyEl.textContent;
-      bodyEl.outerHTML = `<textarea class="note-edit" rows="3">${FH.esc(old)}</textarea>
-        <button class="btn small save-edit">Save</button>`;
-      card.querySelector('.save-edit').onclick = async () => {
-        const n2 = (await FH.api('/api/notes?q=')).data?.notes?.find(x => x.id === id);
-        await FH.api('/api/notes/' + id, { method: 'PUT', body: {
-          body: card.querySelector('.note-edit').value, note_type: n2?.note_type || 'observation' } });
-        load();
-      };
-    });
-  }
-
-  document.getElementById('n-save').onclick = async () => {
-    const err = document.getElementById('n-err'); err.textContent = '';
-    const body = {
-      note_type: document.getElementById('n-type').value,
-      book: document.getElementById('n-book').value.trim(),
-      chapter: parseInt(document.getElementById('n-chapter').value || '0', 10),
-      verse: document.getElementById('n-verse').value ? parseInt(document.getElementById('n-verse').value, 10) : null,
-      day_number: document.getElementById('n-day').value ? parseInt(document.getElementById('n-day').value, 10) : null,
-      body: document.getElementById('n-body').value.trim(),
-    };
-    const { ok, data } = await FH.api('/api/notes', { method: 'POST', body });
-    if (!ok) { err.textContent = data?.error || 'Could not save note'; return; }
-    document.getElementById('n-body').value = '';
-    load();
-  };
-
-  let t; document.getElementById('q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(load, 300); });
-  document.getElementById('f-type').addEventListener('change', load);
-  load();
-})();
-</script>
-</body>
-<script>FH.nav('notes')</script>
+<script>FH.nav('notes');</script>
+<script src="/js/notes.js"></script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
 </html>
