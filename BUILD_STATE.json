@@ -286,16 +286,16 @@
       {
         "id": "task-v06",
         "title": "Live E2E verification: today's reading day with real text (footnote passage + section intro if available), real translation selector, audio player working where live, mock fallback verified via deliberately-wrong-URL test then reverted",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
       {
         "id": "task-v07",
         "title": "Update README.md: describe live VerseWell integration (no API key, public static fetch); note translation/audio availability grows automatically with no ForgeHouse 50 redeploy",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "README.md updated: stack table gains a Scripture row (VerseWell static JSON mirror, no API key); the old 'Adding the licensed Bible API key' section replaced with 'Scripture text & audio - VerseWell integration' documenting the live fetch, 12 translations at integration time, request-time audio availability, mock fallback, and that translation/audio growth arrives automatically with no ForgeHouse 50 redeploy. BIBLE_API_KEY noted as superseded. First-priority flow step 5 now says 'live audio player'."
       },
       {
         "id": "task-v08",
