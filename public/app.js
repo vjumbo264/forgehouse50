@@ -148,3 +148,11 @@ const FH = (() => {
   return { api, el, esc, nav, initTheme, toggleTheme, requireAuth, fmtTime, topbar, ICONS, AVATARS, avatarHtml };
 })();
 FH.initTheme();
+
+/* PWA: register the service worker (app-shell cache + installability).
+   Registered from app.js so every page opts in; failures are non-fatal. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* offline-capable enhancement only */ });
+  });
+}
