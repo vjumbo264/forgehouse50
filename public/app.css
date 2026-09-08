@@ -126,3 +126,39 @@ nav.bottom a svg { display: block; margin: 0 auto 2px; width: 21px; height: 21px
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); flex-shrink: 0; }
 .center { text-align: center; }
 @media (min-width: 720px) { body { font-size: 17px; } }
+
+/* VerseWell integration (task-v04/v05) */
+.intro-block {
+  border-left: 3px solid var(--accent);
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 8px 0 16px;
+  font-size: .92em;
+  color: var(--text-dim);
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+.intro-block .intro-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 4px;
+}
+.fn-marker {
+  background: var(--accent-soft); color: var(--accent);
+  border: none; border-radius: 50%; width: 18px; height: 18px;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  vertical-align: super; margin-left: 3px; cursor: pointer;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+.fn-pop {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: -6px 0 12px 18px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.55;
+}
+#audio-chapters { flex-wrap: wrap; gap: 6px; }
