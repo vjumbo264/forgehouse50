@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Leaderboard</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0f1216">
+<meta name="theme-color" content="#f4f7fc">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -18,51 +18,17 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-  <div class="tabs" id="tabs"></div>
-  <div class="card" id="board" style="padding:6px 14px"></div>
-  <p class="small muted center">Only aggregate scores and counts are shown — never anyone's private notes.</p>
+  <main>
+    <nav class="tabs" id="tabs" aria-label="Leaderboard categories"></nav>
+    <section class="card plain" id="board" aria-live="polite"></section>
+    <p class="small muted center" style="margin-top:var(--s-4)">
+      Only aggregate scores and counts are shown — never anyone's private notes.
+    </p>
+    <section id="badges-section" aria-label="Your badges"></section>
+  </main>
 </div>
 <script src="/app.js"></script>
-<script>
-(async () => {
-  const me = await FH.requireAuth();
-  if (!me) return;
-  document.getElementById('top').innerHTML = FH.topbar('Leaderboard');
-
-  const cats = [
-    ['overall', 'Overall'], ['consistency', 'Consistency'], ['chapters', 'Chapters'],
-    ['reading_time', 'Reading Time'], ['observations', 'Observations'], ['questions', 'Questions'],
-  ];
-  const tabs = document.getElementById('tabs');
-  tabs.innerHTML = cats.map(([k, l]) => `<button data-k="${k}">${l}</button>`).join('');
-
-  function fmtValue(cat, v) {
-    if (cat === 'reading_time') return FH.fmtTime(v);
-    if (cat === 'overall') return v + ' pts';
-    return v;
-  }
-
-  async function load(cat) {
-    tabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.k === cat));
-    const { data } = await FH.api('/api/leaderboard?category=' + cat);
-    const board = document.getElementById('board');
-    if (!data?.entries?.length) { board.innerHTML = '<p class="muted center small" style="padding:18px 0">No entries yet — be the first.</p>'; return; }
-    board.innerHTML = data.entries.map(e => `
-      <div class="lrow">
-        <div class="rank ${e.rank <= 3 ? 'top' : ''}">${e.rank}</div>
-        ${FH.avatarHtml(e.avatar_id, e.display_name, 34)}
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600">${FH.esc(e.display_name)}${e.user_id === me.id ? ' <span class="pill gray">you</span>' : ''}</div>
-          ${cat === 'consistency' ? `<div class="small muted">current streak ${e.streak_current} · best ${e.streak_longest}</div>` : ''}
-        </div>
-        <div style="font-weight:700;color:var(--accent)">${fmtValue(cat, e.value)}</div>
-      </div>`).join('');
-  }
-
-  tabs.addEventListener('click', e => { const k = e.target.dataset?.k; if (k) load(k); });
-  load('overall');
-})();
-</script>
-</body>
-<script>FH.nav('board')</script>
+<script>FH.nav('board');</script>
+<script src="/js/leaderboard.js"></script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
 </html>
