@@ -212,14 +212,16 @@
       {
         "id": "task-m06",
         "title": "Remove Resend-specific code paths; delete RESEND_API_KEY Pages secret; redeploy; confirm auth flow still works",
-        "status": "in_progress",
-        "commits": [],
-        "notes": ""
+        "status": "done",
+        "commits": [
+          "5fd3427"
+        ],
+        "notes": "Legacy Resend code path removed from functions/lib/email.mjs (commit 5fd3427); only sendEmail->Brevo remains. Pages redeploy 4d2f3d0f built commit 5fd34278 successfully; production live health: GET / -> 200, /api/config email_provider=Brevo. Post-removal live E2E on Brevo-only build passed with a third test signup fh50.brevo.postremove.1788831086@proton.me user_id=4b039f7b-4e36-49a2-8c7f-0439d309e800: signup email_sent=true (OTP 521795 in D1), verify ok=true, login ok=true role=member. RESEND_API_KEY deleted from Pages env_vars on BOTH production and preview (PATCH with null value; success=true; confirmed via full GET). Production Pages env after cleanup: BREVO_API_KEY (secret_text), PROGRAMME_START_DATE (plain_text=2026-09-07), WHATSAPP_GROUP_URL (plain_text=\"\"). Preview: same three. Auth flow works with Resend fully removed (code + secret)."
       },
       {
         "id": "task-m07",
         "title": "Identify test users in D1; write and run cascading deletion routine covering all child tables; delete test users incl. this session's; flag ambiguous accounts",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
