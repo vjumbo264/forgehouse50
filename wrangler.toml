@@ -6,3 +6,10 @@ compatibility_date = "2024-12-01"
 binding = "DB"
 database_name = "forgehouse50-db"
 database_id = "351aca36-14e4-4c6f-8e13-127caae5b72f"
+
+# task-p07 (profile_content_cleanup_v1): every `pages deploy` via the GitHub
+# Actions workflow rewrites the project's plain-text env vars to match this
+# file, so the WhatsApp group invite link MUST be declared here or each
+# deploy wipes the dashboard/API-set value. plain text, not a secret.
+[vars]
+WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/KNt6BxuzOWwFZ9p4LL2Dfq?s=cl&p=a&mlu=4&ilr=4"
