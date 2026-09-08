@@ -173,21 +173,23 @@
       {
         "id": "task-m01",
         "title": "Pull repo, inspect live secrets & email code, append migration_brevo_v1 to BUILD_STATE.json, commit and push seed",
-        "status": "in_progress",
-        "commits": [],
-        "notes": ""
+        "status": "done",
+        "commits": [
+          "5a949f0"
+        ],
+        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview \u2014 noted, not in scope)."
       },
       {
         "id": "task-m02",
         "title": "Add BREVO_API_KEY as Pages secret via CF API; keep RESEND_API_KEY",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed \u2014 Pages secrets live in CF, not in code."
       },
       {
         "id": "task-m03",
         "title": "Implement Brevo transactional email in functions/lib/email.mjs; replace Resend call in OTP send path; sender = Forgehouse 50 <vjumbo264@gmail.com>",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
