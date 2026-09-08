@@ -453,14 +453,14 @@
       {
         "id": "task-w05",
         "title": "Live verification of Part A: manifest validates, installability criteria met, install shows correct ForgeHouse 50 icon/name on at least one platform",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "LIVE VERIFIED 2026-09-08 via headless Chromium (Playwright) on https://forgehouse50.pages.dev/login: (1) manifest 200 application/manifest+json, parses with name/short_name \"ForgeHouse 50\", display standalone, start_url+scope \"/\", theme/background #0f1216, 4 icons (192/512 any+maskable); (2) service worker registered, scope=/, active state=activated, page CONTROLLED, shell-fh50-v1 cache holds 22 precached files; (3) all 4 manifest icon URLs HEAD 200 image/png; (4) head tags live: manifest link, theme-color #0f1216, apple-mobile-web-app-capable yes, apple title \"ForgeHouse 50\", apple-touch-icon absolute URL 200; (5) Chrome DevTools Protocol Page.getInstallabilityErrors returned EMPTY LIST -> browser installability criteria fully satisfied (install prompt eligible); (6) zero page errors. Icon artwork confirmed visually correct from contact sheet (ForgeHouse 50 house+flame+book mark, not generic)."
       },
       {
         "id": "task-w06",
         "title": "Design/source new illustration-style circular avatar asset set (15-30 options, bold flat-illustration style, colored circular backgrounds, appropriate for Christian reading programme); commit to repo replacing old preset asset location",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
