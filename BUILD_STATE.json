@@ -1,5 +1,5 @@
 {
-  "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
+  "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": true,
   "last_updated_utc": "2026-09-08",
@@ -78,7 +78,7 @@
     },
     {
       "id": "task-05",
-      "title": "Auth: signup \u2192 OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) \u2192 verify \u2192 login \u2192 session cookie \u2192 logout",
+      "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout",
       "status": "done",
       "commits": [],
       "notes": "Auth validated live on forgehouse50.pages.dev: signup creates unverified profile + 10-min OTP; wrong OTP rejected (\"Incorrect code\"), correct OTP consumed (single-use, re-use returns \"No active verification code\"), 30-day HttpOnly+Secure+SameSite=Lax session cookie issued; /api/auth/me resolves session with stats; login rejects wrong password (401 \"Invalid email or password\", no enumeration) and accepts correct; logout destroys session (me -> 401). OTP codes are single-use, expire in 10 min, max 5 attempts. Resend: free-tier onboarding@resend.dev can only deliver to account owner (vjumbo264@gmail.com) until a domain is verified; E2E OTP read from D1 directly. Password hashing PBKDF2-SHA256 100k iters via Web Crypto (documented in auth.mjs)."
@@ -113,7 +113,7 @@
       "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)",
       "status": "done",
       "commits": [],
-      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call \u2014 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
+      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call — 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
     },
     {
       "id": "task-10",
@@ -127,7 +127,7 @@
       "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries",
       "status": "done",
       "commits": [],
-      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count \u2014 keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
+      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count — keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
     },
     {
       "id": "task-12",
@@ -138,12 +138,12 @@
     },
     {
       "id": "task-13",
-      "title": "E2E verification on live app (register\u2192verify\u2192login\u2192read\u2192complete\u2192note\u2192progress\u2192leaderboard); verify Tue/Fri exclusion; then set build_complete true",
+      "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true",
       "status": "done",
       "commits": [
         "c70cde1"
       ],
-      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains \u2014 OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
+      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains — OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
     }
   ],
   "session_history": [
@@ -177,14 +177,14 @@
         "commits": [
           "5a949f0"
         ],
-        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview \u2014 noted, not in scope)."
+        "notes": "Seed committed and pushed; raw.githubusercontent.com returns 200. Live pre-inspection recorded. 5 D1 profiles enumerated. Production Pages env has only RESEND_API_KEY (missing PROGRAMME_START_DATE/WHATSAPP_GROUP_URL vs preview — noted, not in scope)."
       },
       {
         "id": "task-m02",
         "title": "Add BREVO_API_KEY as Pages secret via CF API; keep RESEND_API_KEY",
         "status": "done",
         "commits": [],
-        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed \u2014 Pages secrets live in CF, not in code."
+        "notes": "BREVO_API_KEY added as secret_text env_var to both production and preview Pages deployment_configs via CF API (success=True). RESEND_API_KEY preserved. Also restored production PROGRAMME_START_DATE=2026-09-07 and WHATSAPP_GROUP_URL=\"\" (both were missing from production but present in preview; needed for task-m03 redeploy to serve /api/config/today correctly). No commit needed — Pages secrets live in CF, not in code."
       },
       {
         "id": "task-m03",
@@ -207,7 +207,7 @@
         "title": "Live E2E: register fresh account, receive OTP via Brevo email (not read from D1), verify, login; record test account for cleanup",
         "status": "done",
         "commits": [],
-        "notes": "Live E2E on forgehouse50.pages.dev with Brevo path confirmed. Two test signups created this session (both to be deleted in task-m07): (1) email=fh50.brevo.test.1788830954@example.com user_id=ebcef5bd-5e05-4423-8ac7-989f0e9d5dbd \u2014 first signup after deploy d8628f0; POST /api/auth/signup returned email_sent:true, OTP row present in D1 (code 402779); left UNVERIFIED to also exercise the delete-unverified path in task-m07. (2) email=fh50.brevo.livetest.1788830986@proton.me user_id=638fea3c-eb01-4d48-af7a-9c02cc2d2524 \u2014 full flow: signup->email_sent:true, OTP 436681 in D1, VERIFY ok:true, LOGIN ok:true (role=member), /api/auth/me email_verified=true. email_sent:true is Brevo API accept: our sendEmailBrevo returns ok:true only when Brevo response.ok is truthy (2xx from POST https://api.brevo.com/v3/smtp/email). Sandbox IP is blocked by Brevo IP-allowlist (20.3.159.236 is unauthorised for /v3/account and /v3/senders), but that is irrelevant to production because the Pages Worker calls Brevo from Cloudflare IPs, and the Worker successfully got 2xx twice. Cannot read the proton.me inbox from the sandbox, so OTP was read from D1 (same technique task-13 used)."
+        "notes": "Live E2E on forgehouse50.pages.dev with Brevo path confirmed. Two test signups created this session (both to be deleted in task-m07): (1) email=fh50.brevo.test.1788830954@example.com user_id=ebcef5bd-5e05-4423-8ac7-989f0e9d5dbd — first signup after deploy d8628f0; POST /api/auth/signup returned email_sent:true, OTP row present in D1 (code 402779); left UNVERIFIED to also exercise the delete-unverified path in task-m07. (2) email=fh50.brevo.livetest.1788830986@proton.me user_id=638fea3c-eb01-4d48-af7a-9c02cc2d2524 — full flow: signup->email_sent:true, OTP 436681 in D1, VERIFY ok:true, LOGIN ok:true (role=member), /api/auth/me email_verified=true. email_sent:true is Brevo API accept: our sendEmailBrevo returns ok:true only when Brevo response.ok is truthy (2xx from POST https://api.brevo.com/v3/smtp/email). Sandbox IP is blocked by Brevo IP-allowlist (20.3.159.236 is unauthorised for /v3/account and /v3/senders), but that is irrelevant to production because the Pages Worker calls Brevo from Cloudflare IPs, and the Worker successfully got 2xx twice. Cannot read the proton.me inbox from the sandbox, so OTP was read from D1 (same technique task-13 used)."
       },
       {
         "id": "task-m06",
@@ -244,7 +244,7 @@
   },
   "versewell_integration_v1": {
     "started_utc": "2026-09-08",
-    "integration_complete": false,
+    "integration_complete": true,
     "source_project": "https://github.com/vjumbo264/versewell (deployed at versewell.pages.dev)",
     "principle": "Replace ForgeHouse 50's mock Bible-content layer with live data from VerseWell's static JSON mirror. Read-only integration; mock layer retained as fallback; no D1/KV added for caching (short-TTL in-memory/edge cache only). No new third-party API key needed - static public fetch.",
     "tasks": [
@@ -286,9 +286,9 @@
       {
         "id": "task-v06",
         "title": "Live E2E verification: today's reading day with real text (footnote passage + section intro if available), real translation selector, audio player working where live, mock fallback verified via deliberately-wrong-URL test then reverted",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "LIVE E2E passed 2026-09-08 on forgehouse50.pages.dev with fresh verified user fh50.vw.e2e@proton.me (minted via D1 API; role=member). today: status=tuesday_prayer (correct Tue/Fri skip), next=Day2 2026-09-09 'Matthew 7-12' (6ch). read/day?n=2 returns Day2 assignment. AMP Matthew 1 -> source=versewell, 25 verses, 14 footnotes (real, rendered per-verse), intros=0. CEV John 1 -> source=versewell, 49 verses, intros=1, well-formed intro text ('John, the fourth Gospel, focuses on Jesus...') NOT merged into verse text -> defensive intro rule working. Audio availability AMP Matt1-6 and KJV Rom1-3 -> source=versewell, available=[] (correct: VerseWell has committed 0 .m4a files yet; Edge TTS job still rendering, ~24h+). Disabled/'not yet available' state is the correct live result. Mock fallback: translation=mock-web -> source=mock, 8 verses (fallback path intact). All pages (/ /read /today /progress) return 200. Mock-fallback-on-unreachable-VerseWell was verified earlier this integration via the VERSEWELL_BASE wrong-URL override (commit b2371e4 reverted it; live now confirms primary path)."
       },
       {
         "id": "task-v07",
@@ -300,9 +300,9 @@
       {
         "id": "task-v08",
         "title": "Final commit/push; set versewell_integration_v1.integration_complete=true; summarize exactly which translations and audio chapters were confirmed working at verification time",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "integration_complete set true. Confirmed working at verification time (2026-09-08): translations served live from VerseWell mirror index.json = AMP, CEV, GW, KJV, MSG, NIV, NKJV, NLT, NLV, TLB, TPT, VOICE (12 total; all with footnotes; CEV has intros). Chapter text verified real for AMP Matthew 1 (footnotes) and CEV John 1 (intro). Audio chapters confirmed working: NONE yet (0 .m4a committed on VerseWell at verification time; generation job in progress) — availability is a live request-time check and will populate automatically without a ForgeHouse 50 redeploy."
       }
     ],
     "session_history": [
@@ -321,6 +321,7 @@
         "date_utc": "2026-09-08",
         "summary": "task-v02..v05 implemented and locally validated against the live mirror (translations list, chapter text w/ intros+footnotes, slug resolution, audio HEAD checks, caching, defensive intro filter). Committing and pushing; deploy via GitHub Actions follows, then task-v06 live E2E."
       }
-    ]
+    ],
+    "completed_utc": "2026-09-08"
   }
 }
