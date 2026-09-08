@@ -362,16 +362,16 @@
       {
         "id": "task-p05",
         "title": "Add preset avatar asset set (SVG, 15-30 options, shipped in repo) + avatar_id column on profiles via lightweight non-destructive D1 migration",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Preset avatar asset set + avatar_id column done. ASSET SET: 34 distinct preset avatars as a well-defined enum of initials-free inline SVG icon glyphs (18 icons x themed color combos) in public/app.js (FH.AVATARS, FH.AVATAR_ICONS, FH.AVATAR_COLORS, FH.avatarHtml(avatar_id,name,size) with legacy initial-letter fallback when avatar_id is null/unknown). Inline SVG = no external image hosting, shipped in repo, crisp at any size. Backend source of truth: functions/lib/avatars.mjs (AVATAR_IDS, DEFAULT_AVATAR_ID='dove-amber', isValidAvatarId, normalizeAvatarId — invalid/missing always defaults, signup never blocks). D1 MIGRATION: schema.sql profiles gains 'avatar_id TEXT' (NULL = initial fallback); applied to live D1 via non-destructive ALTER TABLE profiles ADD COLUMN avatar_id TEXT — verified columns after = 10 incl avatar_id, all 4 existing profile rows intact (no data loss). Existing users default to initial-letter fallback until they pick one (FH.avatarHtml handles null); first preset is the signup default for new users. New endpoint functions/api/auth/avatar.mjs: POST {avatar_id} validated against AVATAR_IDS, persisted to D1 immediately (the ONLY profile edit; no email/password/name editing added). avatar_id threaded through: lib/auth.mjs session SELECT, /api/auth/me response, signup INSERT/UPDATE, leaderboard query+response, admin participants query."
       },
       {
         "id": "task-p06",
         "title": "Wire avatar selection into signup flow (non-blocking, sensible default) and Profile settings (changeable any time, persisted to D1 immediately); surface avatar on Profile, Leaderboard, admin participant views",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
-        "notes": ""
+        "notes": "Frontend wiring implemented in same change-set: signup.html gains a non-blocking preset avatar grid (default pre-selected; submitted as avatar_id; OTP flow untouched); profile.html shows chosen avatar (was initial letter) + 'Your avatar' picker card saving via POST /api/auth/avatar with live identity-card refresh; leaderboard.html renders FH.avatarHtml per entry; admin.html participant rows show the avatar. All files pass node --check. Live verification (fresh signup picks avatar; existing user changes avatar; visibility on Profile/Leaderboard/admin) runs in task-p08 after deploy."
       },
       {
         "id": "task-p07",

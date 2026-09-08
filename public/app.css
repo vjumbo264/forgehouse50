@@ -124,6 +124,11 @@ nav.bottom a svg { display: block; margin: 0 auto 2px; width: 21px; height: 21px
 .lrow .rank { width: 28px; font-weight: 700; color: var(--text-mute); text-align: center; }
 .lrow .rank.top { color: var(--accent); }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+.avatar .avatar svg, .avatar svg { display: block; }
+.avatar-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 10px; margin-top: 8px; }
+.avatar-picker button { background: none; border: none; padding: 4px; cursor: pointer; border-radius: 50%; line-height: 0; }
+.avatar-picker button .avatar { margin: 0 auto; transition: transform .08s ease; }
+.avatar-picker button.selected .avatar { outline: 3px solid var(--accent); outline-offset: 2px; transform: scale(1.06); }
 .center { text-align: center; }
 @media (min-width: 720px) { body { font-size: 17px; } }
 

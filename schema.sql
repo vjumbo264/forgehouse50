@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   password_hash   TEXT NOT NULL,                 -- PBKDF2-SHA256 via Web Crypto
   name            TEXT NOT NULL DEFAULT '',
   avatar_url      TEXT,
+  avatar_id       TEXT,                          -- preset avatar id (app.js AVATARS); NULL = initial fallback
   role            TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member','admin')),
   email_verified  INTEGER NOT NULL DEFAULT 0,    -- boolean 0/1
   created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),

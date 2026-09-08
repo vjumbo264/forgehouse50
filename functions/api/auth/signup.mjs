@@ -2,6 +2,7 @@
 import { json, badRequest, conflict, readJson, uuid, nowIso } from '../../lib/http.mjs';
 import { hashPassword, generateOtp, OTP_TTL_MS } from '../../lib/auth.mjs';
 import { sendEmail, otpEmailHtml } from '../../lib/email.mjs';
+import { normalizeAvatarId } from '../../lib/avatars.mjs';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -11,6 +12,10 @@ export async function onRequestPost({ request, env }) {
   const email = String(body.email || '').trim().toLowerCase();
   const password = String(body.password || '');
   const name = String(body.name || '').trim().slice(0, 80);
+  // Preset avatar picked during signup. Never blocks the flow: a missing or
+  // invalid choice falls back to a sensible default, and OTP verification is
+  // entirely unaffected by it.
+  const avatarId = normalizeAvatarId(body.avatar_id);
 
   if (!EMAIL_RE.test(email)) return badRequest('A valid email address is required');
   if (password.length < 8) return badRequest('Password must be at least 8 characters');
@@ -21,14 +26,14 @@ export async function onRequestPost({ request, env }) {
   const passwordHash = await hashPassword(password);
   let userId;
   if (existing) {
-    // Re-signup before verification: refresh credentials.
+    // Re-signup before verification: refresh credentials + chosen avatar.
     userId = existing.id;
-    await env.DB.prepare("UPDATE profiles SET password_hash = ?, name = ?, updated_at = ? WHERE id = ?")
-      .bind(passwordHash, name, nowIso(), userId).run();
+    await env.DB.prepare("UPDATE profiles SET password_hash = ?, name = ?, avatar_id = ?, updated_at = ? WHERE id = ?")
+      .bind(passwordHash, name, avatarId, nowIso(), userId).run();
   } else {
     userId = uuid();
-    await env.DB.prepare('INSERT INTO profiles (id, email, password_hash, name) VALUES (?, ?, ?, ?)')
-      .bind(userId, email, passwordHash, name).run();
+    await env.DB.prepare('INSERT INTO profiles (id, email, password_hash, name, avatar_id) VALUES (?, ?, ?, ?, ?)')
+      .bind(userId, email, passwordHash, name, avatarId).run();
   }
 
   // Invalidate previous OTPs, then create a fresh one.

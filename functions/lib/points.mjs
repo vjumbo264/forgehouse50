@@ -132,9 +132,9 @@ export async function leaderboard(db, category, limit = 50) {
   const expr = cols[category];
   if (!expr) return null;
   const { results } = await db.prepare(
-    `SELECT pr.id AS user_id, pr.name AS display_name, pr.avatar_url, ${expr} AS value
+    `SELECT pr.id AS user_id, pr.name AS display_name, pr.avatar_url, pr.avatar_id, ${expr} AS value
      FROM profiles pr WHERE pr.email_verified = 1
      ORDER BY value DESC, pr.created_at ASC LIMIT ?`
   ).bind(limit).all();
-  return (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, display_name: r.display_name || 'Member', avatar_url: r.avatar_url, value: r.value }));
+  return (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, display_name: r.display_name || 'Member', avatar_url: r.avatar_url, avatar_id: r.avatar_id ?? null, value: r.value }));
 }

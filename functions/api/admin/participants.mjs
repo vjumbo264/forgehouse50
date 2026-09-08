@@ -9,7 +9,7 @@ export async function onRequestGet({ request, env }) {
   if (!requireAdmin(user)) return forbidden('Admin access required');
 
   const { results } = await env.DB.prepare(
-    `SELECT pr.id, pr.name, pr.email, pr.role, pr.created_at,
+    `SELECT pr.id, pr.name, pr.email, pr.role, pr.avatar_id, pr.created_at,
             COALESCE((SELECT COUNT(*) FROM reading_progress rp WHERE rp.user_id = pr.id AND rp.completed = 1),0) AS days_completed,
             COALESCE((SELECT SUM(rp.chapters_read) FROM reading_progress rp WHERE rp.user_id = pr.id AND rp.completed = 1),0) AS chapters,
             COALESCE((SELECT SUM(rp.reading_seconds) FROM reading_progress rp WHERE rp.user_id = pr.id),0) AS reading_seconds,

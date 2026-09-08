@@ -9,6 +9,7 @@
 <div class="wrap">
   <div id="top"></div>
   <div id="identity"></div>
+  <div id="avatar-settings"></div>
   <div id="stats"></div>
   <div id="badges"></div>
   <div id="all-badges"></div>
@@ -25,10 +26,37 @@
 
   document.getElementById('identity').innerHTML = `
     <div class="card row">
-      <div class="avatar" style="width:56px;height:56px;font-size:24px">${FH.esc((me.name || me.email)[0].toUpperCase())}</div>
+      ${FH.avatarHtml(me.avatar_id, me.name || me.email, 56)}
       <div><h1 style="margin:0">${FH.esc(me.name || 'Member')}</h1>
       <div class="small muted">${FH.esc(me.email)}${me.role === 'admin' ? ' · <span class="pill">admin</span>' : ''}</div></div>
     </div>`;
+
+  // Avatar settings — changeable at any time from the same preset set,
+  // persisted to D1 immediately. (This is the only profile-editing control;
+  // email/password/name stay read-only per scope.)
+  let myAvatar = me.avatar_id || FH.AVATARS[0].id;
+  const settings = document.getElementById('avatar-settings');
+  settings.innerHTML = `<div class="card">
+    <h2 style="margin-top:0">Your avatar</h2>
+    <div class="avatar-picker" id="me-avatar-picker"></div>
+    <div class="small muted" id="avatar-msg" style="margin-top:8px"></div>
+  </div>`;
+  const mePicker = document.getElementById('me-avatar-picker');
+  mePicker.innerHTML = FH.AVATARS.map(a =>
+    `<button type="button" data-avatar="${a.id}" class="${a.id === myAvatar ? 'selected' : ''}" title="${a.id}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
+  mePicker.addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-avatar]');
+    if (!b || b.dataset.avatar === myAvatar) return;
+    myAvatar = b.dataset.avatar;
+    mePicker.querySelectorAll('button').forEach(x => x.classList.toggle('selected', x.dataset.avatar === myAvatar));
+    const msg = document.getElementById('avatar-msg');
+    const { ok } = await FH.api('/api/auth/avatar', { method: 'POST', body: { avatar_id: myAvatar } });
+    msg.textContent = ok ? 'Saved ✓' : 'Could not save — try again';
+    if (ok) {
+      document.getElementById('identity').querySelector('.avatar').outerHTML = FH.avatarHtml(myAvatar, me.name || me.email, 56);
+      setTimeout(() => { msg.textContent = ''; }, 2000);
+    }
+  });
 
   const pct = Math.min(100, Math.round(s.days_completed / 50 * 100));
   document.getElementById('stats').innerHTML = `

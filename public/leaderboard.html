@@ -40,7 +40,7 @@
     board.innerHTML = data.entries.map(e => `
       <div class="lrow">
         <div class="rank ${e.rank <= 3 ? 'top' : ''}">${e.rank}</div>
-        <div class="avatar">${FH.esc((e.display_name || 'M')[0].toUpperCase())}</div>
+        ${FH.avatarHtml(e.avatar_id, e.display_name, 34)}
         <div style="flex:1;min-width:0">
           <div style="font-weight:600">${FH.esc(e.display_name)}${e.user_id === me.id ? ' <span class="pill gray">you</span>' : ''}</div>
           ${cat === 'consistency' ? `<div class="small muted">current streak ${e.streak_current} · best ${e.streak_longest}</div>` : ''}

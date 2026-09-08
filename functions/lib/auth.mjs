@@ -66,7 +66,7 @@ export async function getUser(request, env) {
   const token = getSessionToken(request);
   if (!token) return null;
   const row = await env.DB.prepare(`
-    SELECT s.id AS session_id, s.expires_at, p.id, p.email, p.name, p.avatar_url, p.role, p.email_verified, p.created_at
+    SELECT s.id AS session_id, s.expires_at, p.id, p.email, p.name, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at
     FROM sessions s JOIN profiles p ON p.id = s.user_id
     WHERE s.id = ?`).bind(token).first();
   if (!row) return null;

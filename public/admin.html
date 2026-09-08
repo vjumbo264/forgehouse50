@@ -50,7 +50,7 @@
   document.getElementById('participants').innerHTML = (p?.participants || []).map(u => `
     <div class="card flat" style="padding:12px 14px">
       <div class="between">
-        <div><strong>${FH.esc(u.name || 'Member')}</strong> <span class="small muted">${FH.esc(u.email)}</span></div>
+        <div class="row" style="gap:10px;align-items:center">${FH.avatarHtml(u.avatar_id, u.name, 34)}<div><strong>${FH.esc(u.name || 'Member')}</strong> <span class="small muted">${FH.esc(u.email)}</span></div></div>
         <span class="pill">${u.points} pts</span>
       </div>
       <div class="small muted" style="margin-top:4px">${u.days_completed}/50 days · ${u.chapters} ch · ${FH.fmtTime(u.reading_seconds)} · ${u.notes_count} notes</div>

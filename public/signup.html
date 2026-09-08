@@ -22,6 +22,8 @@
       <input type="email" id="email" required autocomplete="email" placeholder="you@example.com">
       <label>Password</label>
       <input type="password" id="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+      <label style="margin-top:4px">Choose your avatar <span class="muted small">(optional — pick any time later)</span></label>
+      <div class="avatar-picker" id="avatar-picker"></div>
       <div class="error" id="err"></div>
       <button class="btn" type="submit">Sign up</button>
     </form>
@@ -30,13 +32,27 @@
 </div>
 <script src="/app.js"></script>
 <script>
+// Preset avatar picker — optional and non-blocking; a default is pre-selected
+// so the OTP verification flow is never complicated by this step.
+let chosenAvatar = FH.AVATARS[0].id;
+const picker = document.getElementById('avatar-picker');
+picker.innerHTML = FH.AVATARS.map(a =>
+  `<button type="button" data-avatar="${a.id}" class="${a.id === chosenAvatar ? 'selected' : ''}" title="${a.id}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
+picker.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-avatar]');
+  if (!b) return;
+  chosenAvatar = b.dataset.avatar;
+  picker.querySelectorAll('button').forEach(x => x.classList.toggle('selected', x.dataset.avatar === chosenAvatar));
+});
+
 document.getElementById('f').addEventListener('submit', async (e) => {
   e.preventDefault();
   const err = document.getElementById('err'); err.textContent = '';
   const btn = e.target.querySelector('button'); btn.disabled = true;
   const email = document.getElementById('email').value;
   const { ok, data } = await FH.api('/api/auth/signup', { method: 'POST', body: {
-    name: document.getElementById('name').value, email, password: document.getElementById('password').value } });
+    name: document.getElementById('name').value, email, password: document.getElementById('password').value,
+    avatar_id: chosenAvatar } });
   btn.disabled = false;
   if (ok) { location.href = '/verify.html?email=' + encodeURIComponent(email); return; }
   err.textContent = data?.error || 'Signup failed';
