@@ -421,14 +421,16 @@
       {
         "id": "task-w01",
         "title": "Commit attached logo to static-assets path (public/branding/forgehouse50-logo-source.png); append pwa_and_avatars_v1 task list to BUILD_STATE.json; commit and push; verify push landed before any other work",
-        "status": "in_progress",
-        "commits": [],
-        "notes": ""
+        "status": "done",
+        "commits": [
+          "b421a0a"
+        ],
+        "notes": "Logo committed at public/branding/forgehouse50-logo-source.png (1024x1024 RGBA master source; repo is Cloudflare Pages with static assets under public/ - confirmed by existing structure, no build step). pwa_and_avatars_v1 seed appended (10 tasks). Push verified landed on origin/main (b421a0a; raw logo fetch HTTP 200)."
       },
       {
         "id": "task-w02",
         "title": "Generate full PWA icon set (192/512 standard + maskable, favicon, apple-touch-icon 180) from the source logo, committed into repo",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
