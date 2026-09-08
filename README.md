@@ -60,8 +60,7 @@ phone using browser dashboards, or with `curl` in Termux.
 
 ### Scripture text & audio — VerseWell integration
 
-Scripture no longer comes from the mock layer by default. The Reading page
-pulls **live text from VerseWell** — the sibling project
+The Reading page pulls **live text from VerseWell** — the sibling project
 [`vjumbo264/versewell`](https://github.com/vjumbo264/versewell), deployed at
 `https://versewell.pages.dev` — via its **public static JSON mirror**
 (`/static-data/…`). **No API key is needed**: it is a plain unauthenticated
@@ -86,19 +85,21 @@ How it works:
   VerseWell's narration job completes each chapter, and shows a clearly
   disabled "Not yet available" state where it hasn't. No hardcoded list, no
   polling.
-- The **mock content layer** (`functions/lib/bible.mjs`) remains as the
-  fallback: if VerseWell is unreachable or a passage/version is missing,
-  the Reading page silently falls back to it and keeps working.
+- The earlier **mock content layer** (`functions/lib/bible.mjs`, provider
+  id `mock-web`) has been **removed entirely** (profile_content_cleanup_v1).
+  VerseWell is now the sole Scripture source: if VerseWell is unreachable or
+  a passage/version is missing, the Reading page shows a clear "Scripture is
+  temporarily unavailable" state instead of serving placeholder text.
 
 Because translation and audio availability grow on VerseWell's side (its
 import and narration jobs run on their own schedule), ForgeHouse 50 picks
 up that growth **live — no ForgeHouse 50 redeploy is ever required** for
 new translations or newly narrated chapters to appear.
 
-The previous `BIBLE_API_KEY` path is now unnecessary — VerseWell supersedes
-it. If a different licensed provider is ever wanted instead, add a provider
-in `functions/lib/bible.mjs` implementing
-`getPassage(book, chapterStart, chapterEnd)` and register it in `PROVIDERS`.
+The previous `BIBLE_API_KEY` path is unnecessary — VerseWell supersedes it,
+and the mock provider that referenced it has been deleted. If a different
+Scripture source is ever wanted, integrate it in `functions/lib/versewell.mjs`
+(or a sibling module) behind the same `getPassage(...)` shape.
 
 The same recipe works for `WHATSAPP_GROUP_URL` (plain_text, not secret) to
 light up the **Join ForgeHouse WhatsApp Group** button — set it in

@@ -12,6 +12,7 @@ export function unauthorized(message = 'Not authenticated') { return json({ erro
 export function forbidden(message = 'Forbidden') { return json({ error: message }, 403); }
 export function notFound(message = 'Not found') { return json({ error: message }, 404); }
 export function conflict(message) { return json({ error: message }, 409); }
+export function unavailable(message = 'Service temporarily unavailable') { return json({ error: message, unavailable: true }, 503); }
 
 export async function readJson(request) {
   try { return await request.json(); } catch { return null; }

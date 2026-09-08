@@ -55,15 +55,25 @@
     </div></div>`;
 
   const sel = document.getElementById('translation');
-  sel.innerHTML = (tr.translations || []).map(t => `<option value="${FH.esc(t.id)}">${FH.esc(t.name)}</option>`).join('');
-  // Prefer a live VerseWell translation as the default (CEV first — reads
-  // naturally aloud and has intros+footnotes), then any live version,
-  // then mock. Remember the user's last pick.
+  const trList = tr?.translations || [];
+  sel.innerHTML = trList.map(t => `<option value="${FH.esc(t.id)}">${FH.esc(t.name)}</option>`).join('');
+  // The selector lists ONLY translations actually available from VerseWell
+  // (the mock translation was removed in task-p04). Prefer a sensible live
+  // default (CEV first — reads naturally aloud and has intros+footnotes),
+  // then any live version. Remember the user's last pick.
   const savedTr = localStorage.getItem('fh50_translation');
-  const ids = (tr.translations || []).map(t => t.id);
+  const ids = trList.map(t => t.id);
   const defaultTr = (savedTr && ids.includes(savedTr)) ? savedTr
     : (ids.find(i => i === 'versewell-cev') || ids.find(i => i.startsWith('versewell-')) || ids[0]);
   if (defaultTr) sel.value = defaultTr;
+  if (!trList.length || tr?.versewell_live === false) {
+    // VerseWell mirror unreachable right now — say so plainly.
+    document.getElementById('passage').innerHTML =
+      '<p class="muted">Scripture is temporarily unavailable. Please try again shortly.</p>';
+    document.getElementById('attrib').textContent = '';
+    sel.disabled = true;
+    return;
+  }
 
   let currentParts = [];
 
@@ -73,9 +83,21 @@
     localStorage.setItem('fh50_translation', translation);
     document.getElementById('passage').innerHTML = '<p class="muted">Loading passage…</p>';
     const parts = [];
+    let failed = false;
     for (const a of day.assignments) {
-      const { data } = await FH.api(`/api/read/passage?book=${encodeURIComponent(a.book)}&chapter_start=${a.chapter_start}&chapter_end=${a.chapter_end}&translation=${encodeURIComponent(translation)}`);
-      if (data) parts.push(data);
+      const { ok, data } = await FH.api(`/api/read/passage?book=${encodeURIComponent(a.book)}&chapter_start=${a.chapter_start}&chapter_end=${a.chapter_end}&translation=${encodeURIComponent(translation)}`);
+      // Never swallow a failure silently: if VerseWell is unreachable or a
+      // chapter is missing, show a clear unavailable state (no mock fallback).
+      if (!ok || !data || !Array.isArray(data.verses) || data.verses.length === 0) { failed = true; break; }
+      parts.push(data);
+    }
+    if (failed) {
+      currentParts = [];
+      document.getElementById('passage').innerHTML =
+        '<p class="muted">Scripture is temporarily unavailable for this passage. Please try again shortly.</p>';
+      document.getElementById('attrib').textContent = '';
+      loadAudio();
+      return;
     }
     currentParts = parts;
     renderPassage(parts);

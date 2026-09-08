@@ -12,12 +12,15 @@
 //     job renders chapters over ~24h+).
 //   * Intros are handled defensively: if intro text appears concatenated
 //     into verse text (the historical upstream bug), the intro is dropped.
-//   * Anything that fails returns null so callers can fall back to mock.
+//   * Anything that fails returns null so callers can surface a clear
+//     "scripture temporarily unavailable" state (the mock fallback layer was
+//     removed in profile_content_cleanup_v1 / task-p04).
 
 let BASE = 'https://versewell.pages.dev/static-data';
 
 // Optional per-environment override (e.g. VERSEWELL_BASE Pages env var) —
-// used to prove the mock-fallback path by pointing at a wrong URL.
+// originally added to prove the (now-removed) mock-fallback path; kept as a
+// general base-URL override.
 export function configureVersewell(env) {
   if (env && typeof env.VERSEWELL_BASE === 'string' && env.VERSEWELL_BASE) {
     BASE = env.VERSEWELL_BASE.replace(/\/+$/, '');
@@ -113,7 +116,7 @@ export const versewellProvider = {
   },
 
   // Fetch one book/chapter range. Returns null when the version or any
-  // chapter in the range is unavailable (caller falls back to mock).
+  // chapter in the range is unavailable (caller shows an unavailable state).
   async getPassage(code, book, chapterStart, chapterEnd) {
     const versionLower = (code || '').toLowerCase();
     const bookEntry = await resolveBook(versionLower, book);

@@ -21,7 +21,9 @@ export async function onRequestGet({ request, env }) {
   if (!book || !cs || !ce || ce < cs) return badRequest('book, chapter_start, chapter_end are required');
 
   if (!isVersewellId(translation)) {
-    return json({ source: 'mock', available: [], note: 'No live audio for this translation yet.' });
+    // The mock translation layer was removed (task-p04); only VerseWell
+    // translations can carry audio, so anything else has none.
+    return json({ source: 'none', available: [], note: 'No audio for this translation.' });
   }
   const code = versewellCode(translation);
   const available = [];

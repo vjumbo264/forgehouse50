@@ -103,27 +103,30 @@ points.
 
 ## Bible content
 
-`lib/bible.mjs` defines a provider interface (`getPassage(book, chapterStart,
-chapterEnd, translation)`), a `mock` provider (public-domain/placeholder
-sample passages), and a registry keyed by translation id so a licensed API
-drops in later with **zero** architectural change. The translation selector's
-data shape already supports multiple translations. No copyrighted text is
-scraped or shipped. Audio is a stub player until a licensed source exists.
+Scripture text and audio come exclusively from VerseWell's live static JSON
+mirror (see "VerseWell integration" below) — fetched at request time through
+`functions/lib/versewell.mjs`. The former mock/placeholder content layer
+(`functions/lib/bible.mjs`, provider id `mock-web`) was **removed entirely**
+in profile_content_cleanup_v1 (task-p04): the translation selector lists only
+translations VerseWell actually serves, and if VerseWell is unreachable or a
+chapter is missing the Reading page shows a clear "Scripture is temporarily
+unavailable" state instead of falling back to placeholder text. No
+copyrighted text is scraped or shipped.
 
 ## Secrets & environment
 
 | Name | Where | Notes |
 |---|---|---|
 | `BREVO_API_KEY` | Pages project secret (API: `PATCH /pages/projects/{name}`, `deployment_configs.production.env_vars` type `secret_text`) | Never in code/logs; used by `functions/lib/email.mjs` as the `api-key` header on Brevo requests |
-| `BIBLE_API_KEY` | Same mechanism — operator adds later per README | Build never blocks on it |
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | GitHub Actions secrets | Used by deploy workflow |
-| `WHATSAPP_GROUP_URL` | Pages env var (plain text is fine) | Placeholder until a real group link exists |
+| `WHATSAPP_GROUP_URL` | Pages env var (plain text, production + preview) | Real group invite link (set in task-p07) |
 
 ## Explicitly not built yet (clean seams only)
 
-Licensed Bible API integration, licensed audio, WhatsApp automation, push
-notifications, AI note organization, community observations, Friday Bible
-Study integration, richer analytics.
+WhatsApp automation, push notifications, AI note organization, community
+observations, Friday Bible Study integration, richer analytics. (Scripture
+text/audio is fully live via VerseWell; there is no licensed-API fallback
+layer by design.)
 
 ## VerseWell integration (versewell_integration_v1, 2026-09-08)
 
@@ -131,8 +134,10 @@ ForgeHouse 50's Scripture layer is a **read-only consumer of VerseWell's
 static JSON mirror** (`https://versewell.pages.dev/static-data/`, sibling
 project `vjumbo264/versewell`, also Cloudflare Pages). No API key, no auth,
 no D1/KV added on our side — plain public `fetch` with a short-TTL
-in-memory cache in the Pages Functions isolate. The mock provider in
-`functions/lib/bible.mjs` is kept as the fallback path.
+in-memory cache in the Pages Functions isolate. VerseWell is the sole
+Scripture source: the earlier mock provider was removed in
+profile_content_cleanup_v1, so a VerseWell failure surfaces as a clear
+unavailable state rather than placeholder text.
 
 ### Live-verified data contract (inspected against the deployed mirror, not assumed)
 
@@ -164,13 +169,17 @@ in-memory cache in the Pages Functions isolate. The mock provider in
   ForgeHouse 50 therefore checks audio existence **at request time**
   (content-type-verified HEAD, short-TTL cached) — never a hardcoded list.
 
-### Fallback rules
+### Unavailable-state rules (mock fallback removed, task-p04)
 
 - VerseWell unreachable / fetch error / non-JSON response / version or
-  chapter not present in the mirror → that passage falls back to the mock
-  provider; the Reading page stays fully functional.
-- The translation selector lists the live VerseWell versions plus the mock
-  translation; if the live index fetch fails, the selector still offers the
-  mock translation.
+  chapter not present in the mirror → `GET /api/read/passage` returns
+  **503 `{error, unavailable:true}`** and the Reading page shows a clear
+  "Scripture is temporarily unavailable — please try again shortly" state.
+  The failure is never silently swallowed.
+- The translation selector lists **only** the live VerseWell versions. If
+  the live index fetch fails, the selector is empty/disabled and the page
+  shows the same unavailable state — no mock entry is ever offered.
 - A version whose per-version index lacks the assigned book (partial
-  canon) falls back to mock for that passage only.
+  canon) returns the same 503 unavailable state for that passage only.
+- The optional `VERSEWELL_BASE` Pages env var overrides the mirror base URL
+  (kept as a general override; originally used to test the old fallback).

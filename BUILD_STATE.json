@@ -355,14 +355,14 @@
       {
         "id": "task-p04",
         "title": "Remove mock Bible content layer + mock translation entirely (Part A): delete mock module/data + code paths, replace mock-fallback with clear 'scripture temporarily unavailable' state, remove mock from translation selector, scrub docs/seed references. Guard satisfied per task-p01.",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "Mock layer removed entirely (guard satisfied per task-p01 — VerseWell confirmed live). Changes: (1) DELETED functions/lib/bible.mjs (the mock provider id 'mock-web', SAMPLE public-domain passages, PLACEHOLDER_PARAGRAPHS, PROVIDERS registry, getProvider/listTranslations). (2) functions/api/read/passage.mjs rewritten — no bible.mjs import; non-versewell translation -> 400 'Unknown translation'; VerseWell getPassage null -> 503 {error, unavailable:true} via new lib/http.mjs unavailable() helper; source field always 'versewell'. No mock fallthrough remains. (3) functions/api/translations.mjs — selector returns ONLY live VerseWell versions; on mirror failure returns {translations:[], versewell_live:false} (no mock entry ever). (4) functions/api/read/audio_availability.mjs — non-versewell translation now returns source:'none' (was 'mock'). (5) public/read.html — selector comment/logic no longer references mock; empty/failed translations list shows a plain 'Scripture is temporarily unavailable' state and disables the selector; loadPassage now detects a failed/empty passage fetch and renders a clear 'Scripture is temporarily unavailable for this passage' state instead of silently rendering nothing (no mock fallback). (6) lib/versewell.mjs comments updated (no more 'fall back to mock'). (7) ARCHITECTURE.md 'Bible content' section rewritten (mock layer documented as removed), 'Fallback rules' -> 'Unavailable-state rules' (503 unavailable, selector only-live), secrets table dropped stale BIBLE_API_KEY row, WHATSAPP_GROUP_URL note updated; README.md VerseWell section updated (mock layer documented as removed, BIBLE_API_KEY note rewritten). Verification: grep confirms no live code references bible.mjs/mock-web/getProvider/source:'mock' (remaining matches are doc notes recording the removal + the legit versewell listTranslations). All .mjs pass node --check. Live verification of the selector/passage deferred to task-p08 E2E after deploy."
       },
       {
         "id": "task-p05",
         "title": "Add preset avatar asset set (SVG, 15-30 options, shipped in repo) + avatar_id column on profiles via lightweight non-destructive D1 migration",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
         "notes": ""
       },
@@ -400,6 +400,11 @@
         "session": 4,
         "date_utc": "2026-09-08",
         "summary": "Session start (profile/content cleanup). Pulled forgehouse50 (HEAD 6fdfdc3; build_complete, migration_brevo_v1 complete, versewell_integration_v1 complete). No profile_content_cleanup_v1 section existed - appending seed per state-determination rule and pushing first to prove push access."
+      },
+      {
+        "session": 4,
+        "date_utc": "2026-09-08",
+        "summary": "task-p02/p03 done: diagnosed + fixed empty homepage (eager banners object literal dereferenced data.today=null on non-reading days -> TypeError aborted IIFE -> empty render; converted to lazy builders; verified live headless logged-in + logged-out). task-p04 done: mock Bible layer + mock translation removed entirely; clear 503 unavailable states; docs scrubbed; all .mjs parse. Next: task-p05 avatars."
       }
     ]
   }
