@@ -26,16 +26,20 @@
   if (!data) return;
   const s = data.stats;
 
-  // Today banner
+  // Today banner — lazy per-status builders (NOT a pre-built object: an object
+  // literal would eagerly evaluate every branch, and the `reading` branch
+  // dereferences data.today which is null on Tue/Fri/rest days -> TypeError
+  // that aborts the whole IIFE and renders a completely empty homepage).
   const banners = {
-    reading: `<div class="card" style="border-color:var(--accent)"><span class="pill">Reading Day ${data.today.day_number}</span>
+    reading: () => `<div class="card" style="border-color:var(--accent)"><span class="pill">Reading Day ${data.today.day_number}</span>
       <h2 style="margin:10px 0 4px">${FH.esc(data.today.assignment.summary)}</h2>
       <div class="muted small">${data.today.assignment.chapter_count} chapters · about ${data.today.assignment.est_minutes} min ${data.today.completed ? '· <span class="check">Completed ✓</span>' : ''}</div></div>`,
-    tuesday_prayer: `<div class="card"><span class="pill gray">Tuesday</span><h2 style="margin:10px 0 4px">Fasting &amp; Prayer</h2><div class="muted small">No reading today — see you on the next reading day.</div></div>`,
-    friday_prayer_study: `<div class="card"><span class="pill gray">Friday</span><h2 style="margin:10px 0 4px">Fasting &amp; Prayer + Bible Study</h2><div class="muted small">No reading today — see you on the next reading day.</div></div>`,
-    rest: `<div class="card"><span class="pill gray">Rest day</span><h2 style="margin:10px 0 4px">No reading scheduled today</h2></div>`,
+    tuesday_prayer: () => `<div class="card"><span class="pill gray">Tuesday</span><h2 style="margin:10px 0 4px">Fasting &amp; Prayer</h2><div class="muted small">No reading today — see you on the next reading day.</div></div>`,
+    friday_prayer_study: () => `<div class="card"><span class="pill gray">Friday</span><h2 style="margin:10px 0 4px">Fasting &amp; Prayer + Bible Study</h2><div class="muted small">No reading today — see you on the next reading day.</div></div>`,
+    rest: () => `<div class="card"><span class="pill gray">Rest day</span><h2 style="margin:10px 0 4px">No reading scheduled today</h2></div>`,
   };
-  document.getElementById('today-banner').innerHTML = banners[data.status] || '';
+  const bannerFor = banners[data.status];
+  document.getElementById('today-banner').innerHTML = bannerFor ? bannerFor() : '';
 
   // Stats grid
   document.getElementById('stats').innerHTML = `<div class="grid3">

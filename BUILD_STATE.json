@@ -339,16 +339,16 @@
       {
         "id": "task-p02",
         "title": "Live-diagnose empty homepage (Part D): identify real root cause with evidence before fixing",
-        "status": "pending",
+        "status": "done",
         "commits": [],
-        "notes": ""
+        "notes": "ROOT CAUSE FOUND with evidence (headless Chromium, logged-in session minted for verified member fh50.vw.e2e@proton.me): public/index.html built the today-banner as an EAGER object literal whose `reading` branch interpolates data.today.day_number / data.today.assignment.summary. On any non-reading day (Tue/Fri/rest) /api/today returns today:null, so constructing the literal throws 'TypeError: Cannot read properties of null (reading day_number)' INSIDE the page IIFE -> the whole IIFE aborts and, since ALL homepage content is injected by JS (topbar, banner, stats, progress bar, CTA, next-day, WhatsApp), the body renders completely EMPTY except the bottom nav. Reproduced live 2026-09-08 (a Tuesday): logged-in page loaded / 200 but pageerror exactly as above, wrap innerHTML 468 chars (nav only). NOT a data-flow bug: /api/today authenticated -> 200 with status=tuesday_prayer, next_reading_day=Day2 2026-09-09 Matthew 7-12, stats zeroed; reading_days seed intact (50 days 2026-09-07..2026-11-15, 260 chapters); app.js/app.css 200 and byte-identical to repo; /api/auth/me 200. Bug predates Brevo/VerseWell work (banner object was in the original build; task-13 E2E ran on Sunday 2026-09-06 = rest day, but curl-HTML checks used then don't execute JS so the eager-eval crash was never observed; it only surfaces in a real browser on a non-reading day). Logged-out behavior confirmed correct-by-design: JS redirect to /login (200, login form renders) — no issue there. Same eager-eval pattern searched across all pages: confined to index.html; lines 57-58/64-65 already guarded with && / ?."
       },
       {
         "id": "task-p03",
         "title": "Fix homepage per task-p02 diagnosis; verify live for logged-in user with real progress and logged-out visitor",
-        "status": "pending",
+        "status": "in_progress",
         "commits": [],
-        "notes": ""
+        "notes": "Fix: today-banner object literal converted to lazy per-status builder functions; only the builder matching data.status runs, so non-reading days never dereference data.today. banners[data.status] || '' fallback kept for unknown statuses."
       },
       {
         "id": "task-p04",
