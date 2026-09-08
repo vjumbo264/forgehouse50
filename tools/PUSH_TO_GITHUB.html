@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>ForgeHouse 50 — Push to GitHub</title>
+<style>
+  /* Self-contained: no external fonts, scripts or styles. */
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f7fb; --surface: #ffffff; --line: #d9e1ec; --text: #14213d; --dim: #56637a;
+    --brand: #1d5bd6; --brand-2: #1747a8; --ok: #1c8a4e; --bad: #c8322f; --warn: #b26a00; --soft: #e8effc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1522; --surface: #16202f; --line: #263244; --text: #e7edf6; --dim: #9fb0c8;
+      --brand: #5b8def; --brand-2: #7ea4f4; --ok: #4cc27f; --bad: #ef6b68; --warn: #f0b34a; --soft: #1d2b44;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 22px 0 8px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); }
+  p { margin: 6px 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 14px 0; }
+  label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  input[type=password], input[type=text] { width: 100%; font: inherit; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  input:focus { outline: 3px solid var(--soft); border-color: var(--brand); }
+  .hint { font-size: 13px; color: var(--dim); }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 12px; padding: 13px 18px; cursor: pointer; background: var(--brand); color: #fff; width: 100%; margin-top: 12px; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.secondary { background: var(--soft); color: var(--brand-2); }
+  button.tiny { width: auto; padding: 6px 10px; font-size: 13px; margin: 0; border-radius: 9px; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  ul.files { list-style: none; margin: 0; padding: 0; }
+  ul.files li { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  ul.files li:last-child { border-bottom: 0; }
+  ul.files code { font-size: 12.5px; color: var(--dim); word-break: break-all; }
+  .path { flex: 1; min-width: 0; }
+  .status { font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .status.ok { color: var(--ok); } .status.bad { color: var(--bad); } .status.run { color: var(--warn); } .status.idle { color: var(--dim); }
+  .banner { border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-top: 12px; }
+  .banner.ok { background: rgba(28,138,78,.12); color: var(--ok); }
+  .banner.bad { background: rgba(200,50,47,.12); color: var(--bad); }
+  .banner.info { background: var(--soft); color: var(--brand-2); }
+  #log { font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 260px; overflow: auto; margin-top: 10px; }
+  .hidden { display: none !important; }
+  .picker { border: 1px dashed var(--line); border-radius: 12px; padding: 12px; margin-top: 10px; }
+  .picker input[type=file] { font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Push to GitHub</h1>
+  <p class="hint">Pushes this sandbox's UI-overhaul files to <strong>vjumbo264/forgehouse50</strong> (branch <code>main</code>) using the GitHub REST API, straight from your browser. Nothing you type here leaves your browser except the direct HTTPS calls to <code>api.github.com</code>.</p>
+
+  <section class="card" id="source-card">
+    <h2 style="margin-top:0">1. Files to push</h2>
+    <div id="source-status" class="hint">Locating <code>LOCAL_BUILD_STATE.json</code>…</div>
+    <div class="picker hidden" id="picker">
+      <p class="hint" style="margin-top:0">This page was opened from disk, so it cannot read sibling files by itself. Select the sandbox workspace folder (the one containing <code>LOCAL_BUILD_STATE.json</code>). On phones without a folder picker, use the second button and multi-select <code>LOCAL_BUILD_STATE.json</code> together with the files.</p>
+      <div class="row" style="flex-wrap:wrap">
+        <input type="file" id="dir-input" webkitdirectory directory multiple>
+      </div>
+      <div class="row" style="flex-wrap:wrap;margin-top:8px">
+        <input type="file" id="multi-input" multiple>
+      </div>
+    </div>
+    <ul class="files" id="file-list"></ul>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap">
+      <button class="tiny secondary" id="select-all" type="button">Select all</button>
+      <button class="tiny secondary" id="select-none" type="button">Select none</button>
+      <button class="tiny secondary" id="reload-state" type="button">Reload file list</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-top:0">2. Credential</h2>
+    <label for="pat">GitHub Personal Access Token — pasted here only, never stored</label>
+    <input type="password" id="pat" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ghp_… or github_pat_…" aria-describedby="pat-hint">
+    <p class="hint" id="pat-hint">Needs <em>Contents: read &amp; write</em> on the repo (fine-grained) or the <code>repo</code> scope (classic). The token lives only in a local variable while a push is running; the field is cleared as soon as the push finishes.</p>
+    <label for="msg" style="margin-top:12px">Commit message (optional)</label>
+    <input type="text" id="msg" autocomplete="off" placeholder="UI overhaul batch: <timestamp>">
+    <button id="push-btn" type="button" disabled>Push to GitHub</button>
+    <div id="summary"></div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-top:0">Log</h2>
+    <div id="log" aria-live="polite"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  // ─────────────────────────────────────────────────────────────────────────
+  // CONFIG
+  // ─────────────────────────────────────────────────────────────────────────
+  const OWNER = 'vjumbo264';
+  const REPO = 'forgehouse50';
+  const BRANCH = 'main';
+  const STATE_FILE = 'LOCAL_BUILD_STATE.json';
+  const REMOTE_BUILD_STATE = 'BUILD_STATE.json';
+  const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DOM
+  // ─────────────────────────────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+  const logEl = $('log'), listEl = $('file-list'), summaryEl = $('summary');
+  const patEl = $('pat'), msgEl = $('msg'), pushBtn = $('push-btn');
+  const sourceStatus = $('source-status'), picker = $('picker');
+
+  function log(line, cls) {
+    const t = new Date().toLocaleTimeString();
+    const div = document.createElement('div');
+    div.textContent = `[${t}] ${line}`;
+    if (cls) div.style.color = `var(--${cls})`;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function banner(text, kind) {
+    summaryEl.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'banner ' + kind;
+    d.textContent = text;
+    summaryEl.appendChild(d);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // STATE: how we read local files. Two modes:
+  //  - 'http'  : page is served (e.g. sandbox preview) → fetch() relative paths.
+  //  - 'files' : page opened from disk → operator picks folder/files; we index
+  //              them by workspace-relative path.
+  // ─────────────────────────────────────────────────────────────────────────
+  let mode = null;
+  let state = null;          // parsed LOCAL_BUILD_STATE.json
+  let localIndex = new Map(); // relative path → File (files mode only)
+  let entries = [];          // [{local, dest, checked, li, statusEl, retryBtn}]
+
+  function bytesToBase64(bytes) {
+    // Chunked to avoid call-stack limits on large files. Handles any binary.
+    let bin = '';
+    const CHUNK = 0x8000;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    return btoa(bin);
+  }
+  function base64ToText(b64) {
+    // GitHub returns base64 with embedded newlines; strip all whitespace first.
+    const clean = String(b64 || '').replace(/\s+/g, '');
+    const bin = atob(clean);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  function textToBase64(text) {
+    return bytesToBase64(new TextEncoder().encode(text));
+  }
+
+  async function readLocalBytes(relPath) {
+    if (mode === 'http') {
+      const res = await fetch('./' + relPath, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`local fetch ${relPath} → HTTP ${res.status}`);
+      return new Uint8Array(await res.arrayBuffer());
+    }
+    const f = localIndex.get(relPath) || localIndex.get(relPath.split('/').pop());
+    if (!f) throw new Error(`file not selected: ${relPath}`);
+    return new Uint8Array(await f.arrayBuffer());
+  }
+
+  function normaliseState(raw) {
+    // Accept a few shapes so a future session can evolve the file safely.
+    const map = raw.file_map || raw.files || raw.file_mapping || [];
+    const list = Array.isArray(map)
+      ? map.map(e => ({ local: e.local || e.src || e.from, dest: e.dest || e.destination || e.to, include: e.include !== false }))
+      : Object.entries(map).map(([local, dest]) => ({ local, dest, include: true }));
+    return {
+      raw,
+      sectionKey: raw.section_key || 'ui_overhaul_v1',
+      tasks: Array.isArray(raw.tasks) ? raw.tasks : [],
+      files: list.filter(e => e.local && e.dest && e.include),
+      meta: raw.remote_section_meta || {},
+    };
+  }
+
+  function renderList() {
+    listEl.innerHTML = '';
+    entries = state.files.map(f => {
+      const li = document.createElement('li');
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+      const path = document.createElement('div'); path.className = 'path';
+      path.innerHTML = `<div>${escapeHtml(f.dest)}</div><code>from ${escapeHtml(f.local)}</code>`;
+      const st = document.createElement('span'); st.className = 'status idle'; st.textContent = 'ready';
+      const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'tiny secondary hidden'; retry.textContent = 'Retry';
+      li.append(cb, path, st, retry);
+      listEl.appendChild(li);
+      const entry = { ...f, cb, statusEl: st, retryBtn: retry, li, result: null };
+      retry.addEventListener('click', () => retryOne(entry));
+      return entry;
+    });
+    pushBtn.disabled = entries.length === 0;
+    sourceStatus.innerHTML = `${entries.length} mapped file(s) found in <code>${STATE_FILE}</code>` +
+      (state.raw.last_updated_utc ? ` · last updated ${escapeHtml(state.raw.last_updated_utc)}` : '') +
+      (mode === 'files' ? ` · reading from your selected folder` : ` · reading from this server`);
+  }
+  function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  function setStatus(entry, text, cls) {
+    entry.statusEl.textContent = text;
+    entry.statusEl.className = 'status ' + cls;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // LOCAL STATE DISCOVERY
+  // ─────────────────────────────────────────────────────────────────────────
+  async function tryHttpMode() {
+    if (location.protocol === 'file:') return false;
+    try {
+      const res = await fetch('./' + STATE_FILE, { cache: 'no-store' });
+      if (!res.ok) return false;
+      const raw = await res.json();
+      mode = 'http';
+      state = normaliseState(raw);
+      return true;
+    } catch (_) { return false; }
+  }
+  function showPicker(reason) {
+    picker.classList.remove('hidden');
+    sourceStatus.innerHTML = reason;
+  }
+  async function loadStateFromFiles(files) {
+    localIndex = new Map();
+    let stateFile = null;
+    for (const f of files) {
+      let rel = f.webkitRelativePath || f.name;
+      // webkitRelativePath includes the picked folder name as first segment; strip it.
+      if (f.webkitRelativePath && rel.includes('/')) rel = rel.split('/').slice(1).join('/');
+      localIndex.set(rel, f);
+      if (!localIndex.has(f.name)) localIndex.set(f.name, f); // basename fallback (multi-select mode)
+      if (rel === STATE_FILE || f.name === STATE_FILE) stateFile = f;
+    }
+    if (!stateFile) { showPicker(`<span style="color:var(--bad)">No <code>${STATE_FILE}</code> in that selection. Pick the workspace folder (or include the file).</span>`); return; }
+    try {
+      const raw = JSON.parse(await stateFile.text());
+      mode = 'files';
+      state = normaliseState(raw);
+      renderList();
+      log(`Loaded ${STATE_FILE} from selected files (${state.files.length} mapped).`);
+    } catch (e) {
+      showPicker(`<span style="color:var(--bad)">${STATE_FILE} is not valid JSON: ${escapeHtml(e.message)}</span>`);
+    }
+  }
+  async function init() {
+    if (await tryHttpMode()) {
+      renderList();
+      log(`Loaded ${STATE_FILE} from server (${state.files.length} mapped files).`);
+    } else {
+      showPicker(`Could not fetch <code>${STATE_FILE}</code> from this location — select the workspace folder below.`);
+    }
+  }
+  $('dir-input').addEventListener('change', e => loadStateFromFiles(Array.from(e.target.files)));
+  $('multi-input').addEventListener('change', e => loadStateFromFiles(Array.from(e.target.files)));
+  $('select-all').addEventListener('click', () => entries.forEach(e => e.cb.checked = true));
+  $('select-none').addEventListener('click', () => entries.forEach(e => e.cb.checked = false));
+  $('reload-state').addEventListener('click', async () => {
+    if (mode === 'http') { await tryHttpMode(); renderList(); log('Reloaded file list.'); }
+    else { $('dir-input').value = ''; $('multi-input').value = ''; showPicker('Re-select the workspace folder to reload.'); }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GITHUB API
+  // The token is passed as a parameter and never assigned to any long-lived
+  // variable, storage, URL, or log line.
+  // ─────────────────────────────────────────────────────────────────────────
+  function ghHeaders(token) {
+    return {
+      'Authorization': 'token ' + token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+    };
+  }
+  async function ghGetFile(token, path) {
+    // Returns { sha, contentB64 } or null when the file does not exist yet.
+    const url = API + encodePath(path) + `?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
+    const res = await fetch(url, { headers: ghHeaders(token), cache: 'no-store' });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`GET ${path} → HTTP ${res.status}: ${await safeErr(res)}`);
+    const j = await res.json();
+    if (Array.isArray(j)) throw new Error(`${path} is a directory on GitHub, not a file`);
+    return { sha: j.sha, contentB64: j.content };
+  }
+  async function ghPutFile(token, path, contentB64, message, sha) {
+    const body = { message, content: contentB64, branch: BRANCH };
+    if (sha) body.sha = sha; // omit only for genuinely new files
+    const res = await fetch(API + encodePath(path), {
+      method: 'PUT', headers: ghHeaders(token), body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`PUT ${path} → HTTP ${res.status}: ${await safeErr(res)}`);
+    const j = await res.json();
+    return { sha: j.content && j.content.sha, commit: j.commit && j.commit.sha };
+  }
+  function encodePath(p) { return p.split('/').map(encodeURIComponent).join('/'); }
+  async function safeErr(res) {
+    try { const j = await res.json(); return j.message || JSON.stringify(j); } catch { return res.statusText || ''; }
+  }
+
+  // Push one mapped file with fetch-sha-then-put. Idempotent & retry-safe.
+  async function pushOne(token, entry, message) {
+    setStatus(entry, 'reading…', 'run');
+    const bytes = await readLocalBytes(entry.local);
+    const b64 = bytesToBase64(bytes);
+    setStatus(entry, 'checking sha…', 'run');
+    const existing = await ghGetFile(token, entry.dest);
+    if (existing && existing.contentB64 && existing.contentB64.replace(/\s+/g, '') === b64) {
+      setStatus(entry, 'unchanged', 'ok');
+      log(`= ${entry.dest} identical on GitHub, skipped.`);
+      entry.result = 'ok';
+      return;
+    }
+    setStatus(entry, existing ? 'updating…' : 'creating…', 'run');
+    const r = await ghPutFile(token, entry.dest, b64, message, existing ? existing.sha : undefined);
+    setStatus(entry, existing ? 'updated' : 'created', 'ok');
+    log(`✓ ${entry.dest} ${existing ? 'updated' : 'created'} (${bytes.length} bytes, commit ${String(r.commit || '').slice(0, 7)})`, 'ok');
+    entry.result = 'ok';
+  }
+
+  // Merge & push BUILD_STATE.json (fresh GET → merge section → PUT with sha).
+  async function pushBuildState(token, pushedDests, message) {
+    log(`Fetching fresh ${REMOTE_BUILD_STATE} from GitHub…`);
+    const existing = await ghGetFile(token, REMOTE_BUILD_STATE);
+    let remote = {};
+    if (existing) {
+      try { remote = JSON.parse(base64ToText(existing.contentB64)); }
+      catch (e) { throw new Error(`Remote ${REMOTE_BUILD_STATE} is not valid JSON; refusing to overwrite (${e.message})`); }
+    }
+    const key = state.sectionKey;
+    const now = new Date().toISOString();
+    const section = Object.assign({}, remote[key] || {});
+    section.scope = state.meta.scope || section.scope ||
+      'Premium UI overhaul: auto prefers-color-scheme theming (manual toggle removed), premium-blue light+dark palettes, full component redesign across every screen, design tokens in DESIGN_SYSTEM.md, footnote single-marker fix, micro-interactions with reduced-motion support. Frontend only; no API/schema/auth/points changes.';
+    section.started_utc = section.started_utc || (state.raw.started_utc || now.slice(0, 10));
+    section.last_push_utc = now;
+    section.pushed_via = 'tools/PUSH_TO_GITHUB.html (browser-side GitHub Contents API; no credential ever left the operator browser)';
+    // Merge tasks by id: local statuses win (they are the source of truth for this batch).
+    const byId = new Map((section.tasks || []).map(t => [t.id, t]));
+    for (const t of state.tasks) {
+      const prev = byId.get(t.id) || {};
+      byId.set(t.id, Object.assign({}, prev, {
+        id: t.id, title: t.title || prev.title || '',
+        status: t.status || prev.status || 'pending',
+        notes: t.notes || prev.notes || '',
+        files: t.files || prev.files || [],
+        completed_utc: t.status === 'done' ? (t.completed_utc || prev.completed_utc || now.slice(0, 10)) : (prev.completed_utc || undefined),
+      }));
+    }
+    section.tasks = Array.from(byId.values());
+    section.work_complete = section.tasks.length > 0 && section.tasks.every(t => t.status === 'done');
+    section.last_pushed_files = pushedDests;
+    section.session_history = Array.isArray(section.session_history) ? section.session_history : [];
+    section.session_history.push({
+      date_utc: now,
+      summary: `Operator push via PUSH_TO_GITHUB.html: ${pushedDests.length} file(s). Tasks done: ${section.tasks.filter(t => t.status === 'done').map(t => t.id).join(', ') || 'none yet'}.`,
+    });
+    remote[key] = section;
+    remote.last_updated_utc = now.slice(0, 10);
+    const b64 = textToBase64(JSON.stringify(remote, null, 2) + '\n');
+    const r = await ghPutFile(token, REMOTE_BUILD_STATE, b64, message + ' — update BUILD_STATE.json', existing ? existing.sha : undefined);
+    log(`✓ ${REMOTE_BUILD_STATE} merged & pushed (section "${key}", commit ${String(r.commit || '').slice(0, 7)})`, 'ok');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ORCHESTRATION
+  // ─────────────────────────────────────────────────────────────────────────
+  let busy = false;
+  function readToken() {
+    // Read once into a local string. The caller holds it only for the duration
+    // of the running operation and calls finishToken() in its `finally`.
+    return patEl.value.trim();
+  }
+  function finishToken() { patEl.value = ''; }
+
+  async function retryOne(entry) {
+    if (busy) return;
+    const token = readToken();
+    if (!token) { banner('Paste your token again to retry this file.', 'bad'); return; }
+    busy = true; pushBtn.disabled = true; entry.retryBtn.classList.add('hidden');
+    const message = (msgEl.value.trim() || `UI overhaul batch: ${new Date().toISOString()}`) + ` (retry ${entry.dest})`;
+    try {
+      await pushOne(token, entry, message);
+      banner(`Retry of ${entry.dest} succeeded. Press "Push to GitHub" again to re-run the full batch (identical files are skipped) and refresh BUILD_STATE.json.`, 'ok');
+    } catch (e) {
+      setStatus(entry, 'failed', 'bad'); entry.retryBtn.classList.remove('hidden');
+      log(`✗ ${entry.dest}: ${e.message}`, 'bad');
+      banner(`Retry failed for ${entry.dest}: ${e.message}`, 'bad');
+    } finally {
+      finishToken(); busy = false; pushBtn.disabled = false;
+    }
+  }
+
+  pushBtn.addEventListener('click', async () => {
+    if (busy || !state) return;
+    const token = readToken(); // local const — never stored anywhere else
+    if (!token) { banner('Paste a GitHub Personal Access Token first.', 'bad'); patEl.focus(); return; }
+    const selected = entries.filter(e => e.cb.checked);
+    if (!selected.length) { banner('Select at least one file.', 'bad'); return; }
+    busy = true; pushBtn.disabled = true; pushBtn.textContent = 'Pushing…';
+    summaryEl.innerHTML = '';
+    const message = msgEl.value.trim() || `UI overhaul batch: ${new Date().toISOString()}`;
+    log(`Starting push of ${selected.length} file(s) to ${OWNER}/${REPO}@${BRANCH}.`);
+    let okCount = 0, failCount = 0;
+    const pushedDests = [];
+    try {
+      // Sequential on purpose: parallel commits to the same branch race and
+      // produce 409/422 conflicts.
+      for (const entry of selected) {
+        entry.retryBtn.classList.add('hidden');
+        try {
+          await pushOne(token, entry, message);
+          okCount++; pushedDests.push(entry.dest);
+        } catch (e) {
+          failCount++;
+          setStatus(entry, 'failed', 'bad'); entry.retryBtn.classList.remove('hidden');
+          log(`✗ ${entry.dest}: ${e.message}`, 'bad');
+        }
+      }
+      if (failCount === 0) {
+        try {
+          await pushBuildState(token, pushedDests, message);
+          banner(`All ${okCount} file(s) pushed and BUILD_STATE.json updated. GitHub Actions will deploy to forgehouse50.pages.dev automatically.`, 'ok');
+        } catch (e) {
+          log(`✗ BUILD_STATE.json: ${e.message}`, 'bad');
+          banner(`Files pushed (${okCount}), but BUILD_STATE.json update failed: ${e.message}. Press "Push to GitHub" again — unchanged files are skipped and the bookkeeping will be retried.`, 'bad');
+        }
+      } else {
+        banner(`${okCount} succeeded, ${failCount} failed. Use the Retry buttons (paste the token again first), then press "Push to GitHub" once more so BUILD_STATE.json gets updated.`, 'bad');
+      }
+    } finally {
+      finishToken(); // clear the field; the `token` const goes out of scope here
+      busy = false; pushBtn.disabled = false; pushBtn.textContent = 'Push to GitHub';
+    }
+  });
+
+  init();
+})();
+</script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
+</html>
