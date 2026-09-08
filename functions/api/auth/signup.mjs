@@ -1,4 +1,4 @@
-// POST /api/auth/signup — email + password → create unverified profile → OTP via Resend.
+// POST /api/auth/signup — email + password → create unverified profile → OTP via Brevo.
 import { json, badRequest, conflict, readJson, uuid, nowIso } from '../../lib/http.mjs';
 import { hashPassword, generateOtp, OTP_TTL_MS } from '../../lib/auth.mjs';
 import { sendEmail, otpEmailHtml } from '../../lib/email.mjs';

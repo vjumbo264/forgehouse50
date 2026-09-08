@@ -1,10 +1,52 @@
-// Resend transactional email helper.
-// Sender is onboarding@resend.dev — no custom domain verification needed yet.
-// The API key lives exclusively in the RESEND_API_KEY Pages secret.
+// Transactional email helper — Brevo (https://api.brevo.com/v3/smtp/email).
+//
+// Sender is the verified single sender "Forgehouse 50 <vjumbo264@gmail.com>",
+// verified in Brevo (no domain authentication required for a single sender).
+// The Brevo API key lives exclusively in the BREVO_API_KEY Pages secret.
+//
+// A legacy Resend path (sendEmailResend) is retained temporarily behind a
+// feature flag while task-m05 verifies live delivery. Once task-m06 removes
+// the RESEND_API_KEY secret, the legacy function and its imports go with it.
+
+const SENDER_EMAIL = 'vjumbo264@gmail.com';
+const SENDER_NAME = 'Forgehouse 50';
 
 export async function sendEmail(env, { to, subject, html }) {
+  // Feature flag: default to Brevo. Set EMAIL_PROVIDER=resend to force legacy path.
+  const provider = (env.EMAIL_PROVIDER || 'brevo').toLowerCase();
+  if (provider === 'resend') return sendEmailResend(env, { to, subject, html });
+  return sendEmailBrevo(env, { to, subject, html });
+}
+
+async function sendEmailBrevo(env, { to, subject, html }) {
+  if (!env.BREVO_API_KEY) {
+    return { ok: false, error: 'BREVO_API_KEY not configured' };
+  }
+  const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  if (!resp.ok) {
+    // Read but do not expose upstream body text to callers — surface the status only.
+    await resp.text().catch(() => '');
+    return { ok: false, error: `Brevo error ${resp.status}` };
+  }
+  return { ok: true };
+}
+
+// Legacy Resend path — retained for task-m05 rollback safety; removed in task-m06.
+async function sendEmailResend(env, { to, subject, html }) {
   if (!env.RESEND_API_KEY) {
-    // Never block the build on a missing key, but make failures visible.
     return { ok: false, error: 'RESEND_API_KEY not configured' };
   }
   const resp = await fetch('https://api.resend.com/emails', {
@@ -21,7 +63,7 @@ export async function sendEmail(env, { to, subject, html }) {
     }),
   });
   if (!resp.ok) {
-    const body = await resp.text().catch(() => '');
+    await resp.text().catch(() => '');
     return { ok: false, error: `Resend error ${resp.status}` };
   }
   return { ok: true };
@@ -49,7 +91,7 @@ export function otpEmailHtml(code, name = '') {
       </p>
     </div>
     <p style="color:#5c6470;font-size:11px;text-align:center;margin:20px 0 0;">
-      Verification emails are sent via Resend. &copy; ForgeHouse Global.
+      Sent from ForgeHouse 50. &copy; ForgeHouse Global.
     </p>
   </div>
 </body></html>`;
