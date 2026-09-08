@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Read</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0f1216">
+<meta name="theme-color" content="#f4f7fc">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -18,314 +18,45 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-  <div id="day-head"></div>
-  <div class="card flat between" style="gap:6px">
-    <div class="row">
-      <button class="iconbtn" id="fs-dec" title="Smaller text">A−</button>
-      <button class="iconbtn" id="fs-inc" title="Larger text">A+</button>
-      <select id="translation" style="width:auto;margin:0;padding:7px 10px;font-size:13px"></select>
-    </div>
-    <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage">🔖</button>
-  </div>
-  <div id="passage" class="card scripture fs-medium"><p class="muted">Loading passage…</p></div>
-  <div class="card flat" id="audio-card">
-    <div class="between small muted"><span>Audio</span><span id="audio-note">Checking availability…</span></div>
-    <div class="row" style="margin-top:8px">
-      <button class="iconbtn" id="audio-play" disabled>▶ Play</button>
-      <div class="bar" style="flex:1"><i id="audio-bar" style="width:0%"></i></div>
-      <button class="btn ghost small" id="audio-done" style="display:none">Mark audio complete</button>
-    </div>
-    <div class="row" style="margin-top:8px;display:none" id="audio-chapters"></div>
-  </div>
-  <div id="mark-area"></div>
-  <div class="card flat small muted" id="attrib"></div>
+  <main>
+    <section id="day-head" aria-label="Reading day"></section>
+
+    <section class="reader-tools" aria-label="Reading controls">
+      <div class="group">
+        <button class="iconbtn" id="fs-dec" title="Smaller text" aria-label="Decrease text size">A−</button>
+        <button class="iconbtn" id="fs-inc" title="Larger text" aria-label="Increase text size">A+</button>
+      </div>
+      <div class="group" style="flex:1;min-width:0">
+        <label for="translation" class="sr-only">Translation</label>
+        <select id="translation" class="input-sm" style="flex:1"></select>
+      </div>
+      <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage" aria-label="Bookmark this passage"></button>
+    </section>
+
+    <article id="passage" class="reader scripture fs-medium" aria-live="polite">
+      <div class="skeleton line"></div><div class="skeleton line w60"></div>
+      <div class="skeleton line"></div><div class="skeleton line w40"></div>
+    </article>
+
+    <section class="audio" id="audio-card" aria-label="Audio narration">
+      <div class="audio-head">
+        <span class="label" id="audio-label">Audio</span>
+        <span class="small muted" id="audio-note">Checking availability…</span>
+      </div>
+      <div class="audio-main">
+        <button class="audio-play" id="audio-play" disabled aria-label="Play narration">▶</button>
+        <div class="bar thin" style="flex:1"><i id="audio-bar"></i></div>
+      </div>
+      <div class="audio-chips" id="audio-chapters" style="display:none"></div>
+      <button class="btn soft small" id="audio-done" style="display:none">Mark audio complete</button>
+    </section>
+
+    <section id="mark-area"></section>
+    <p class="attribution" id="attrib"></p>
+  </main>
 </div>
 <script src="/app.js"></script>
-<script>
-(async () => {
-  const me = await FH.requireAuth();
-  if (!me) return;
-  document.getElementById('top').innerHTML = FH.topbar('Daily Reading');
-
-  const params = new URLSearchParams(location.search);
-  const dayN = parseInt(params.get('day') || '1', 10);
-
-  // Load day + translations
-  const [{ data: day }, { data: tr }] = await Promise.all([
-    FH.api('/api/read/day?n=' + dayN), FH.api('/api/translations')]);
-  if (!day) { document.getElementById('passage').innerHTML = '<p class="error">Could not load this reading day.</p>'; return; }
-
-  const assignText = day.assignments.map(a =>
-    a.chapter_start === a.chapter_end ? `${a.book} ${a.chapter_start}` : `${a.book} ${a.chapter_start}–${a.chapter_end}`).join(' · ');
-  document.getElementById('day-head').innerHTML = `
-    <div class="between"><div>
-      <span class="pill">Reading Day ${day.day_number}</span>
-      <h1 style="margin:8px 0 2px">${FH.esc(assignText)}</h1>
-      <div class="muted small">${day.date} · ${day.chapter_count} chapters · ~${day.est_minutes} min</div>
-    </div></div>`;
-
-  const sel = document.getElementById('translation');
-  const trList = tr?.translations || [];
-  sel.innerHTML = trList.map(t => `<option value="${FH.esc(t.id)}">${FH.esc(t.name)}</option>`).join('');
-  // The selector lists ONLY translations actually available from VerseWell
-  // (the mock translation was removed in task-p04). Prefer a sensible live
-  // default (CEV first — reads naturally aloud and has intros+footnotes),
-  // then any live version. Remember the user's last pick.
-  const savedTr = localStorage.getItem('fh50_translation');
-  const ids = trList.map(t => t.id);
-  const defaultTr = (savedTr && ids.includes(savedTr)) ? savedTr
-    : (ids.find(i => i === 'versewell-cev') || ids.find(i => i.startsWith('versewell-')) || ids[0]);
-  if (defaultTr) sel.value = defaultTr;
-  if (!trList.length || tr?.versewell_live === false) {
-    // VerseWell mirror unreachable right now — say so plainly.
-    document.getElementById('passage').innerHTML =
-      '<p class="muted">Scripture is temporarily unavailable. Please try again shortly.</p>';
-    document.getElementById('attrib').textContent = '';
-    sel.disabled = true;
-    return;
-  }
-
-  let currentParts = [];
-
-  // Load passage text (fetch each assignment range in turn)
-  async function loadPassage() {
-    const translation = sel.value;
-    localStorage.setItem('fh50_translation', translation);
-    document.getElementById('passage').innerHTML = '<p class="muted">Loading passage…</p>';
-    const parts = [];
-    let failed = false;
-    for (const a of day.assignments) {
-      const { ok, data } = await FH.api(`/api/read/passage?book=${encodeURIComponent(a.book)}&chapter_start=${a.chapter_start}&chapter_end=${a.chapter_end}&translation=${encodeURIComponent(translation)}`);
-      // Never swallow a failure silently: if VerseWell is unreachable or a
-      // chapter is missing, show a clear unavailable state (no mock fallback).
-      if (!ok || !data || !Array.isArray(data.verses) || data.verses.length === 0) { failed = true; break; }
-      parts.push(data);
-    }
-    if (failed) {
-      currentParts = [];
-      document.getElementById('passage').innerHTML =
-        '<p class="muted">Scripture is temporarily unavailable for this passage. Please try again shortly.</p>';
-      document.getElementById('attrib').textContent = '';
-      loadAudio();
-      return;
-    }
-    currentParts = parts;
-    renderPassage(parts);
-    loadAudio(); // re-check audio for the newly selected translation
-  }
-
-  let highlights = [];
-  async function loadHighlights() {
-    const first = day.assignments[0];
-    const { data } = await FH.api(`/api/read/highlights?book=${encodeURIComponent(first.book)}&chapter=${first.chapter_start}`);
-    highlights = data?.highlights || [];
-  }
-
-  function renderIntroBlock(intro) {
-    // Visually separated, always-expanded block — never merged into verse text.
-    return `<div class="intro-block"><div class="intro-label">Introduction</div><p>${FH.esc(intro.text)}</p></div>`;
-  }
-
-  function renderPassage(parts) {
-    const cont = document.getElementById('passage');
-    cont.innerHTML = parts.map(p => {
-      let curCh = null;
-      const intros = Array.isArray(p.intros) ? p.intros : [];
-      const introForCh = (ch) => intros.filter(i => i.chapter === ch);
-      const bookName = p.reference.replace(/\s+\d.*$/, '');
-      const verses = p.verses.map(v => {
-        const hl = highlights.find(h => h.chapter === v.chapter && v.verse >= h.verse_start && v.verse <= h.verse_end);
-        let head = '';
-        if (v.chapter !== curCh) {
-          head = `<h3 style="color:var(--accent);margin:18px 0 8px">${FH.esc(bookName)} ${v.chapter}</h3>`;
-          for (const intro of introForCh(v.chapter)) head += renderIntroBlock(intro);
-          curCh = v.chapter;
-        }
-        const fn = (v.footnotes && v.footnotes.length)
-          ? v.footnotes.map(f =>
-              `<button class="fn-marker" data-fn="${FH.esc(f.text)}" title="Footnote">${FH.esc(f.marker)}</button>`).join('')
-          : '';
-        return `${head}<p class="v ${hl ? 'hl-' + hl.color : ''}" data-ch="${v.chapter}" data-v="${v.verse}"><span class="vn">${v.verse}</span>${FH.esc(v.text)}${fn}</p>`;
-      }).join('');
-      return verses;
-    }).join('');
-    document.getElementById('attrib').textContent = parts[0]?.attribution || '';
-  }
-
-  // Footnote marker: single tappable marker per footnote; tap toggles an
-  // inline expansion directly under the verse (tap again or another to close).
-  document.getElementById('passage').addEventListener('click', (e) => {
-    const marker = e.target.closest('.fn-marker');
-    if (marker) {
-      e.stopPropagation();
-      const verse = marker.closest('p.v');
-      const existing = verse.nextElementSibling;
-      const already = existing && existing.classList.contains('fn-pop') && existing.dataset.for === marker.dataset.fn;
-      document.querySelectorAll('.fn-pop').forEach(el => el.remove());
-      if (!already) {
-        const pop = document.createElement('div');
-        pop.className = 'fn-pop';
-        pop.dataset.for = marker.dataset.fn;
-        pop.textContent = marker.dataset.fn;
-        verse.after(pop);
-      }
-      return;
-    }
-  });
-
-  // ----- Audio (live VerseWell per-chapter files; disabled stub otherwise) -----
-  const audioEl = new Audio();
-  let audioQueue = [];   // [{chapter, url}]
-  let audioIdx = -1;
-  const playBtn = document.getElementById('audio-play');
-  const barEl = document.getElementById('audio-bar');
-  const noteEl = document.getElementById('audio-note');
-  const doneBtn = document.getElementById('audio-done');
-  const chapRow = document.getElementById('audio-chapters');
-
-  function setAudioState() {
-    if (audioQueue.length > 0) {
-      playBtn.disabled = false;
-      noteEl.textContent = `${audioQueue.length} chapter${audioQueue.length > 1 ? 's' : ''} narrated (VerseWell)`;
-      chapRow.style.display = audioQueue.length > 1 ? 'flex' : 'none';
-      chapRow.innerHTML = audioQueue.map((a, i) =>
-        `<button class="iconbtn small" data-ai="${i}" style="font-size:12px">Ch ${a.chapter}</button>`).join('');
-    } else {
-      playBtn.disabled = true;
-      playBtn.textContent = '▶ Play';
-      noteEl.textContent = 'Not yet available — narration is being generated by VerseWell';
-      chapRow.style.display = 'none';
-    }
-  }
-
-  async function loadAudio() {
-    // One request-time check per passage load (server caches short-TTL); no polling.
-    const translation = sel.value;
-    audioQueue = [];
-    audioIdx = -1;
-    audioEl.pause();
-    const first = day.assignments[0];
-    const { data } = await FH.api(`/api/read/audio_availability?book=${encodeURIComponent(first.book)}&chapter_start=${first.chapter_start}&chapter_end=${first.chapter_end}&translation=${encodeURIComponent(translation)}`);
-    if (data && Array.isArray(data.available)) audioQueue = data.available;
-    setAudioState();
-  }
-
-  function playIdx(i) {
-    if (i < 0 || i >= audioQueue.length) return;
-    audioIdx = i;
-    audioEl.src = audioQueue[i].url;
-    audioEl.play().catch(() => {});
-    playBtn.textContent = '⏸ Pause';
-    chapRow.querySelectorAll('button').forEach((b, j) =>
-      b.style.borderColor = j === i ? 'var(--accent)' : 'var(--border-strong)');
-  }
-
-  playBtn.onclick = () => {
-    if (!audioQueue.length) return;
-    if (audioEl.paused) {
-      if (audioIdx < 0) playIdx(0);
-      else { audioEl.play().catch(() => {}); playBtn.textContent = '⏸ Pause'; }
-    } else {
-      audioEl.pause();
-      playBtn.textContent = '▶ Play';
-    }
-  };
-  chapRow.addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-ai]');
-    if (b) playIdx(parseInt(b.dataset.ai, 10));
-  });
-  audioEl.addEventListener('timeupdate', () => {
-    if (audioEl.duration) barEl.style.width = (100 * audioEl.currentTime / audioEl.duration) + '%';
-  });
-  audioEl.addEventListener('ended', () => {
-    if (audioIdx + 1 < audioQueue.length) playIdx(audioIdx + 1);
-    else {
-      playBtn.textContent = '▶ Play';
-      barEl.style.width = '100%';
-      doneBtn.style.display = '';
-    }
-  });
-  doneBtn.onclick = async () => {
-    await FH.api('/api/read/audio', { method: 'POST', body: { day_number: dayN } });
-    doneBtn.textContent = '✓ Audio complete';
-    doneBtn.disabled = true;
-  };
-
-  await loadHighlights();
-  await loadPassage();
-  sel.addEventListener('change', loadPassage);
-
-  // Tap a verse to highlight (cycles amber → none) — simple, mobile-friendly
-  document.getElementById('passage').addEventListener('click', async (e) => {
-    if (e.target.closest('.fn-marker')) return; // footnote taps handled above
-    const p = e.target.closest('p.v');
-    if (!p) return;
-    const ch = parseInt(p.dataset.ch, 10), v = parseInt(p.dataset.v, 10);
-    const book = day.assignments[0].book;
-    const existing = highlights.find(h => h.chapter === ch && v >= h.verse_start && v <= h.verse_end);
-    if (existing) {
-      await FH.api('/api/read/highlight', { method: 'DELETE', body: { id: existing.id } });
-      highlights = highlights.filter(h => h.id !== existing.id);
-      p.className = 'v';
-    } else {
-      await FH.api('/api/read/highlight', { method: 'POST', body: { book, chapter: ch, verse_start: v, verse_end: v, color: 'amber' } });
-      highlights.push({ chapter: ch, verse_start: v, verse_end: v, color: 'amber' });
-      p.className = 'v hl-amber';
-    }
-  });
-
-  // Font size
-  const sizes = ['fs-small', 'fs-medium', 'fs-large'];
-  let fsIdx = +(localStorage.getItem('fh50_fs') ?? 1);
-  function applyFs() {
-    const el = document.getElementById('passage');
-    el.classList.remove(...sizes); el.classList.add(sizes[fsIdx]);
-    localStorage.setItem('fh50_fs', fsIdx);
-  }
-  applyFs();
-  document.getElementById('fs-dec').onclick = () => { fsIdx = Math.max(0, fsIdx - 1); applyFs(); };
-  document.getElementById('fs-inc').onclick = () => { fsIdx = Math.min(sizes.length - 1, fsIdx + 1); applyFs(); };
-
-  // Bookmark (first verse of passage)
-  document.getElementById('bookmark-btn').onclick = async () => {
-    const a = day.assignments[0];
-    await FH.api('/api/read/bookmark', { method: 'POST', body: { book: a.book, chapter: a.chapter_start, day_number: dayN } });
-    document.getElementById('bookmark-btn').textContent = '✅ Saved';
-  };
-
-  // Reading-time heartbeat (30s)
-  setInterval(() => {
-    if (document.visibilityState === 'visible')
-      FH.api('/api/read/time', { method: 'POST', body: { day_number: dayN, seconds: 30 } });
-  }, 30000);
-
-  // Mark complete
-  function renderMarkArea() {
-    const done = !!day.progress.completed;
-    document.getElementById('mark-area').innerHTML = done
-      ? `<div class="card center"><span class="check" style="font-size:18px">✓ Reading complete</span>
-          <div class="small muted" style="margin-top:4px">Points awarded. Well done.</div>
-          <a class="btn ghost" style="margin-top:12px" href="/notes.html?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note →</a></div>`
-      : `<button class="btn" id="mark-btn">Mark Complete · Day ${dayN}</button>`;
-    if (!done) document.getElementById('mark-btn').onclick = async () => {
-      const btn = document.getElementById('mark-btn'); btn.disabled = true;
-      const { ok, data } = await FH.api('/api/read/complete', { method: 'POST', body: { day_number: dayN } });
-      if (ok) { day.progress.completed = 1; renderMarkArea(); }
-      else { btn.disabled = false; }
-    };
-  }
-  renderMarkArea();
-
-  // Prev / next day navigation
-  const navRow = document.createElement('div');
-  navRow.className = 'between';
-  navRow.style.margin = '14px 0';
-  navRow.innerHTML = `
-    ${dayN > 1 ? `<a class="btn ghost small" href="/read.html?day=${dayN - 1}">← Day ${dayN - 1}</a>` : '<span></span>'}
-    ${dayN < 50 ? `<a class="btn ghost small" href="/read.html?day=${dayN + 1}">Day ${dayN + 1} →</a>` : '<span></span>'}`;
-  document.getElementById('mark-area').appendChild(navRow);
-})();
-</script>
-</body>
-<script>FH.nav('read')</script>
+<script>FH.nav('read');</script>
+<script src="/js/read.js"></script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
 </html>
