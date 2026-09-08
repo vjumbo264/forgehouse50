@@ -251,9 +251,9 @@
       {
         "id": "task-v01",
         "title": "Inspect live vjumbo264/versewell repo + deployed static mirror; document real URL patterns, translation availability, intro/footnote shape and known-bug status, audio path convention + current availability in ARCHITECTURE.md; append this seed task list; commit and push; verify push landed",
-        "status": "in_progress",
+        "status": "done",
         "commits": [],
-        "notes": "Seed appended 2026-09-08. VerseWell repo cloned at c2c5c2bf (audio: +100 chapter m4a(s) rendered (200 rendered)). site/static-data/ contains translations amp/cev/gw/kjv/msg/niv/nkjv/nlt/nlv/tlb/tpt/voice + index.json. Full inspection in progress."
+        "notes": "Live inspection complete (documented in ARCHITECTURE.md 'VerseWell integration'). Static mirror LIVE at https://versewell.pages.dev/static-data/: index.json lists 12 versions (AMP CEV GW KJV MSG NIV NKJV NLT NLV TLB TPT VOICE); per-version /static-data/{v}/index.json gives books with book_name/chapters/slug/testament; chapter JSON at /static-data/{v}/{book_slug}/{chapter}.json shape {version,book,book_name,chapter,audio_url,intros[],verses[] with nested footnotes,navigation}. Slug = full book name lowercased hyphenated (never OSIS-derived). Known bugs ALL FIXED upstream: intro-merge (INTRO_FIX_STATE fix_complete, c99a1fa6 - intros[] structurally separate), intros-misreported-missing (same), TPT OT/NT grouping (a4710c80 - Ps/Prov/Song=OT, 27 NT books=NT). FH50 still renders intros defensively. Audio: /static-data/{v}/{book_slug}/{chapter}.m4a (AAC 48kbps); chapter JSON audio_url field set when file exists else null; 200 m4a files live, ALL AMP OT (genesis-joshua) - NT audio not yet rendered (self-resuming GH Actions job, 24h+); treated as live growing dataset with request-time content-type-verified existence checks. SPA fallback gotcha: unknown paths return 200 text/html - all fetches verify content-type. Seed push verified landed on origin/main via GitHub API (sha 518ecac706, 8 tasks present)."
       },
       {
         "id": "task-v02",
@@ -310,6 +310,11 @@
         "session": 3,
         "date_utc": "2026-09-08",
         "summary": "Session start (VerseWell integration). Pulled forgehouse50 (HEAD 11a47df, build_complete=true, migration_brevo_v1 complete) and cloned vjumbo264/versewell. No versewell_integration_v1 section existed - appending seed task list per state-determination rule and pushing to prove push access before any other work."
+      },
+      {
+        "session": 3,
+        "date_utc": "2026-09-08",
+        "summary": "Seed pushed and verified on origin/main (had to fix credential interpolation). task-v01 done: full live inspection of versewell repo (HEAD c2c5c2bf) + deployed mirror; all findings written to ARCHITECTURE.md. Next: task-v02 VerseWell client module."
       }
     ]
   }
