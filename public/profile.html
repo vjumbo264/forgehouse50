@@ -53,7 +53,7 @@
   </div>`;
   const mePicker = document.getElementById('me-avatar-picker');
   mePicker.innerHTML = FH.AVATARS.map(a =>
-    `<button type="button" data-avatar="${a.id}" class="${a.id === myAvatar ? 'selected' : ''}" title="${a.id}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
+    `<button type="button" data-avatar="${a.id}" class="${a.id === myAvatar ? 'selected' : ''}" title="${a.label}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
   mePicker.addEventListener('click', async (e) => {
     const b = e.target.closest('button[data-avatar]');
     if (!b || b.dataset.avatar === myAvatar) return;

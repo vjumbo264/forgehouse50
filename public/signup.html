@@ -47,7 +47,7 @@
 let chosenAvatar = FH.AVATARS[0].id;
 const picker = document.getElementById('avatar-picker');
 picker.innerHTML = FH.AVATARS.map(a =>
-  `<button type="button" data-avatar="${a.id}" class="${a.id === chosenAvatar ? 'selected' : ''}" title="${a.id}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
+  `<button type="button" data-avatar="${a.id}" class="${a.id === chosenAvatar ? 'selected' : ''}" title="${a.label}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
 picker.addEventListener('click', (e) => {
   const b = e.target.closest('button[data-avatar]');
   if (!b) return;

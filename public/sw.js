@@ -8,7 +8,7 @@
    - Stale-while-revalidate for VerseWell scripture mirror content (text is
      immutable per version, audio grows over time).
 */
-const VERSION = "fh50-v1";
+const VERSION = "fh50-v2";
 const SHELL_CACHE = `shell-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
 const CONTENT_CACHE = `versewell-${VERSION}`;
@@ -66,6 +66,19 @@ const isStaticShell = (url) =>
     /\.(css|js|png|ico|webmanifest|woff2?)$/.test(url.pathname));
 
 self.addEventListener("fetch", (event) => {
+  { // Avatar illustrations: cache-first (immutable per deploy), network fill.
+    const u = new URL(event.request.url);
+    if (u.origin === self.location.origin && u.pathname.startsWith("/avatars/")) {
+      event.respondWith(caches.open(SHELL_CACHE).then(async (cache) => {
+        const hit = await cache.match(event.request);
+        if (hit) return hit;
+        const res = await fetch(event.request);
+        if (res.ok) cache.put(event.request, res.clone());
+        return res;
+      }));
+      return;
+    }
+  }
   const { request } = event;
   if (request.method !== "GET") return; // never touch mutations (POST/PUT/DELETE)
 
