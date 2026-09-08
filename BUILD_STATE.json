@@ -1,8 +1,8 @@
 {
-  "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
+  "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": true,
-  "last_updated_utc": "2026-09-06",
+  "last_updated_utc": "2026-09-08",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -78,7 +78,7 @@
     },
     {
       "id": "task-05",
-      "title": "Auth: signup → OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) → verify → login → session cookie → logout",
+      "title": "Auth: signup \u2192 OTP (10-min expiry, Resend onboarding@resend.dev, custom HTML) \u2192 verify \u2192 login \u2192 session cookie \u2192 logout",
       "status": "done",
       "commits": [],
       "notes": "Auth validated live on forgehouse50.pages.dev: signup creates unverified profile + 10-min OTP; wrong OTP rejected (\"Incorrect code\"), correct OTP consumed (single-use, re-use returns \"No active verification code\"), 30-day HttpOnly+Secure+SameSite=Lax session cookie issued; /api/auth/me resolves session with stats; login rejects wrong password (401 \"Invalid email or password\", no enumeration) and accepts correct; logout destroys session (me -> 401). OTP codes are single-use, expire in 10 min, max 5 attempts. Resend: free-tier onboarding@resend.dev can only deliver to account owner (vjumbo264@gmail.com) until a domain is verified; E2E OTP read from D1 directly. Password hashing PBKDF2-SHA256 100k iters via Web Crypto (documented in auth.mjs)."
@@ -113,7 +113,7 @@
       "title": "Points system with idempotency guards, badge logic, Leaderboard page (6 categories, aggregate-only)",
       "status": "done",
       "commits": [],
-      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call — 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
+      "notes": "Points idempotency re-confirmed live (repeat audio day1 -> 0 pts; repeat complete day1 -> 0 pts). All six leaderboard categories validated live with 2 users: overall (39 vs 22; arithmetic verified: 10+5+3+10+3+3*2+2=39), consistency (2 vs 1 days, streaks attached), chapters (12 vs 6), reading_time (300s vs 120s), observations (3 vs 1), questions (1 vs 0). Invalid category -> 400. PRIVACY: raw response scan confirms no email/body/note-text fields; entries carry only rank/user_id/display_name/avatar_url/value(+streaks). Badge engine (checkBadges) runs on every awardPoints call \u2014 10 badge rules mapped to aggregates; thresholds not reachable with small test data so badge grant is code-verified, not live-triggered (noted for task-13)."
     },
     {
       "id": "task-10",
@@ -127,7 +127,7 @@
       "title": "Admin dashboard + actions, admin-role gated, private notes excluded from all admin queries",
       "status": "done",
       "commits": [],
-      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count — keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
+      "notes": "Admin validated live. Gating: non-admin (user2) -> 403 on /api/admin/stats + /api/admin/participants; unauthenticated -> 401. Promoted user1 (fh50.test1) to role=admin in D1 (role read fresh per request, existing session picks it up). /api/admin/stats returns total_participants=2, active=2, completed_today=0, avg_completion=3%, total_chapters=18, users_behind=0, per_day_completions. /api/admin/participants lists both users with aggregate days/chapters/points/notes_count \u2014 keys confirmed to contain NO note body/content (only notes_count aggregate). Admin actions: award +5 pts with reason OK (user2 39->44), points-without-reason -> 400, completion correction (user2 day2 -> incomplete) OK. admin.html page 200. Private note content never exposed to admins."
     },
     {
       "id": "task-12",
@@ -138,12 +138,12 @@
     },
     {
       "id": "task-13",
-      "title": "E2E verification on live app (register→verify→login→read→complete→note→progress→leaderboard); verify Tue/Fri exclusion; then set build_complete true",
+      "title": "E2E verification on live app (register\u2192verify\u2192login\u2192read\u2192complete\u2192note\u2192progress\u2192leaderboard); verify Tue/Fri exclusion; then set build_complete true",
       "status": "done",
       "commits": [
         "c70cde1"
       ],
-      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains — OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
+      "notes": "Full E2E pass on live app with fresh user (E2E Runner / fh50.e2e3@proton.me): REGISTER ok -> VERIFY OTP ok (single-use) -> LOGIN ok -> SEE TODAY (status=rest on Sun 2026-09-06, next=Day1 2026-09-07 Matthew 1-6) -> READ (day1 assignment + real public-domain WEB passage Matthew 5, 10 verses; +90s time) -> MARK COMPLETE (+13 pts) -> WRITE NOTE (observation +2, prayer +0) -> SEE PROGRESS (1 day, 6 ch, 2.3%, streak 1, 2 notes on day1) -> SEE LEADERBOARD (E2E Runner appears in all 6 categories, ranked correctly). Admin assignment-management validated live (day-50 rewrite, read-back intact). CALENDAR: 50 days, ZERO Tue/Fri dates, 2026-09-07 -> 2026-11-15, exactly 260 chapters mapped. All 10 pages return 200. Two route bugs found & fixed this session (highlights plural alias, notes [id] dynamic route). KNOWN LIMITATION (free-tier, not a code bug): Resend onboarding@resend.dev only delivers to account owner email until a domain is verified at resend.com/domains \u2014 OTP emails to other recipients return 403; documented in README; E2E read OTP from D1. Everything else fully functional without the future BIBLE_API_KEY."
     }
   ],
   "session_history": [
@@ -162,5 +162,77 @@
       "date_utc": "2026-09-06",
       "summary": "Completed remaining work. Validated tasks 05-11 live on forgehouse50.pages.dev; fixed two Pages Functions routing bugs (highlights plural alias; notes dynamic route _id.mjs -> [id].mjs); added admin manage endpoint (assignment replace + badge grant/revoke) and admin UI action controls; wrote README (phone-only). Fixed Pages production env (added PROGRAMME_START_DATE + WHATSAPP_GROUP_URL). Ran full E2E first-priority flow with a fresh user; verified Tue/Fri exclusion (0 violations, 260 chapters, 2026-09-07 to 2026-11-15). All 13 tasks done. build_complete=true. Known free-tier note: Resend test sender only delivers to account owner until domain verified."
     }
-  ]
+  ],
+  "migration_brevo_v1": {
+    "started_utc": "2026-09-08",
+    "migration_complete": false,
+    "sender": "Forgehouse 50 <vjumbo264@gmail.com>",
+    "brevo_api": "https://api.brevo.com/v3/smtp/email",
+    "notes": "Follow-on migration: replace Resend transactional email with Brevo; purge test users. Live pre-inspection: production Pages env has RESEND_API_KEY only; D1 has 5 profiles (fh50.test1/test2/e2e3 from prior E2E, vjumbo98 unverified stray, vjumbo264 owner=Brevo verified sender=KEEP).",
+    "tasks": [
+      {
+        "id": "task-m01",
+        "title": "Pull repo, inspect live secrets & email code, append migration_brevo_v1 to BUILD_STATE.json, commit and push seed",
+        "status": "in_progress",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m02",
+        "title": "Add BREVO_API_KEY as Pages secret via CF API; keep RESEND_API_KEY",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m03",
+        "title": "Implement Brevo transactional email in functions/lib/email.mjs; replace Resend call in OTP send path; sender = Forgehouse 50 <vjumbo264@gmail.com>",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m04",
+        "title": "Update auth-screen copy + README.md + ARCHITECTURE.md references from Resend to Brevo; remove obsolete sandbox-sender note",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m05",
+        "title": "Live E2E: register fresh account, receive OTP via Brevo email (not read from D1), verify, login; record test account for cleanup",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m06",
+        "title": "Remove Resend-specific code paths; delete RESEND_API_KEY Pages secret; redeploy; confirm auth flow still works",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m07",
+        "title": "Identify test users in D1; write and run cascading deletion routine covering all child tables; delete test users incl. this session's; flag ambiguous accounts",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m08",
+        "title": "Verify live: only genuine users remain; leaderboard/admin counts reflect this; no orphaned child rows",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      },
+      {
+        "id": "task-m09",
+        "title": "Final commit/push; set migration_brevo_v1.migration_complete = true with summary",
+        "status": "pending",
+        "commits": [],
+        "notes": ""
+      }
+    ]
+  }
 }
