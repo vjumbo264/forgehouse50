@@ -27,10 +27,10 @@
   Cache-Control: no-cache, must-revalidate
 
 # Versioned app assets — immutable (new deploy => new vN filename)
-/app.v3.css
+/app.v4.css
   Cache-Control: public, max-age=31536000, immutable
 
-/app.v3.js
+/app.v4.js
   Cache-Control: public, max-age=31536000, immutable
 
 # Images — immutable per deploy (SW cache names version them too)

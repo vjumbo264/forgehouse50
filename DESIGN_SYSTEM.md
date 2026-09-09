@@ -1,9 +1,10 @@
-# ForgeHouse 50 — Design System v3
+# ForgeHouse 50 — Design System v4
 
 A deliberately small design system. The goal is a calm, legible,
 premium-through-restraint interface appropriate for a Bible-reading app:
 quiet neutral surfaces, generous whitespace, typographic hierarchy doing
-most of the visual work, and one restrained accent used sparingly.
+most of the visual work, and **one restrained muted-blue accent** used
+sparingly.
 
 This replaces the entire previous (v2, expressive) direction, which was
 reverted. Keep it simple — do not add tokens without a real need.
@@ -13,23 +14,23 @@ reverted. Keep it simple — do not add tokens without a real need.
 - Light/dark is **automatic** via `prefers-color-scheme`. There is no
   manual toggle and no stored preference; `FH.initTheme()` only removes
   legacy stored keys/attributes and keeps the `theme-color` meta in sync.
-- Both palettes are defined in `app.v3.css` (`:root` and
+- Both palettes are defined in `app.v4.css` (`:root` and
   `@media (prefers-color-scheme: dark)`). Never hardcode a theme.
 
 ## Color tokens
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--bg` | `#faf9f6` | `#171614` | page background (warm off-white / warm near-black) |
+| `--bg` | `#fafaf8` | `#171614` | page background (warm off-white / warm near-black) |
 | `--surface` | `#ffffff` | `#201f1c` | cards, nav, inputs |
-| `--surface-2` | `#f1efe9` | `#2a2925` | recessed/flat surfaces |
-| `--border` / `--border-strong` | `#e5e2d9` / `#d3cfc3` | `#353330` / `#48453f` | hairlines / interactive borders |
-| `--text` | `#1f1e1a` | `#ebe8e1` | primary text |
+| `--surface-2` | `#f2f2ef` | `#2a2925` | recessed/flat surfaces, segmented-control track |
+| `--border` / `--border-strong` | `#e6e6e1` / `#d4d4cd` | `#353330` / `#48453f` | hairlines / interactive borders |
+| `--text` | `#1f1e1c` | `#ebe8e1` | primary text |
 | `--text-dim` / `--text-mute` / `--text-faint` | — | — | secondary → tertiary text |
-| `--accent` | `#2f6a4f` | `#7ab894` | the single accent: primary buttons, active states, key indicators |
-| `--accent-text` | `#265a42` | `#8fc7a6` | accent used as text/line color (AA on its background) |
-| `--accent-soft` / `--accent-soft-2` | 10% / 18% tint | 13% / 24% tint | subtle accent washes (pills, selected rows) |
-| `--on-accent` | `#ffffff` | `#12281d` | text on the filled accent |
+| `--accent` | `#3a5f8a` | `#7f9fc4` | the single muted-blue accent: primary buttons, active states, key indicators |
+| `--accent-text` | `#2d4e74` | `#9db8d6` | accent used as text/line color (AA on its background) |
+| `--accent-soft` / `--accent-soft-2` | 9% / 17% tint | 13% / 24% tint | subtle accent washes (pills, active segment fill) |
+| `--on-accent` | `#ffffff` | `#101a26` | text on the filled accent |
 | `--ok` / `--danger` | — | — | success / destructive only |
 
 Rules: the accent is for primary actions and key state only — never wash
@@ -54,13 +55,18 @@ it across large surfaces. Everything else is neutral.
   (border, color, opacity, background); 0.4s on progress bars.
 - No bouncy easing, no celebratory or attention-seeking animation.
 - `prefers-reduced-motion: reduce` collapses all transitions/animations
-  app-wide (implemented globally in `app.v3.css`).
+  app-wide (implemented globally in `app.v4.css`).
 
-## Icons & imagery
+## Icons
 
 - **No emojis anywhere in the UI.** Icons come from the single inline SVG
-  set in `FH.ICONS` (`app.v3.js`): 24×24 viewBox, 2px stroke, rounded
+  set in `FH.ICONS` (`app.v4.js`): 24×24 viewBox, 2px stroke, rounded
   joins, `currentColor`. Add new icons there, in the same style.
+- **Every icon is sized by CSS, never by the SVG's intrinsic 300×150
+  default.** The rule set covers nav (`21px`), `.iconbtn` (`15px`),
+  `.btn`/`.btn.ghost` (`16px`), `.check` (`17px`) and the audio player
+  (`20px` play, `16px` skips). Inject icons only into elements those rules
+  cover; if a new context is added, add a sizing rule for it.
 
 ## Components (contract)
 
@@ -73,7 +79,14 @@ it across large surfaces. Everything else is neutral.
   or clearly bordered shape plus hover/active/focus states — never bare
   text, never oversized banner styling.
 - `.card` / `.card.flat`, `.pill`, `.badge`, `.stat`, `.tabs`, `.dayrow`,
-  `.lrow` as defined in `app.v3.css` — reuse before inventing.
+  `.lrow` as defined in `app.v4.css` — reuse before inventing.
 - Reading page: `.reader-pane` is a fixed-max-height internally scrolling
   chapter pane; Prev/Next chapter controls live outside it and are always
-  visible (see Part E of the v2-redesign contract).
+  visible.
+- **Audio player**: Play/Pause is the single filled circular primary
+  action (`#audio-play`, 46px); ±5s skips are quiet circular `.iconbtn`s;
+  downloads are secondary `.btn.ghost.small` text+icon buttons. The
+  chapter picker (`#audio-chapters`) is a calm segmented control: the
+  active segment gets a subtle `--accent-soft-2` fill and accent text —
+  never a high-contrast outline. The seek slider's filled track before the
+  thumb is the accent, driven by the `--fill` custom property.

@@ -1,23 +1,24 @@
-/* ForgeHouse 50 — design system v3
+/* ForgeHouse 50 — design system v4
    Calm, minimal, premium through restraint (see DESIGN_SYSTEM.md).
    Automatic light/dark via prefers-color-scheme — no manual toggle, no
-   stored preference. One restrained accent; typographic hierarchy does the
-   visual work. Motion is fast and unobtrusive. */
+   stored preference. One restrained muted-blue accent; typographic
+   hierarchy does the visual work. Motion is fast and unobtrusive.
+   Every inline SVG icon is sized by CSS (never intrinsic 300×150). */
 
 :root {
-  --bg: #faf9f6;
+  --bg: #fafaf8;
   --surface: #ffffff;
-  --surface-2: #f1efe9;
-  --border: #e5e2d9;
-  --border-strong: #d3cfc3;
-  --text: #1f1e1a;
-  --text-dim: #45433c;
-  --text-mute: #6d6a61;
-  --text-faint: #a3a094;
-  --accent: #2f6a4f;
-  --accent-text: #265a42;
-  --accent-soft: rgba(47, 106, 79, 0.10);
-  --accent-soft-2: rgba(47, 106, 79, 0.18);
+  --surface-2: #f2f2ef;
+  --border: #e6e6e1;
+  --border-strong: #d4d4cd;
+  --text: #1f1e1c;
+  --text-dim: #4a4844;
+  --text-mute: #6f6c66;
+  --text-faint: #a3a19a;
+  --accent: #3a5f8a;
+  --accent-text: #2d4e74;
+  --accent-soft: rgba(58, 95, 138, 0.09);
+  --accent-soft-2: rgba(58, 95, 138, 0.17);
   --on-accent: #ffffff;
   --ok: #3d7a5c;
   --danger: #b04a3c;
@@ -40,11 +41,11 @@
     --text-dim: #c3bfb5;
     --text-mute: #97938a;
     --text-faint: #6b6862;
-    --accent: #7ab894;
-    --accent-text: #8fc7a6;
-    --accent-soft: rgba(122, 184, 148, 0.13);
-    --accent-soft-2: rgba(122, 184, 148, 0.24);
-    --on-accent: #12281d;
+    --accent: #7f9fc4;
+    --accent-text: #9db8d6;
+    --accent-soft: rgba(127, 159, 196, 0.13);
+    --accent-soft-2: rgba(127, 159, 196, 0.24);
+    --on-accent: #101a26;
     --ok: #7ab894;
     --danger: #d48a7c;
     --danger-soft: rgba(212, 138, 124, 0.12);
@@ -88,10 +89,21 @@ h3 { font-size: 15px; font-weight: 650; margin: 0 0 6px; }
 .stat .v { font-size: 22px; font-weight: 650; color: var(--text); }
 .stat .l { font-size: 11.5px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
 
+/* ── Icons: every FH.ICONS glyph is a 24×24-viewBox inline SVG. Without an
+   explicit size it renders at the replaced-element default 300×150 — this
+   single rule (plus the stronger component rules below) keeps every icon
+   at a sane, consistent size everywhere it is injected. (task-c02: the
+   prior build sized icons only inside nav + .iconbtn, so icons inside
+   .btn/.ghost/cards ballooned to hundreds of px.) */
+svg { flex-shrink: 0; }
+.btn svg, .btn.ghost svg { width: 16px; height: 16px; flex: none; }
+.check svg { width: 17px; height: 17px; flex: none; }
+
 /* Buttons — the primary reads as the one filled action; ghost is a clear
    bordered affordance. Hover/active/focus states are subtle and fast. */
 .btn {
-  display: inline-block; width: 100%; text-align: center;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; text-align: center;
   background: var(--accent); color: var(--on-accent);
   border: 1px solid var(--accent); border-radius: var(--radius-sm);
   padding: 13px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
@@ -138,8 +150,8 @@ label { font-size: 13px; color: var(--text-dim); font-weight: 600; }
 .hl-rose  { background: rgba(208,91,91,.28); border-radius: 3px; }
 .fs-small { font-size: 16px; } .fs-medium { font-size: 19px; } .fs-large { font-size: 23px; }
 
-/* Fixed-height clipped reading pane (Part E): the pane scrolls internally;
-   the page chrome around it never grows with chapter length. */
+/* Fixed-height clipped reading pane: the pane scrolls internally; the page
+   chrome around it never grows with chapter length. */
 .reader-pane {
   max-height: min(58vh, 620px);
   overflow-y: auto;
@@ -243,12 +255,61 @@ nav.bottom a svg { display: block; margin: 0 auto 2px; width: 21px; height: 21px
   font-family: var(--font-ui);
   line-height: 1.55;
 }
-#audio-chapters { flex-wrap: wrap; gap: 6px; }
 
-/* Audio seek slider — quiet native range styled to match */
+/* ── Audio player (redesign_correction_v1 / task-c04) ────────────────────
+   Clear hierarchy: Play is the single filled primary action; ±5s skips are
+   quiet bordered icon-buttons; downloads are secondary ghost buttons. The
+   chapter picker is a calm segmented control — the active segment gets a
+   subtle accent FILL (never a high-contrast outline). */
+#audio-card .player-row { gap: 12px; justify-content: center; }
+
+#audio-play {
+  width: 46px; height: 46px; padding: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--on-accent);
+  border: 1px solid var(--accent); box-shadow: var(--shadow); cursor: pointer;
+  transition: opacity .12s ease;
+}
+#audio-play:hover { opacity: .92; }
+#audio-play:disabled { opacity: .5; cursor: default; box-shadow: none; }
+#audio-play svg { width: 20px; height: 20px; display: block; }
+#audio-play svg:first-child { margin-left: 2px; } /* optically center the play triangle */
+#audio-play span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* accessible label, visually hidden */
+
+#audio-back, #audio-fwd {
+  width: 38px; height: 38px; padding: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative;
+}
+#audio-back svg, #audio-fwd svg { width: 16px; height: 16px; }
+#audio-back span, #audio-fwd span {
+  position: absolute; bottom: 1px; font-size: 8px; font-weight: 700;
+  letter-spacing: .2px; color: inherit; pointer-events: none;
+}
+
+/* Chapter picker: calm segmented control. */
+#audio-chapters {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 3px; margin-top: 10px;
+  width: fit-content;
+}
+#audio-chapters button {
+  border: none; background: transparent; color: var(--text-mute);
+  border-radius: 99px; padding: 5px 12px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; line-height: 1.4;
+  transition: background-color .12s ease, color .12s ease;
+}
+#audio-chapters button:hover { color: var(--text); }
+#audio-chapters button.active { background: var(--accent-soft-2); color: var(--accent-text); }
+#audio-chapters button:disabled { opacity: .45; cursor: default; }
+
+/* Audio seek slider — quiet native range styled to match; the filled
+   portion before the thumb is the accent via a JS-set linear-gradient. */
 input[type="range"]#audio-seek {
   -webkit-appearance: none; appearance: none;
-  height: 6px; border-radius: 99px; background: var(--surface-2);
+  height: 6px; border-radius: 99px;
+  background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--surface-2) var(--fill, 0%));
   border: 1px solid var(--border);
 }
 input[type="range"]#audio-seek::-webkit-slider-thumb {

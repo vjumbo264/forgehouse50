@@ -1,4 +1,4 @@
-/* ForgeHouse 50 — shared frontend helpers */
+/* ForgeHouse 50 — shared frontend helpers (v4) */
 const FH = (() => {
   async function api(path, opts = {}) {
     const res = await fetch(path, {
@@ -54,7 +54,7 @@ const FH = (() => {
     document.documentElement.removeAttribute('data-theme');
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const meta = document.querySelector('meta[name="theme-color"]');
-    const apply = () => { if (meta) meta.setAttribute('content', mq.matches ? '#171614' : '#faf9f6'); };
+    const apply = () => { if (meta) meta.setAttribute('content', mq.matches ? '#171614' : '#fafaf8'); };
     apply();
     if (mq.addEventListener) mq.addEventListener('change', apply);
   }

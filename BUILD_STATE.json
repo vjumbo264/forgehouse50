@@ -781,36 +781,36 @@
       {
         "id": "task-c01",
         "title": "Reproduce the 'undefined' label bug by inspecting the actual rendered audio player; identify the exact broken icon-rendering code path and every other place using the same helper; append this task list; commit+push seed.",
-        "status": "in_progress",
+        "status": "done",
         "notes": "Seed commit. REPRODUCTION FINDINGS so far (2026-09-09): (a) ROOT CAUSE via git history \u2014 at deploy f27cc951 (task-r03/r04), public/read.html referenced FH.ICONS.play/pause/back5/fwd5/download/check but public/app.js at that same commit defined ONLY the 6 nav icon keys (home/read/notes/progress/board/profile). The action icons evaluated to JS undefined and were string-concatenated into button innerHTML => literal 'undefined5s', 'undefinedPlay', 'undefinedDownload this chapter' text. The action icon keys were only added later at 9b4048cf. The operator's screenshot matches that deployment. (b) Live production currently runs HEAD 9b2ff636 (deploy 83bbc88f) where the keys DO resolve \u2014 rendered /read shows no literal 'undefined' text. HOWEVER a real Chromium render (both schemes) revealed the fix was incomplete: every inline SVG injected into .btn / .btn.ghost / .card elements is UNSIZED in CSS (only nav.bottom a svg and .iconbtn svg have width/height), so the download icon renders full-width (~290px tall) and the 'Reading complete' check icon renders ~180px tall, ballooning the cards. (c) Prior session's 'verification' grepped only for absence of emoji/toggle/animation strings \u2014 never rendered a page; the Part D redesign claim was therefore false-positive. Screenshots of the actual current render saved as evidence.",
-        "commit": ""
+        "commit": "b8e55f1"
       },
       {
         "id": "task-c02",
         "title": "Fix the broken icon rendering everywhere it appears (not just the audio player). Verify by rendering real pages \u2014 zero literal 'undefined' text anywhere in the UI.",
-        "status": "pending",
-        "notes": "",
+        "status": "in_progress",
+        "notes": "Fix implemented (pending live verification): (1) ICONS references audited app-wide \u2014 every FH.ICONS key used across all pages (play/pause/back5/fwd5/download/check/bookmark + 6 nav keys) IS defined in app.v4.js; the historical 'undefined' came from deploy f27cc951 shipping read.html icon refs before the icon keys existed in app.js. (2) The REAL still-live breakage found by rendering: action SVGs were unsized outside nav/.iconbtn, rendering at the 300x150 intrinsic default (download icon ~290px, completion check ~180px, ballooning cards). Fixed with explicit CSS sizing: .btn/.btn.ghost svg 16px, .check svg 17px, plus audio-player-specific sizes (play 20px, skips 16px). (3) Assets renamed app.v3->app.v4 (cache-bust convention) so no client/CDN/SW can serve a stale css/js pair; all 10 pages repointed; sw.js bumped fh50-v5 with v4 precache; _headers updated. This guarantees no visitor can again hit the mismatched html/js pair that produced 'undefined' labels.",
         "commit": ""
       },
       {
         "id": "task-c03",
         "title": "Update DESIGN_SYSTEM.md with the corrected, actually-intended simplified token set (muted neutral surfaces, ONE restrained MUTED-BLUE accent, clear typographic hierarchy, minimal borders/shadows).",
-        "status": "pending",
-        "notes": "",
+        "status": "done",
+        "notes": "DESIGN_SYSTEM.md rewritten as v4: accent changed from the prior green (#2f6a4f/#7ab894) to the specified ONE RESTRAINED MUTED BLUE (#3a5f8a light / #7f9fc4 dark; accent-text #2d4e74/#9db8d6). Muted neutral surfaces, typographic hierarchy, minimal borders/shadows retained. Added the missing 'every icon is sized by CSS' rule and the full audio-player component contract (filled primary play, ghost secondary downloads, segmented chapter picker with subtle accent-fill active state).",
         "commit": ""
       },
       {
         "id": "task-c04",
         "title": "Rebuild the audio player component per Part 2 \u2014 visual hierarchy between primary/secondary controls, properly rendering sized icons, calmer segmented chapter-selector styling (no high-contrast outline).",
-        "status": "pending",
-        "notes": "",
+        "status": "in_progress",
+        "notes": "Audio player rebuilt in read.html + app.v4.css: Play/Pause is now a single 46px filled-accent circular PRIMARY button (secondary \u00b15s are smaller quiet circular iconbtns, so hierarchy is unambiguous \u2014 previously all three were identical pills); download buttons are ghost secondary with properly sized icons; chapter picker restyled from bordered pills-with-bright-outline to a calm segmented control (active = subtle --accent-soft-2 fill + accent text, no outline, class-based active state replacing the old inline borderColor swap); seek slider track now fills with the accent up to the thumb via a --fill gradient.",
         "commit": ""
       },
       {
         "id": "task-c05",
         "title": "Apply the corrected design system across Home, Notes, Progress, Leaderboard, Profile, admin, and auth screens.",
-        "status": "pending",
-        "notes": "",
+        "status": "in_progress",
+        "notes": "App-wide application is via the shared v4 stylesheet consumed by all 10 pages (Home/Read/Notes/Progress/Leaderboard/Profile/admin/login/signup/verify): every component (cards, buttons, pills, tabs, dayrows, lrows, badges, stats, avatar picker) now renders on the neutral-surfaces/one-muted-blue-accent v4 tokens with no per-page markup change needed beyond the read.html player rebuild. Awaiting live visual verification.",
         "commit": ""
       },
       {
@@ -832,6 +832,10 @@
       {
         "date_utc": "2026-09-09",
         "summary": "Session start (correction). Pulled repo HEAD 9b2ff636; read BUILD_STATE.json incl. revert_and_v2_redesign. Confirmed live production == HEAD via CF deployments API + byte-diff of live app.v3.js/css vs repo (IDENTICAL). Reproduced the audio-player state with a REAL headless-Chromium render (owner session minted in D1): no literal 'undefined' text at HEAD, but the action SVG icons are completely unsized (download icon renders ~290px, completion check ~180px) \u2014 the 'fixed' player is still visually broken. Root-cause of the operator-reported 'undefined' labels confirmed in git history (see task-c01 notes). Seeding correction task list and pushing before other work per protocol."
+      },
+      {
+        "date_utc": "2026-09-09",
+        "summary": "task-c01 done (root cause + render reproduction, seed pushed b8e55f1). task-c02..c05 implemented: v3->v4 cache-busted asset rename + SW fh50-v5; muted-blue v4 token set; DESIGN_SYSTEM.md v4; audio player rebuilt (primary-filled play, ghost downloads, segmented chapter picker, accent-filled seek track); app-wide icon-sizing CSS fixing the unsized-SVG ballooning."
       }
     ]
   }

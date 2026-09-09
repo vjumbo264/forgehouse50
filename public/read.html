@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Read</title>
-<link rel="stylesheet" href="/app.v3.css">
+<link rel="stylesheet" href="/app.v4.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -35,28 +35,28 @@
   </div>
   <div class="card flat" id="audio-card">
     <div class="between small muted"><span>Audio</span><span id="audio-note">Checking availability…</span></div>
-    <div class="row" style="margin-top:8px">
+    <div class="row player-row" style="margin-top:10px">
       <button class="iconbtn" id="audio-back" disabled title="Back 5 seconds" aria-label="Back 5 seconds"></button>
-      <button class="iconbtn" id="audio-play" disabled></button>
+      <button id="audio-play" disabled aria-label="Play"></button>
       <button class="iconbtn" id="audio-fwd" disabled title="Forward 5 seconds" aria-label="Forward 5 seconds"></button>
     </div>
-    <div class="row" style="margin-top:10px;gap:8px">
+    <div class="row" style="margin-top:12px;gap:8px">
       <span class="small muted" id="audio-cur" style="min-width:36px;text-align:right">0:00</span>
       <input type="range" id="audio-seek" min="0" max="1000" value="0" step="1" disabled
-             style="flex:1;margin:0;padding:0;height:auto;border:0;background:transparent" aria-label="Seek narration">
+             style="flex:1;margin:0;padding:0;height:auto;border:0" aria-label="Seek narration">
       <span class="small muted" id="audio-dur" style="min-width:36px">0:00</span>
     </div>
-    <div class="row" style="margin-top:8px;flex-wrap:wrap">
+    <div style="display:none" id="audio-chapters" aria-label="Choose chapter"></div>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap">
       <button class="btn ghost small" id="audio-dl" style="display:none;width:auto">Download this chapter</button>
       <button class="btn ghost small" id="audio-dl-all" style="display:none;width:auto">Download all for today</button>
       <button class="btn ghost small" id="audio-done" style="display:none;width:auto">Mark audio complete</button>
     </div>
-    <div class="row" style="margin-top:8px;display:none" id="audio-chapters"></div>
   </div>
   <div id="mark-area"></div>
   <div class="card flat small muted" id="attrib"></div>
 </div>
-<script src="/app.v3.js"></script>
+<script src="/app.v4.js"></script>
 <script>
 (async () => {
   const me = await FH.requireAuth();
@@ -253,7 +253,10 @@
   }
   function syncSeekUi() {
     const d = audioEl.duration;
-    if (!seeking) seekEl.value = d ? Math.round(1000 * audioEl.currentTime / d) : 0;
+    const v = d && isFinite(d) ? Math.round(1000 * audioEl.currentTime / d) : 0;
+    if (!seeking) seekEl.value = v;
+    // Filled accent portion of the scrubber track (see app.v4.css gradient).
+    seekEl.style.setProperty('--fill', (v / 10) + '%');
     curEl.textContent = fmtSecs(audioEl.currentTime);
     durEl.textContent = fmtSecs(d);
   }
@@ -264,9 +267,9 @@
     seekEl.disabled = !has;
     if (has) {
       noteEl.textContent = `${audioQueue.length} chapter${audioQueue.length > 1 ? 's' : ''} narrated (VerseWell)`;
-      chapRow.style.display = audioQueue.length > 1 ? 'flex' : 'none';
+      chapRow.style.display = audioQueue.length > 1 ? 'inline-flex' : 'none';
       chapRow.innerHTML = audioQueue.map((a, i) =>
-        `<button class="iconbtn small" data-ai="${i}" style="font-size:12px">Ch ${a.chapter}</button>`).join('');
+        `<button type="button" data-ai="${i}" class="${i === (audioIdx < 0 ? 0 : audioIdx) ? 'active' : ''}" aria-pressed="${i === (audioIdx < 0 ? 0 : audioIdx)}">Ch ${a.chapter}</button>`).join('');
       // Downloads are gated on real availability — only chapters in audioQueue exist.
       dlBtn.style.display = '';
       dlAllBtn.style.display = audioQueue.length > 1 ? '' : 'none';
@@ -314,8 +317,10 @@
     audioEl.play().catch(() => {});
     playBtn.innerHTML = ICON_PAUSE;
     noteEl.textContent = `Playing ${audioQueue[i].book} ${audioQueue[i].chapter}`;
-    chapRow.querySelectorAll('button').forEach((b, j) =>
-      b.style.borderColor = j === i ? 'var(--accent)' : 'var(--border-strong)');
+    chapRow.querySelectorAll('button').forEach((b, j) => {
+      b.classList.toggle('active', j === i);
+      b.setAttribute('aria-pressed', j === i ? 'true' : 'false');
+    });
   }
 
   playBtn.onclick = () => {
