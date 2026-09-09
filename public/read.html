@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Read</title>
-<link rel="stylesheet" href="/app.v6.css">
+<link rel="stylesheet" href="/app.v7.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -60,7 +60,7 @@
   <div id="day-head" hidden></div>
   <div class="card flat small muted" id="attrib" hidden></div>
 </div>
-<script src="/app.v6.js"></script>
+<script src="/app.v7.js"></script>
 <script>
 (async () => {
   const me = await FH.requireAuth();
@@ -298,7 +298,7 @@
     const d = audioEl.duration;
     const v = d && isFinite(d) ? Math.round(1000 * audioEl.currentTime / d) : 0;
     if (!seeking) seekEl.value = v;
-    // Filled accent portion of the scrubber track (see app.v6.css gradient).
+    // Filled accent portion of the scrubber track (see app.v7.css gradient).
     seekEl.style.setProperty('--fill', (v / 10) + '%');
     curEl.textContent = fmtSecs(audioEl.currentTime);
     durEl.textContent = fmtSecs(d);

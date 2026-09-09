@@ -125,7 +125,23 @@ FH.initTheme();
 /* PWA: register the service worker (app-shell cache + installability).
    Registered from app.js so every page opts in; failures are non-fatal. */
 if ('serviceWorker' in navigator) {
+  // cache_fix_v1 (task-f03): a newly deployed service worker takes over
+  // immediately (skipWaiting + clients.claim in sw.js); when it does, reload
+  // the open tab ONCE so every visitor always runs the current app shell —
+  // no more stale UI after a deploy. The hadController guard skips the very
+  // first install (no prior controller => nothing to refresh).
+  const hadController = !!navigator.serviceWorker.controller;
+  let swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || swRefreshing) return;
+    swRefreshing = true;
+    location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => { /* offline-capable enhancement only */ });
+    // updateViaCache:'none' + an explicit update() on every load: the browser
+    // always re-checks sw.js for a new deploy instead of trusting its cache.
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then((reg) => { reg.update().catch(() => {}); })
+      .catch(() => { /* offline-capable enhancement only */ });
   });
 }

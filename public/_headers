@@ -1,16 +1,16 @@
 # ForgeHouse 50 — cache policy (Cloudflare Pages _headers, deployed verbatim)
 #
-# Strategy (revert_and_v2_redesign / task-r05):
+# Strategy (cache_player_profile_fixes_v1 / task-f03 — revised):
 #   * HTML entry points + service worker + manifest: NO caching — a visitor
 #     always fetches the latest document, which references the current
-#     versioned asset filenames. This is what guarantees a redeploy is
-#     immediately visible without a hard refresh.
+#     versioned asset filenames.
 #   * Versioned app assets (app.vN.css / app.vN.js): the basename carries a
 #     deploy version, so any content change ships under a NEW URL — safe to
 #     cache immutably forever at both browser and CDN layers.
-#   * Icons / avatars / branding images: content-addressed by convention
-#     (files are only ever replaced together with a service-worker VERSION
-#     bump + new deploy), cached immutably.
+#   * Icons / branding images: STABLE URLs whose CONTENT changes across
+#     deploys (new app icon) — they must revalidate. Marking them immutable
+#     was the bug that kept the OLD PWA icon on users' devices.
+#   * Avatars: content never changes at a given URL — immutable is correct.
 
 # HTML entry points — always revalidate
 /*.html
@@ -33,14 +33,28 @@
 /app.v5.js
   Cache-Control: public, max-age=31536000, immutable
 
-# Images — immutable per deploy (SW cache names version them too)
-/icons/*
+/app.v6.css
   Cache-Control: public, max-age=31536000, immutable
 
-/avatars/*
+/app.v6.js
   Cache-Control: public, max-age=31536000, immutable
+
+/app.v7.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/app.v7.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# Icons / branding — revalidate every load (content changes at stable URLs;
+# the service worker also fetches these network-first)
+/icons/*
+  Cache-Control: no-cache, must-revalidate
 
 /branding/*
+  Cache-Control: no-cache, must-revalidate
+
+# Avatars — immutable per URL (a given avatar-N N.png never changes content)
+/avatars/*
   Cache-Control: public, max-age=31536000, immutable
 
 # Audio streams through the proxy — browser range fetches must be cacheable
