@@ -1,13 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Admin</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<!-- Theme is automatic (prefers-color-scheme). This tag is only the browser-chrome
-     colour and is kept in sync by FH.initTheme(); there is no theme setting. -->
-<meta name="theme-color" content="#f4f7fc">
+<meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -20,70 +18,115 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-
-  <!-- Non-admin / unauthenticated notice lands here -->
   <div id="gate"></div>
-
-  <main id="admin-main" hidden>
-    <!-- Programme-wide KPIs -->
-    <section class="rise" aria-labelledby="overview-h">
-      <h2 id="overview-h">Programme overview</h2>
-      <div id="stats"></div>
-    </section>
-
-    <!-- Participant roster + per-member actions -->
-    <section class="rise rise-1" aria-labelledby="participants-h">
-      <div class="between" style="margin-top:var(--s-6)">
-        <h2 id="participants-h" style="margin:0">Participants</h2>
-        <span class="pill gray" id="participant-count"></span>
-      </div>
-      <div class="field" style="margin-top:var(--s-3)">
-        <label for="participant-search" class="sr-only">Filter participants</label>
-        <input type="search" id="participant-search" class="input-sm"
-               placeholder="Filter by name or email" autocapitalize="off" spellcheck="false">
-      </div>
-      <div id="participants"></div>
-    </section>
-
-    <!-- Reading-assignment editor -->
-    <section class="rise rise-2" aria-labelledby="assignment-h">
-      <h2 id="assignment-h" style="margin-top:var(--s-6)">Reading assignment</h2>
-      <div class="card">
-        <p class="small muted" style="margin-top:0">
-          Replace the chapters mapped to one of the 50 reading days. This overwrites
-          that day's assignment for every participant.</p>
-
-        <div class="control-row">
-          <div style="flex:0 0 84px">
-            <label for="as-day">Day</label>
-            <input id="as-day" type="number" min="1" max="50" placeholder="1" class="input-sm">
-          </div>
-          <div style="flex:1 1 150px">
-            <label for="as-book">Book</label>
-            <input id="as-book" type="text" placeholder="Matthew" class="input-sm">
-          </div>
-          <div style="flex:0 0 84px">
-            <label for="as-cs">From ch.</label>
-            <input id="as-cs" type="number" min="1" placeholder="1" class="input-sm">
-          </div>
-          <div style="flex:0 0 84px">
-            <label for="as-ce">To ch.</label>
-            <input id="as-ce" type="number" min="1" placeholder="6" class="input-sm">
-          </div>
-        </div>
-
-        <div class="error" id="as-err" role="alert"></div>
-        <div class="ok-msg" id="as-ok" role="status"></div>
-        <button class="btn" id="as-save" style="margin-top:var(--s-3)">Replace day assignment</button>
-      </div>
-    </section>
-
-    <p class="tiny muted center" style="margin:var(--s-6) 0 0">
-      Participants' note contents are private and are never shown here — only
-      aggregate counts.</p>
-  </main>
+  <div id="stats"></div>
+  <h2>Participants</h2>
+  <div id="participants"></div>
+  <h2>Manage reading assignment</h2>
+  <div class="card">
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <input id="as-day" type="number" min="1" max="50" placeholder="Day" style="width:70px">
+      <input id="as-book" type="text" placeholder="Book (e.g. Matthew)" style="flex:1;min-width:120px">
+      <input id="as-cs" type="number" min="1" placeholder="From" style="width:70px">
+      <input id="as-ce" type="number" min="1" placeholder="To" style="width:70px">
+    </div>
+    <div class="error" id="as-err"></div>
+    <button class="btn" id="as-save" style="margin-top:10px">Replace day assignment</button>
+  </div>
 </div>
 <script src="/app.js"></script>
-<script src="/js/admin.js"></script>
+<script>
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+  document.getElementById('top').innerHTML = FH.topbar('Admin Dashboard');
+  if (me.role !== 'admin') {
+    document.getElementById('gate').innerHTML = '<div class="card error">Admin access required.</div>';
+    return;
+  }
+
+  const { data: s } = await FH.api('/api/admin/stats');
+  if (s) document.getElementById('stats').innerHTML = `
+    <div class="grid2">
+      <div class="stat"><div class="v">${s.total_participants}</div><div class="l">Participants</div></div>
+      <div class="stat"><div class="v">${s.active_participants}</div><div class="l">Active</div></div>
+      <div class="stat"><div class="v">${s.completed_today}</div><div class="l">Read today</div></div>
+      <div class="stat"><div class="v">${s.average_completion_percent}%</div><div class="l">Avg completion</div></div>
+      <div class="stat"><div class="v">${s.total_chapters_completed}</div><div class="l">Chapters read</div></div>
+      <div class="stat"><div class="v">${s.users_behind_schedule}</div><div class="l">Behind</div></div>
+    </div>`;
+
+  const { data: p } = await FH.api('/api/admin/participants');
+  document.getElementById('participants').innerHTML = (p?.participants || []).map(u => `
+    <div class="card flat" style="padding:12px 14px">
+      <div class="between">
+        <div class="row" style="gap:10px;align-items:center">${FH.avatarHtml(u.avatar_id, u.name, 34)}<div><strong>${FH.esc(u.name || 'Member')}</strong> <span class="small muted">${FH.esc(u.email)}</span></div></div>
+        <span class="pill">${u.points} pts</span>
+      </div>
+      <div class="small muted" style="margin-top:4px">${u.days_completed}/50 days · ${u.chapters} ch · ${FH.fmtTime(u.reading_seconds)} · ${u.notes_count} notes</div>
+      <details style="margin-top:8px">
+        <summary class="small muted">Admin actions</summary>
+        <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">
+          <input type="number" placeholder="+/− pts" id="pts-${u.id}" style="width:80px">
+          <input type="text" placeholder="Reason (required)" id="rsn-${u.id}" style="flex:1;min-width:120px">
+          <button class="btn ghost small" data-act="points" data-uid="${u.id}">Apply points</button>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
+          <input type="number" min="1" max="50" placeholder="Day" id="day-${u.id}" style="width:70px">
+          <button class="btn ghost small" data-act="complete" data-uid="${u.id}">Mark complete</button>
+          <button class="btn ghost small" data-act="uncomplete" data-uid="${u.id}">Mark incomplete</button>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
+          <select id="bdg-${u.id}" style="flex:1;min-width:150px">
+            <option value="streak-7">7-Day Streak</option><option value="streak-14">14-Day Streak</option>
+            <option value="streak-25">25-Day Streak</option><option value="finisher-50">50-Day Finisher</option>
+            <option value="chapters-100">100 Chapters</option><option value="chapters-200">200 Chapters</option>
+            <option value="chapters-260">260 Chapters</option><option value="audio-50">50 Audio Sessions</option>
+            <option value="observations-25">25 Observations</option><option value="questions-25">25 Questions</option>
+          </select>
+          <button class="btn ghost small" data-act="badge-grant" data-uid="${u.id}">Grant</button>
+          <button class="btn ghost small" data-act="badge-revoke" data-uid="${u.id}">Revoke</button>
+        </div>
+        <div class="error" id="err-${u.id}"></div>
+      </details>
+    </div>`).join('') || '<div class="card muted small center">No participants yet.</div>';
+
+  document.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', async () => {
+    const uid = btn.dataset.uid, act = btn.dataset.act;
+    const err = document.getElementById('err-' + uid); err.textContent = '';
+    btn.disabled = true;
+    let res;
+    if (act === 'points') {
+      res = await FH.api('/api/admin/adjust', { method: 'POST', body: { action: 'points', user_id: uid,
+        points: parseInt(document.getElementById('pts-' + uid).value || '0', 10),
+        reason: document.getElementById('rsn-' + uid).value } });
+    } else if (act === 'complete' || act === 'uncomplete') {
+      res = await FH.api('/api/admin/adjust', { method: 'POST', body: { action: 'completion', user_id: uid,
+        day_number: parseInt(document.getElementById('day-' + uid).value || '0', 10), completed: act === 'complete' } });
+    } else {
+      res = await FH.api('/api/admin/manage', { method: 'POST', body: { action: 'badge', user_id: uid,
+        badge_id: document.getElementById('bdg-' + uid).value, grant: act === 'badge-grant' } });
+    }
+    btn.disabled = false;
+    if (!res.ok) { err.textContent = res.data?.error || 'Action failed'; return; }
+    location.reload();
+  }));
+
+  document.getElementById('as-save').addEventListener('click', async () => {
+    const err = document.getElementById('as-err'); err.textContent = '';
+    const btn = document.getElementById('as-save'); btn.disabled = true;
+    const res = await FH.api('/api/admin/manage', { method: 'POST', body: { action: 'assignment',
+      day_number: parseInt(document.getElementById('as-day').value || '0', 10),
+      book: document.getElementById('as-book').value,
+      chapter_start: parseInt(document.getElementById('as-cs').value || '0', 10),
+      chapter_end: parseInt(document.getElementById('as-ce').value || '0', 10) } });
+    btn.disabled = false;
+    if (!res.ok) { err.textContent = res.data?.error || 'Save failed'; return; }
+    err.textContent = ''; document.getElementById('as-save').textContent = 'Saved ✓';
+    setTimeout(() => { document.getElementById('as-save').textContent = 'Replace day assignment'; }, 2000);
+  });
+})();
+</script>
 </body>
+<script>FH.nav('profile')</script>
 </html>

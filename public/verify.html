@@ -1,13 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Verify email</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<!-- Theme is automatic (prefers-color-scheme). This tag is only the browser-chrome
-     colour and is kept in sync by FH.initTheme(); there is no theme setting. -->
-<meta name="theme-color" content="#f4f7fc">
+<meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -16,42 +14,47 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ForgeHouse 50">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<style>body{padding-bottom:0}</style>
 </head>
-<body class="auth">
-<main class="auth-wrap">
-  <div id="head"></div>
-  <section class="auth-card rise">
-    <h1 style="margin-bottom:var(--s-2)">Check your email</h1>
-    <p class="small muted" style="margin-bottom:var(--s-5)">
-      We sent a 6-digit verification code to
-      <strong class="verify-email" id="em"></strong>. It expires in 10 minutes.</p>
-
-    <form id="verify-form" novalidate>
-      <div class="field">
-        <label for="code">Verification code</label>
-        <input type="text" id="code" name="code" class="otp-input" inputmode="numeric"
-               pattern="\d{6}" maxlength="6" required placeholder="••••••"
-               autocomplete="one-time-code" autocapitalize="off" spellcheck="false"
-               aria-describedby="code-help">
-        <p class="tiny muted" id="code-help" style="margin:8px 0 0;text-align:center">
-          Six digits, from the email we just sent.</p>
-      </div>
-
-      <div class="error" id="err" role="alert"></div>
-      <div class="ok-msg" id="ok" role="status"></div>
-      <button class="btn" type="submit" id="submit-btn">Verify &amp; continue</button>
+<body>
+<div class="wrap" style="max-width:440px;padding-top:48px">
+  <div class="center" style="margin-bottom:22px">
+    <div class="brand" style="font-size:26px">ForgeHouse <span>50</span></div>
+    <div class="tagline">Read the New Testament in 50 Reading Days</div>
+  </div>
+  <div class="card">
+    <h1 style="margin-top:0">Check your email</h1>
+    <p class="small muted">We sent a 6-digit verification code to <strong id="em"></strong>. It expires in 10 minutes.</p>
+    <form id="f">
+      <label>Verification code</label>
+      <input type="text" id="code" class="otp-input" inputmode="numeric" pattern="\d{6}" maxlength="6" required placeholder="••••••" autocomplete="one-time-code">
+      <div class="error" id="err"></div>
+      <button class="btn" type="submit">Verify &amp; continue</button>
     </form>
-
-    <p class="auth-foot">
-      Didn't get it?
-      <a href="#" id="resend">Send a new code</a>
-    </p>
-    <p class="auth-foot" style="margin-top:var(--s-2)">
-      Wrong address? <a href="/signup.html">Start again</a>
-    </p>
-  </section>
-</main>
+    <p class="small muted center" style="margin:14px 0 0">Didn't get it? <a href="#" id="resend">Resend code</a></p>
+  </div>
+</div>
 <script src="/app.js"></script>
-<script src="/js/verify.js"></script>
+<script>
+const email = new URLSearchParams(location.search).get('email') || '';
+document.getElementById('em').textContent = email || 'your email';
+if (!email) location.href = '/signup.html';
+
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const err = document.getElementById('err'); err.textContent = '';
+  const btn = e.target.querySelector('button'); btn.disabled = true;
+  const { ok, data } = await FH.api('/api/auth/verify', { method: 'POST', body: {
+    email, code: document.getElementById('code').value.trim() } });
+  btn.disabled = false;
+  if (ok) { location.href = '/'; return; }
+  err.textContent = data?.error || 'Verification failed';
+});
+document.getElementById('resend').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await FH.api('/api/auth/resend', { method: 'POST', body: { email } });
+  e.target.textContent = 'Sent — check your inbox';
+});
+</script>
 </body>
 </html>

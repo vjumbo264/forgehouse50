@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Home</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#f4f7fc">
+<meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -18,17 +18,76 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-  <main id="home-main">
-    <section id="today-banner" aria-label="Today"></section>
-    <section id="cta"></section>
-    <section id="progress-card" aria-label="Programme progress"></section>
-    <section id="stats" aria-label="Your statistics"></section>
-    <section id="next-day"></section>
-    <section id="whatsapp" aria-label="Community"></section>
-  </main>
+  <div id="today-banner"></div>
+  <div id="stats"></div>
+  <div id="progress-card"></div>
+  <div id="cta"></div>
+  <div id="next-day"></div>
+  <div id="whatsapp"></div>
 </div>
 <script src="/app.js"></script>
-<script>FH.nav('home');</script>
-<script src="/js/home.js"></script>
+<script>
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+  document.getElementById('top').innerHTML = FH.topbar('Read the New Testament in 50 Reading Days');
+
+  const { data } = await FH.api('/api/today');
+  if (!data) return;
+  const s = data.stats;
+
+  // Today banner — lazy per-status builders (NOT a pre-built object: an object
+  // literal would eagerly evaluate every branch, and the `reading` branch
+  // dereferences data.today which is null on Tue/Fri/rest days -> TypeError
+  // that aborts the whole IIFE and renders a completely empty homepage).
+  const banners = {
+    reading: () => `<div class="card" style="border-color:var(--accent)"><span class="pill">Reading Day ${data.today.day_number}</span>
+      <h2 style="margin:10px 0 4px">${FH.esc(data.today.assignment.summary)}</h2>
+      <div class="muted small">${data.today.assignment.chapter_count} chapters · about ${data.today.assignment.est_minutes} min ${data.today.completed ? '· <span class="check">Completed ✓</span>' : ''}</div></div>`,
+    tuesday_prayer: () => `<div class="card"><span class="pill gray">Tuesday</span><h2 style="margin:10px 0 4px">Fasting &amp; Prayer</h2><div class="muted small">No reading today — see you on the next reading day.</div></div>`,
+    friday_prayer_study: () => `<div class="card"><span class="pill gray">Friday</span><h2 style="margin:10px 0 4px">Fasting &amp; Prayer + Bible Study</h2><div class="muted small">No reading today — see you on the next reading day.</div></div>`,
+    rest: () => `<div class="card"><span class="pill gray">Rest day</span><h2 style="margin:10px 0 4px">No reading scheduled today</h2></div>`,
+  };
+  const bannerFor = banners[data.status];
+  document.getElementById('today-banner').innerHTML = bannerFor ? bannerFor() : '';
+
+  // Stats grid
+  document.getElementById('stats').innerHTML = `<div class="grid3">
+    <div class="stat"><div class="v">${s.chapters}</div><div class="l">Chapters</div></div>
+    <div class="stat"><div class="v">${Math.round(s.chapters / 260 * 100)}%</div><div class="l">Complete</div></div>
+    <div class="stat"><div class="v">${s.streak_current}</div><div class="l">Streak</div></div>
+    <div class="stat"><div class="v">${FH.fmtTime(s.reading_seconds)}</div><div class="l">Reading</div></div>
+    <div class="stat"><div class="v">${s.notes_total}</div><div class="l">Notes</div></div>
+    <div class="stat"><div class="v">${s.questions}</div><div class="l">Questions</div></div>
+  </div>`;
+
+  // Programme progress bar
+  const pct = Math.min(100, Math.round(s.days_completed / 50 * 100));
+  document.getElementById('progress-card').innerHTML = `<div class="card flat">
+    <div class="between small muted"><span>Programme progress</span><span>${s.days_completed} / 50 days</span></div>
+    <div class="bar" style="margin-top:8px"><i style="width:${pct}%"></i></div></div>`;
+
+  // CTA
+  const ctaDay = data.is_reading_day && data.today ? data.today.day_number : (data.next_reading_day?.day_number || 1);
+  const ctaLabel = data.is_reading_day && data.today && !data.today.completed ? 'Continue Reading' : (data.is_reading_day ? 'Review Today\u2019s Reading' : 'Read Next Assignment');
+  document.getElementById('cta').innerHTML = `<a class="btn" href="/read.html?day=${ctaDay}">${ctaLabel} →</a>`;
+
+  // Next day
+  if (data.next_reading_day) {
+    document.getElementById('next-day').innerHTML = `<div class="card flat small">
+      <span class="muted">Next reading day:</span> <strong>Day ${data.next_reading_day.day_number}</strong> · ${data.next_reading_day.date}
+      · ${FH.esc(data.next_reading_day.assignment.summary)}</div>`;
+  }
+
+  // WhatsApp
+  const cfg = await FH.api('/api/config');
+  const groupUrl = cfg.data?.whatsapp_group_url || '';
+  const shareText = encodeURIComponent('Join me in ForgeHouse 50 — read the whole New Testament in 50 reading days! ' + location.origin);
+  document.getElementById('whatsapp').innerHTML = `<div class="row" style="margin-top:6px">
+    ${groupUrl ? `<a class="btn ghost" style="flex:1" href="${FH.esc(groupUrl)}" target="_blank" rel="noopener">Join ForgeHouse WhatsApp Group</a>` : ''}
+    <a class="btn ghost small" href="https://wa.me/?text=${shareText}" target="_blank" rel="noopener">Share</a></div>`;
+})();
+</script>
 </body>
+<script>FH.nav('home')</script>
 </html>

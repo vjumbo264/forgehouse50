@@ -684,19 +684,19 @@
   "scope": "Revert the abandoned ui_overhaul_v1 (Duolingo-expressive redesign) frontend to the exact pre-overhaul state (commit 1edc454, immediately after pwa_and_avatars_v1 completed), then: audio seek (scrubber + 5s skip) and audio download (single chapter + all-for-today), proper static-asset cache busting + cache headers, a simplified calm 'Claude-like' redesign (auto prefers-color-scheme theming with NO manual toggle, zero emojis, single restrained accent, minimal motion, clearly-clickable notes button, lean DESIGN_SYSTEM.md), a fixed-height clipped chapter reading pane with always-visible Prev/Next controls, and PWA icon regeneration with white-corner artifacts removed.",
   "started_utc": "2026-09-09",
   "revert_target_commit": "1edc454e",
-  "revert_target_commit_full": null,
+  "revert_target_commit_full": "1edc45415bf4174655f059e0e31c966bb3972050",
   "tasks": [
    {
     "id": "task-r01",
     "title": "Inspect full git history, identify exact pre-overhaul commit; append revert_and_v2_redesign task list; commit+push seed.",
-    "status": "in_progress",
-    "notes": "Pre-overhaul commit identified precisely: 1edc454 ('task-w10/w11: live verification passed + pwa_and_avatars_v1.work_complete=true'). Verified: BUILD_STATE.json at 1edc454 has pwa_and_avatars_v1.work_complete=true and NO ui_overhaul_v1 key; the very next commit (84a08dc is BEFORE 1edc454; first overhaul batch is 0e555d8/92853b7 at 2026-09-08T23:12:50Z immediately after 1edc454). Diff 1edc454..HEAD touches ONLY frontend files (public/*.html, public/app.css, public/app.js, new public/js/*.js, DESIGN_SYSTEM.md, tools/PUSH_TO_GITHUB.html) + BUILD_STATE.json history + commit 18fd609 'Add files via upload' (operator UI tweaks to app.css fn-marker + read.html audio-card position — also part of the UI layer, reverted per Part A; audio-seek/download features re-implemented properly in r03/r04). Nothing unrelated interleaved -> clean tree revert of frontend to 1edc454 is correct. DESIGN_SYSTEM.md did NOT exist at 1edc454 (created by the overhaul) -> deleted on revert, rewritten lean in r06."
+    "status": "done",
+    "notes": "Pre-overhaul commit identified precisely: 1edc454 ('task-w10/w11: live verification passed + pwa_and_avatars_v1.work_complete=true'). Verified: BUILD_STATE.json at 1edc454 has pwa_and_avatars_v1.work_complete=true and NO ui_overhaul_v1 key; the very next commit (84a08dc is BEFORE 1edc454; first overhaul batch is 0e555d8/92853b7 at 2026-09-08T23:12:50Z immediately after 1edc454). Diff 1edc454..HEAD touches ONLY frontend files (public/*.html, public/app.css, public/app.js, new public/js/*.js, DESIGN_SYSTEM.md, tools/PUSH_TO_GITHUB.html) + BUILD_STATE.json history + commit 18fd609 'Add files via upload' (operator UI tweaks to app.css fn-marker + read.html audio-card position — also part of the UI layer, reverted per Part A; audio-seek/download features re-implemented properly in r03/r04). Nothing unrelated interleaved -> clean tree revert of frontend to 1edc454 is correct. DESIGN_SYSTEM.md did NOT exist at 1edc454 (created by the overhaul) -> deleted on revert, rewritten lean in r06. Seed commit c6ee4e1 pushed to origin/main and verified (push output 18fd609..c6ee4e1)."
    },
    {
     "id": "task-r02",
     "title": "Revert frontend to pre-overhaul state (1edc454) per Part A; verify live; clean labeled revert commit.",
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Revert staged: working tree now byte-identical to 1edc454 everywhere except BUILD_STATE.json (verified via git diff --cached 1edc454). Reverted: all 10 public/*.html pages, app.css, app.js; deleted overhaul-added public/js/*.js (10 page scripts), DESIGN_SYSTEM.md (did not exist pre-overhaul), tools/PUSH_TO_GITHUB.html (overhaul-session tooling). Also reverted operator commit 18fd609 (fn-marker styling + audio-card reposition — UI-layer changes from the overhaul window, reverted per Part A; audio features re-implemented properly in r03/r04)."
    },
    {
     "id": "task-r03",

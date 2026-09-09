@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Progress</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#f4f7fc">
+<meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -18,17 +18,44 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-  <main>
-    <section id="totals" aria-label="Totals"></section>
-    <div class="section-title">
-      <h2>Reading Days 1–50</h2>
-      <span class="small muted" id="days-note"></span>
-    </div>
-    <section id="days" aria-label="All reading days"></section>
-  </main>
+  <div id="totals"></div>
+  <h2>Reading Days 1–50</h2>
+  <div id="days"></div>
 </div>
 <script src="/app.js"></script>
-<script>FH.nav('progress');</script>
-<script src="/js/progress.js"></script>
+<script>
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+  document.getElementById('top').innerHTML = FH.topbar('Your Progress');
+
+  const { data } = await FH.api('/api/progress');
+  if (!data) return;
+  const t = data.totals;
+
+  document.getElementById('totals').innerHTML = `
+    <div class="card">
+      <div class="between small muted"><span>Programme</span><span>${t.reading_days_completed} / 50 days · ${t.percent_completed}%</span></div>
+      <div class="bar" style="margin:8px 0 14px"><i style="width:${Math.min(100, t.percent_completed)}%"></i></div>
+      <div class="grid3">
+        <div class="stat"><div class="v">${t.chapters_completed}</div><div class="l">Chapters</div></div>
+        <div class="stat"><div class="v">${t.streak_current}</div><div class="l">Streak</div></div>
+        <div class="stat"><div class="v">${t.streak_longest}</div><div class="l">Best streak</div></div>
+      </div>
+      <div class="small muted center" style="margin-top:10px">Total reading time: ${FH.fmtTime(t.reading_seconds_total)}</div>
+    </div>`;
+
+  document.getElementById('days').innerHTML = data.days.map(d => `
+    <a class="dayrow ${d.completed ? 'done' : ''}" href="/read.html?day=${d.day_number}" style="color:inherit">
+      <div class="num">${d.day_number}</div>
+      <div class="meta">
+        <div style="font-weight:600">${FH.esc(d.assignment)}</div>
+        <div class="small muted">${d.date} · ${d.chapter_count} ch${d.notes_count ? ' · ' + d.notes_count + ' note' + (d.notes_count > 1 ? 's' : '') : ''}${d.reading_seconds ? ' · ' + FH.fmtTime(d.reading_seconds) : ''}</div>
+      </div>
+      <div class="${d.completed ? 'check' : 'muted'}">${d.completed ? '✓' : '·'}</div>
+    </a>`).join('');
+})();
+</script>
 </body>
+<script>FH.nav('progress')</script>
 </html>
