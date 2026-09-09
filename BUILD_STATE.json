@@ -957,5 +957,63 @@
    }
   ],
   "asset_versions": "app.v6 -> app.v7 (all 10 HTML pages + sw precache); service worker fh50-v8 -> fh50-v9."
+ },
+ "audio_player_crop_fix_v1": {
+  "started_utc": "2026-09-09",
+  "work_complete": false,
+  "scope": "Third attempt at the audio-player defect. Operator has direct screenshot evidence that the Reading page audio player is still cropped at the bottom of the viewport (download controls + chapter strip pushed below/cut off) and the seek bar renders malformed (thumb/fill misaligned). This session must not repeat the two prior approaches; root causes established from REAL rendered measurements and computed CSS, not source reading.",
+  "prior_attempts_reviewed": {
+   "cache_player_profile_fixes_v1": "task-f01 added safe-area env() padding + 8px bottom padding. Diagnosed crop as iOS home-indicator only; did not address browsers without dynamic-viewport-unit support or that the fixed zones can exceed the real visible viewport. Verified only in Chromium 151 (has full dvh support).",
+   "redesign_correction_v1_task_c04": "Restyled the seek bar with appearance:none + height:6px + border:1px + --fill gradient, but never noticed the generic input{padding:11px 13px} rule (app stylesheet line ~123) applies to the range input: with box-sizing:border-box + height:6px + 1px borders the content box computes to 0px tall, so the WebKit thumb aligns to a zero-height content box instead of the track. Fill % is computed from the element border box while the thumb travels the (zero-height) content box, so fill and thumb disagree."
+  },
+  "root_cause_evidence": {
+   "live_render_2026_09_09": "Rendered the LIVE page (/read?day=2, Matthew 7-12, 6 narrated chapters, real owner session minted in D1) in headless Chromium at 390x844 and 360x640. 390x844: header 53px, pane 480px, chapter-nav 34px, mark-strip 44px, audio-card 128px (top 652 bottom 780), nav 56px (top 788), gap card->nav 8px, bodyScrollH 844 == ih, docScrollW 390 == iw, zero errors, zero clipped children. Screenshots saved. In THIS engine (dvh-capable Chromium 151) the four zones fit exactly.",
+   "crop_root_cause": "body.read-page declares 'height:100vh; height:100dvh'. On real devices whose WebKit/Blink build lacks dynamic viewport units (older iOS Safari < 15.4, older Chrome/Android WebView, older in-app webviews), 100dvh is dropped and 100vh wins = the FULL visual viewport including the area under the browser address bar. body height then EXCEEDS the real visible area by the chrome height (~50-80px typical phone browser). The fixed four-zone flex column is sized to that over-tall body, so the last zone (audio player) lands partially or fully below the fold; .read-wrap{overflow:hidden} then crops it silently with no way to scroll to it. The prior safe-area fix only covered the iOS home indicator, not this. Fix = size the page from the REAL visible viewport: html-level 100% + dvh-with-vh-fallback handled via 100svh/100dvh ordering plus small-screen density budget; verify with emulated small effective heights.",
+   "seek_root_cause": "Computed CSS on the live page: input#audio-seek has height 6px (author), border-top/bottom 1px, box-sizing border-box AND padding 11px 13px leaked from the generic 'input,select,textarea' rule. Content box = 6 - 2(borders) - 22(vertical padding) => clamped to 0. WebKit sizes/positions the range track inside the content box and the thumb travel range is derived from it; with a 0px-tall content box the 16px thumb renders detached from the 6px visual track (vertical misalignment), and the --fill gradient (drawn across the full border box) cannot match the thumb position (horizontal mismatch, worst near the ends where thumb inset is 8px but fill reaches 0%/100% of the border box). Fix = padding:0 + margin:0 on the seek input (override the generic rule), plus track/border geometry that makes fill end exactly at the thumb at 0/50/100%."
+  },
+  "tasks": [
+   {
+    "id": "task-f01",
+    "title": "Render the live Reading page at 390x844, capture actual current state, compare against operator's report, read what the prior two sessions changed; append this task list; commit+push seed and verify the push landed before any other work.",
+    "status": "done",
+    "notes": "Live render performed BEFORE any code change (see root_cause_evidence): four zones measured, screenshots captured, computed CSS for the seek input extracted. Live read.html/app.v7.css/app.v7.js/sw.js byte-identical to repo HEAD f8fe9f0. Crop = 100vh fallback + fixed zones exceeding real visible viewport + overflow hidden (candidate cause (b), confirmed by arithmetic); seek = generic input padding crushing the range content box to 0px (evidence above). Seed appended; committing and pushing first per protocol.",
+    "commit": "pending"
+   },
+   {
+    "id": "task-f02",
+    "title": "Size the page from the real visible viewport (not 100vh guesswork): html 100% chain + svh/dvh-corrected page height so the four zones always fit the ACTUAL visible area on every mobile browser; verse pane keeps flex:1 subtraction semantics (it already fills remaining space) — the fix is the page-height basis, not a pane px value.",
+    "status": "pending",
+    "notes": "",
+    "commit": ""
+   },
+   {
+    "id": "task-f03",
+    "title": "Density budget for short screens (360x640 etc.): if zones still exceed the real viewport, compact the audio card internals (single status+chapters row, tighter controls) until every element fits with visible padding above the nav.",
+    "status": "pending",
+    "notes": "",
+    "commit": ""
+   },
+   {
+    "id": "task-f04",
+    "title": "Fix seek bar thumb/track/fill alignment: zero out leaked padding/margin on the range input; make --fill math account for the 16px thumb width so fill ends exactly at the thumb at 0%, 50%, 100%.",
+    "status": "pending",
+    "notes": "",
+    "commit": ""
+   },
+   {
+    "id": "task-f05",
+    "title": "Live verification at 390x844 AND 360x640 (and a reduced-height emulation of a small-viewport/chrome-occluded device): every player element fully visible with padding above nav; seek thumb/flush-fill correct at 0%, ~50%, 100%; no regression to header/pane scroll/Prev-Next chapter/mark strip.",
+    "status": "pending",
+    "notes": "",
+    "commit": ""
+   },
+   {
+    "id": "task-f06",
+    "title": "Final commit/push with audio_player_crop_fix_v1.work_complete=true only after task-f05 genuinely passes via real rendered verification.",
+    "status": "pending",
+    "notes": "",
+    "commit": ""
+   }
+  ]
  }
 }
