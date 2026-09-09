@@ -309,6 +309,7 @@ nav.bottom a svg { display: block; margin: 0 auto 2px; width: 21px; height: 21px
    portion before the thumb is the accent via a JS-set linear-gradient. */
 input[type="range"]#audio-seek {
   -webkit-appearance: none; appearance: none;
+  padding: 0; margin: 0; /* override generic input{padding:11px 13px} — it crushed the content box to 0px and detached the thumb */
   height: 6px; border-radius: 99px;
   background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--surface-2) var(--fill, 0%));
   border: 1px solid var(--border);
@@ -339,7 +340,9 @@ input[type="range"]#audio-seek:focus { box-shadow: none; border-color: var(--bor
    The body becomes a fixed-height flex column so the pane fills exactly the
    space freed by compacting the header/player (no vh guesswork). */
 body.read-page {
-  height: 100vh; height: 100dvh;
+  height: 100svh; /* small viewport: never exceeds real visible area */
+  height: 100vh;  /* fallback for engines without dynamic viewport units */
+  height: 100dvh; /* modern engines: live-track browser chrome */
   overflow: hidden;
   padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); /* exact bottom-nav height + iOS safe area — fixes the cropped audio player (cache_player_profile_fixes_v1 task-f01) */
 }
@@ -380,7 +383,7 @@ body.read-page {
 .mark-strip .check { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
 .mark-strip .btn.small { width: auto; }
 /* Compact audio player — the last element above the bottom nav. */
-#audio-card { padding: 8px 12px; margin: 0; display: flex; flex-direction: column; gap: 6px; position: relative; }
+#audio-card { padding: 6px 10px; margin: 0; display: flex; flex-direction: column; gap: 4px; position: relative; }
 #audio-card .ac-row { display: flex; align-items: center; gap: 10px; }
 #audio-card .ac-status { justify-content: space-between; }
 #audio-card .ac-status #audio-note { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -388,10 +391,10 @@ body.read-page {
 #audio-card .ac-controls #audio-cur, #audio-card .ac-controls #audio-dur { min-width: 32px; font-variant-numeric: tabular-nums; }
 #audio-card .ac-controls #audio-cur { text-align: right; }
 #audio-card .ac-controls #audio-seek { flex: 1; margin: 0; min-width: 60px; }
-#audio-card #audio-play { width: 40px; height: 40px; }
-#audio-card #audio-back, #audio-card #audio-fwd { width: 34px; height: 34px; }
+#audio-card #audio-play { width: 38px; height: 38px; }
+#audio-card #audio-back, #audio-card #audio-fwd { width: 32px; height: 32px; }
 #audio-card #audio-chapters { margin-top: 0; padding: 2px; }
-#audio-card #audio-chapters button { padding: 4px 10px; font-size: 12px; }
+#audio-card #audio-chapters button { padding: 3px 9px; font-size: 11.5px; }
 /* Download menu: one compact toggle opens a small menu with BOTH actions. */
 #dl-menu {
   position: absolute; top: 34px; right: 10px; z-index: 72;

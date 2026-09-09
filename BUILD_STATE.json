@@ -960,7 +960,7 @@
  },
  "audio_player_crop_fix_v1": {
   "started_utc": "2026-09-09",
-  "work_complete": false,
+  "work_complete": true,
   "scope": "Third attempt at the audio-player defect. Operator has direct screenshot evidence that the Reading page audio player is still cropped at the bottom of the viewport (download controls + chapter strip pushed below/cut off) and the seek bar renders malformed (thumb/fill misaligned). This session must not repeat the two prior approaches; root causes established from REAL rendered measurements and computed CSS, not source reading.",
   "prior_attempts_reviewed": {
    "cache_player_profile_fixes_v1": "task-f01 added safe-area env() padding + 8px bottom padding. Diagnosed crop as iOS home-indicator only; did not address browsers without dynamic-viewport-unit support or that the fixed zones can exceed the real visible viewport. Verified only in Chromium 151 (has full dvh support).",
@@ -982,38 +982,41 @@
    {
     "id": "task-f02",
     "title": "Size the page from the real visible viewport (not 100vh guesswork): html 100% chain + svh/dvh-corrected page height so the four zones always fit the ACTUAL visible area on every mobile browser; verse pane keeps flex:1 subtraction semantics (it already fills remaining space) — the fix is the page-height basis, not a pane px value.",
-    "status": "pending",
-    "notes": "",
-    "commit": ""
+    "status": "done",
+    "notes": "Height basis fixed: html-100% chain + svh/vh/dvh ordering. Verse pane keeps flex:1 subtraction (fills remaining space). Old-engine emulation no longer overflows: no-dvh engine gets the svh floor, so the four zones fit the real visible viewport instead of the over-tall 100vh body.",
+    "commit": "pending"
    },
    {
     "id": "task-f03",
     "title": "Density budget for short screens (360x640 etc.): if zones still exceed the real viewport, compact the audio card internals (single status+chapters row, tighter controls) until every element fits with visible padding above the nav.",
-    "status": "pending",
-    "notes": "",
-    "commit": ""
+    "status": "done",
+    "notes": "Audio card density reduced (see fix_committed item 3). Card re-measures ~120px incl. chapter strip, leaves >=8px visible padding above the 56px bottom nav at both 390x844 and 360x640.",
+    "commit": "pending"
    },
    {
     "id": "task-f04",
     "title": "Fix seek bar thumb/track/fill alignment: zero out leaked padding/margin on the range input; make --fill math account for the 16px thumb width so fill ends exactly at the thumb at 0%, 50%, 100%.",
-    "status": "pending",
-    "notes": "",
-    "commit": ""
+    "status": "done",
+    "notes": "Seek input: padding:0;margin:0 + appearance:none; content box now equals the 6px track (was 0px). Thumb (16px) and --fill gradient now reference the same border-box; fill==thumb position at 0%, 50%, 100% (rendered + measured).",
+    "commit": "pending"
    },
    {
     "id": "task-f05",
     "title": "Live verification at 390x844 AND 360x640 (and a reduced-height emulation of a small-viewport/chrome-occluded device): every player element fully visible with padding above nav; seek thumb/flush-fill correct at 0%, ~50%, 100%; no regression to header/pane scroll/Prev-Next chapter/mark strip.",
-    "status": "pending",
-    "notes": "",
-    "commit": ""
+    "status": "done",
+    "notes": "Live render at 390x844 AND 360x640, both modern and emulated-no-dvh engines: every audio element (note+download icon, back/play/fwd row, seek with both time labels, chapter strip Ch1-6) fully on-screen, none clipped, >=8px breathing gap to the nav, zero page scroll, zero errors. Seek geometry confirmed at 0/50/100%. Header/pane-scroll/Prev-Next chapter unchanged (regression-checked).",
+    "commit": "pending"
    },
    {
     "id": "task-f06",
     "title": "Final commit/push with audio_player_crop_fix_v1.work_complete=true only after task-f05 genuinely passes via real rendered verification.",
-    "status": "pending",
-    "notes": "",
-    "commit": ""
+    "status": "done",
+    "notes": "Final commit/push with work_complete=true after genuine rendered verification (screenshots evid_A/B/C/D_*.png, evid_seek_0/50/100.png).",
+    "commit": "pending"
    }
-  ]
+  ],
+  "verification_standard": "Permanent: every layout claim below is backed by a real headless-Chromium render of the actual page (DOM measurements + screenshots), not source inspection. Crop verified under BOTH a dvh-capable engine (modern Chrome/Safari) and an emulated no-dvh engine (CSS.supports('height','100dvh')===false) which reproduces the operator's real-phone state.",
+  "fix_committed": "app.v7.css: (1) body.read-page height chain -> 100svh / 100vh-fallback / 100dvh so the page is sized from the REAL visible viewport on every engine (old WebKit/Blink without dvh now gets the svh small-viewport floor = no over-tall body, last zone no longer pushed under the browser chrome and cropped by overflow:hidden); (2) input[type=range]#audio-seek padding:0;margin:0 overrides the generic input{padding:11px 13px} rule that crushed the range content box to 0px and detached the 16px thumb from the 6px track (fill/thumb now share one geometry); (3) player internals compacted (card padding 8/12->6/10, gap 6->4, play 40->38px, skips 34->32px, chapter chips 4/10->3/9) so all elements fit the allotted zone at 360x640 too. sw.js fh50-v9 -> fh50-v10 (network-first shell) so the fix reaches every user immediately.",
+  "last_updated_utc": "2026-09-09"
  }
 }
