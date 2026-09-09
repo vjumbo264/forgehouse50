@@ -19,6 +19,23 @@
 <div class="wrap">
   <div id="top"></div>
   <main>
+    <!-- Audio player moved to the top of the reading page (operator request):
+         narration is now reachable in one tap before any Scripture text.
+         Ids/markup unchanged so public/js/read.js (which selects by id, not
+         position) needs no changes. -->
+    <section class="audio" id="audio-card" aria-label="Audio narration">
+      <div class="audio-head">
+        <span class="label" id="audio-label">Audio</span>
+        <span class="small muted" id="audio-note">Checking availability…</span>
+      </div>
+      <div class="audio-main">
+        <button class="audio-play" id="audio-play" disabled aria-label="Play narration">▶</button>
+        <div class="bar thin" style="flex:1"><i id="audio-bar"></i></div>
+      </div>
+      <div class="audio-chips" id="audio-chapters" style="display:none"></div>
+      <button class="btn soft small" id="audio-done" style="display:none">Mark audio complete</button>
+    </section>
+
     <section id="day-head" aria-label="Reading day"></section>
 
     <section class="reader-tools" aria-label="Reading controls">
@@ -37,19 +54,6 @@
       <div class="skeleton line"></div><div class="skeleton line w60"></div>
       <div class="skeleton line"></div><div class="skeleton line w40"></div>
     </article>
-
-    <section class="audio" id="audio-card" aria-label="Audio narration">
-      <div class="audio-head">
-        <span class="label" id="audio-label">Audio</span>
-        <span class="small muted" id="audio-note">Checking availability…</span>
-      </div>
-      <div class="audio-main">
-        <button class="audio-play" id="audio-play" disabled aria-label="Play narration">▶</button>
-        <div class="bar thin" style="flex:1"><i id="audio-bar"></i></div>
-      </div>
-      <div class="audio-chips" id="audio-chapters" style="display:none"></div>
-      <button class="btn soft small" id="audio-done" style="display:none">Mark audio complete</button>
-    </section>
 
     <section id="mark-area"></section>
     <p class="attribution" id="attrib"></p>

@@ -895,38 +895,52 @@ nav.bottom a.active::before {
    a single inline panel listing every footnote for that verse. Only one panel
    may be open in the chapter at a time. */
 .fn-marker {
+  /* Idle state is deliberately button-like (visible border + resting shadow +
+     hover lift), not a flat quiet pill, so it reads as tappable at a glance
+     mid-sentence. Operator request: "make footnotes button look more
+     clickable." Sizing/motion/aria/reduced-motion contract unchanged. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
   margin-left: 5px;
   vertical-align: 0.28em;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-soft-2);
+  background: var(--accent-soft-2);
+  border: 1.5px solid var(--accent);
   border-radius: var(--r-full);
   color: var(--accent-text);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 800;
+  letter-spacing: .01em;
   line-height: 1;
   cursor: pointer;
+  box-shadow: 0 1px 0 rgba(16, 26, 43, .05), 0 2px 6px color-mix(in srgb, var(--accent) 28%, transparent);
   -webkit-tap-highlight-color: transparent;
-  transition: transform var(--d-1) var(--e-out), background-color var(--d-2) var(--e-out);
+  transition: transform var(--d-1) var(--e-out), background-color var(--d-2) var(--e-out),
+              box-shadow var(--d-2) var(--e-out), border-color var(--d-2) var(--e-out);
 }
-.fn-marker:hover { background: var(--accent-soft-2); }
-.fn-marker:active { transform: scale(.88); }
+.fn-marker:hover {
+  background: var(--accent);
+  color: var(--text-on-brand);
+  border-color: var(--accent);
+  box-shadow: 0 2px 3px rgba(16, 26, 43, .08), 0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent);
+  transform: translateY(-1px);
+}
+.fn-marker:active { transform: scale(.88); box-shadow: var(--sh-inset-press); }
 .fn-marker[aria-expanded="true"] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--text-on-brand);
+  box-shadow: var(--sh-inset-press);
 }
 .fn-marker .fn-count {
   font-size: 9.5px;
   font-weight: 800;
-  opacity: .85;
+  opacity: .9;
 }
 
 .fn-panel {
