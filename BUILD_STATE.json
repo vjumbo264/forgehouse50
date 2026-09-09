@@ -1018,5 +1018,78 @@
   "verification_standard": "Permanent: every layout claim below is backed by a real headless-Chromium render of the actual page (DOM measurements + screenshots), not source inspection. Crop verified under BOTH a dvh-capable engine (modern Chrome/Safari) and an emulated no-dvh engine (CSS.supports('height','100dvh')===false) which reproduces the operator's real-phone state.",
   "fix_committed": "app.v7.css: (1) body.read-page height chain -> 100svh / 100vh-fallback / 100dvh so the page is sized from the REAL visible viewport on every engine (old WebKit/Blink without dvh now gets the svh small-viewport floor = no over-tall body, last zone no longer pushed under the browser chrome and cropped by overflow:hidden); (2) input[type=range]#audio-seek padding:0;margin:0 overrides the generic input{padding:11px 13px} rule that crushed the range content box to 0px and detached the 16px thumb from the 6px track (fill/thumb now share one geometry); (3) player internals compacted (card padding 8/12->6/10, gap 6->4, play 40->38px, skips 34->32px, chapter chips 4/10->3/9) so all elements fit the allotted zone at 360x640 too. sw.js fh50-v9 -> fh50-v10 (network-first shell) so the fix reaches every user immediately.",
   "last_updated_utc": "2026-09-09"
+ },
+ "reading_layout_flexbox_v1": {
+  "started_utc": "2026-09-09",
+  "work_complete": false,
+  "scope": "Operator-prescribed LITERAL structure for the Reading page (fourth attempt): single flex column exactly 100dvh tall; exactly one flexible child (verse pane); header/chapter-nav/audio-player/bottom-nav all flex 0 0 auto; verse pane flex 1 1 auto + min-height 0 + overflow-y auto. Header exactly two rows; audio player at most two internal rows (chapter-selector strip dropped if a third row would be needed); seek thumb and fill driven by one shared value.",
+  "root_cause_audit": {
+   "prior_attempts_checked": [
+    "reading_page_compaction_v1",
+    "reading_page_ui_fix_v1",
+    "cache_player_profile_fixes_v1",
+    "audio_player_crop_fix_v1"
+   ],
+   "min_height_zero_ever_set": true,
+   "min_height_zero_evidence": "app.v7.css (HEAD 74ec970) line 357 '#passage-wrap { flex: 1 1 auto; min-height: 0; ... }' and lines 358-359 '.read-wrap #passage.reader-pane { flex: 1 1 auto; min-height: 0; max-height: none; height: 100%; overflow-y: auto; margin: 0; }' — min-height:0 IS present on the verse pane flex item at current HEAD (added in reading_page_compaction_v1 task-i05, retained since). The hypothesized 'missing min-height:0' root cause is DISPROVEN for the current codebase.",
+   "actual_structural_deviations_vs_prescribed_layout": [
+    "(a) Bottom nav is NOT a flex child of the page container: FH.nav() appends nav.bottom to <body> with position:fixed;bottom:0, and body.read-page reserves padding-bottom:calc(56px + safe-area) to make room. The prescribed structure makes the nav a NORMAL flow child (flex 0 0 auto) so it can never overlay/crop the player — the fixed-nav + body-padding approach is the residual cropping vector (any mismatch between reserved padding and the nav's real height crops the player).",
+    "(b) A SIXTH zone (#mark-area strip) sits between chapter-nav and the audio player — the prescribed structure has exactly five zones.",
+    "(c) The audio player still renders a THIRD row (#audio-chapters Ch1..Ch6 strip) whenever >1 chapter has audio — the prescribed structure caps the player at two internal rows and drops the chapter strip (chapter switching exists via Prev/Next in the chapter-nav zone).",
+    "(d) Seek: thumb and fill currently DO share one value (syncSeekUi computes v once, sets seekEl.value AND --fill from it on every timeupdate — matches the prescribed fix already), but at 360px the controls row (back5/play/fwd5 + two time labels + seek) is tight; prescribed structure allows moving seek+times to their own second row. Also min-width:0 is missing on the seek input (only min-width:60px is set).",
+    "(e) Header is already two rows (rd-top + rd-sub from reading_page_compaction_v1 task-i03) but must be verified as exactly two RENDERED lines at both widths."
+   ]
+  },
+  "tasks": [
+   {
+    "id": "task-x01",
+    "title": "Read all three prior attempts' final CSS for this page. Confirm whether min-height:0 was ever set on the verse pane flex-item rule — record finding in BUILD_STATE.json. Append this session's task list. Commit and push; verify before continuing.",
+    "status": "done",
+    "commits": [],
+    "notes": "FINDING: min-height:0 IS set at current HEAD (app.v7.css:357-359, on both #passage-wrap and #passage.reader-pane) — it was added in reading_page_compaction_v1 task-i05 and retained by every session since. The operator's hypothesized single root cause does not apply to current HEAD. Real remaining deviations recorded in root_cause_audit: fixed bottom nav outside the flex column (cropping vector), a sixth #mark-area zone, a third audio-player row (#audio-chapters strip), seek missing min-width:0, header two rows to be re-verified as rendered."
+   },
+   {
+    "id": "task-x02",
+    "title": "Replace Reading page layout with the prescribed flexbox structure (adapted to this no-build HTML/CSS stack): 100dvh outer flex column, flex 0 0 auto on the four fixed zones, flex 1 1 auto + min-height 0 + overflow-y auto on the verse pane; bottom nav becomes an in-flow flex child on this page.",
+    "status": "pending",
+    "commits": [],
+    "notes": ""
+   },
+   {
+    "id": "task-x03",
+    "title": "Header exactly two rendered rows (brand+day pill+menu / title+meta combined in one line), verified by counting rendered lines at both widths.",
+    "status": "pending",
+    "commits": [],
+    "notes": ""
+   },
+   {
+    "id": "task-x04",
+    "title": "Audio player at most two internal rows; drop the Ch1..Ch6 selector strip from the component (chapter switching via Zone 3 Prev/Next); download button in the top row.",
+    "status": "pending",
+    "commits": [],
+    "notes": ""
+   },
+   {
+    "id": "task-x05",
+    "title": "Seek bar: single shared position value drives BOTH the range value and the fill on every timeupdate (confirm/keep syncSeekUi single-source math); add min-width:0 to the seek input.",
+    "status": "pending",
+    "commits": [],
+    "notes": ""
+   },
+   {
+    "id": "task-x06",
+    "title": "Live rendered verification at 390x844 AND 360x640: all five zones simultaneously fully visible, zero cropping, verse pane the only scroller, seek thumb/fill aligned at 0%/~50%/100%, header exactly two rows as rendered.",
+    "status": "pending",
+    "commits": [],
+    "notes": ""
+   },
+   {
+    "id": "task-x07",
+    "title": "Final commit/push with reading_layout_flexbox_v1.work_complete=true only after task-x06 genuinely passes at both widths; attach exact pixel evidence.",
+    "status": "pending",
+    "commits": [],
+    "notes": ""
+   }
+  ]
  }
 }
