@@ -1051,30 +1051,30 @@
    {
     "id": "task-x02",
     "title": "Replace Reading page layout with the prescribed flexbox structure (adapted to this no-build HTML/CSS stack): 100dvh outer flex column, flex 0 0 auto on the four fixed zones, flex 1 1 auto + min-height 0 + overflow-y auto on the verse pane; bottom nav becomes an in-flow flex child on this page.",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Structure replaced per the prescribed literal layout (adapted to this no-build static HTML/CSS stack, asset revved app.v7->app.v8 + sw fh50-v11): body.read-page = single flex column exactly 100dvh (svh/vh fallbacks), overflow hidden, padding-bottom 0. All four fixed zones (header #top, chapter-nav, audio-card, bottom nav) are flex 0 0 auto; the verse pane (#passage-wrap > #passage) is the ONLY flexible child (flex 1 1 auto, min-height 0, overflow-y auto, overscroll-behavior contain). CRITICAL CHANGE: the bottom nav is no longer position:fixed with reserved body padding — read.html relocates nav.bottom INTO .read-wrap after FH.nav() appends it to <body>, and .read-wrap > nav.bottom is position:static flex 0 0 auto (bleeds to container edges). A fixed nav over reserved padding was the residual cropping vector: any mismatch between reserved 56/76px and the nav's real height cropped the player. The SIXTH zone (#mark-area strip) was removed from page flow; mark-complete/write-a-note moved into the header overflow menu (#om-mark) so the page has EXACTLY the five prescribed zones."
    },
    {
     "id": "task-x03",
     "title": "Header exactly two rendered rows (brand+day pill+menu / title+meta combined in one line), verified by counting rendered lines at both widths.",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Header is exactly two rendered rows by construction: .rd-top (brand + Day-N pill + overflow-menu button, nowrap) and .rd-sub (assignment title ellipsis-clamped nowrap + 'N ch · ~M min' meta, flex none) — title cannot wrap, meta cannot wrap, so two rows render as exactly two lines. Rendered line-count assertion (distinct client-rect tops per row) included in the x06 harness at both widths."
    },
    {
     "id": "task-x04",
     "title": "Audio player at most two internal rows; drop the Ch1..Ch6 selector strip from the component (chapter switching via Zone 3 Prev/Next); download button in the top row.",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Audio player capped at two internal rows: .ac-status (narration label + audio-done + single download toggle with its existing two-action menu) and .ac-controls (back5/play/fwd5 + cur/seek/dur). The Ch1..Ch6 selector strip element (#audio-chapters) and all its JS (build/click/active-toggle) and CSS were REMOVED — chapter switching is via the Previous/Next chapter buttons in the chapter-nav zone (which now also carry the pane across audio advances via the existing renderChapter-on-playIdx logic). Download button already in the top row."
    },
    {
     "id": "task-x05",
     "title": "Seek bar: single shared position value drives BOTH the range value and the fill on every timeupdate (confirm/keep syncSeekUi single-source math); add min-width:0 to the seek input.",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Seek bar single-source fix: syncSeekUi computes v ONCE per timeupdate and drives BOTH seekEl.value (thumb) AND --fill (visual fill) from it — and the fill boundary is now placed at the THUMB CENTRE (the 16px thumb travels within [8px, w-8px]; --fill = (8 + p*(w-16))/w * 100%) so thumb and fill coincide exactly at 0%, 50%, 100% instead of the fill reaching 100% while the thumb centre sits 8px short. The drag (input) handler uses the identical math with seekEl.value as the source. Added min-width: 0 to the seek input (was min-width:60px) so the range can never force the controls row wider than the screen."
    },
    {
     "id": "task-x06",

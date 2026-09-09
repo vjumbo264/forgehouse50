@@ -288,22 +288,10 @@ nav.bottom a svg { display: block; margin: 0 auto 2px; width: 21px; height: 21px
   letter-spacing: .2px; color: inherit; pointer-events: none;
 }
 
-/* Chapter picker: calm segmented control. */
-#audio-chapters {
-  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 99px; padding: 3px; margin-top: 10px;
-  width: fit-content;
-}
-#audio-chapters button {
-  border: none; background: transparent; color: var(--text-mute);
-  border-radius: 99px; padding: 5px 12px; font-size: 12.5px; font-weight: 600;
-  cursor: pointer; font-family: inherit; line-height: 1.4;
-  transition: background-color .12s ease, color .12s ease;
-}
-#audio-chapters button:hover { color: var(--text); }
-#audio-chapters button.active { background: var(--accent-soft-2); color: var(--accent-text); }
-#audio-chapters button:disabled { opacity: .45; cursor: default; }
+/* The Ch1..Ch6 chapter-picker strip was REMOVED from the Reading page audio
+   player in reading_layout_flexbox_v1 (task-x04): the player is capped at two
+   internal rows; chapter switching is via the Previous/Next chapter buttons
+   in the chapter-nav zone. Its CSS rules are deleted with the element. */
 
 /* Audio seek slider — quiet native range styled to match; the filled
    portion before the thumb is the accent via a JS-set linear-gradient. */
@@ -334,30 +322,47 @@ input[type="range"]#audio-seek:focus { box-shadow: none; border-color: var(--bor
   }
 }
 
-/* ── Reading page compaction (reading_page_compaction_v1 / task-i03..i05) ──
-   Four vertical zones on screen at once with NO page-level scroll:
-   compact header → scrollable verse pane → compact audio player → bottom nav.
-   The body becomes a fixed-height flex column so the pane fills exactly the
-   space freed by compacting the header/player (no vh guesswork). */
+/* ── Reading page layout (reading_layout_flexbox_v1 / task-x02) ─────────────
+   ONE flex column, exactly 100dvh tall, overflow hidden — the page itself
+   never scrolls. Exactly ONE flexible child (the verse pane); every other
+   zone is flex: 0 0 auto (natural content height, never grows, never shrinks,
+   so it can never be cropped — the pane is the only element allowed to shrink,
+   and it does so via its own internal scroll). The bottom nav is a NORMAL
+   FLOW child of the column on this page (read.html relocates it into
+   .read-wrap after FH.nav() appends it to <body>) — no position:fixed and no
+   reserved-padding arithmetic, so it can never overlay the audio player. */
 body.read-page {
   height: 100svh; /* small viewport: never exceeds real visible area */
   height: 100vh;  /* fallback for engines without dynamic viewport units */
   height: 100dvh; /* modern engines: live-track browser chrome */
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); /* exact bottom-nav height + iOS safe area — fixes the cropped audio player (cache_player_profile_fixes_v1 task-f01) */
+  padding-bottom: 0; /* the nav is in-flow now; nothing to reserve */
 }
 .read-wrap {
   display: flex; flex-direction: column; gap: 6px;
-  height: 100%; max-height: 100%;
-  max-width: min(720px, 100%);
-  margin: 0 auto; padding: 8px 12px 8px; /* bottom padding: player never flush against the nav */
+  flex: 1 1 auto; min-height: 0;   /* fills body.read-page exactly */
+  max-width: min(720px, 100%); width: 100%;
+  margin: 0 auto; padding: 8px 12px 8px;
   overflow: hidden; position: relative;
 }
-.read-wrap > * { flex: none; }
+/* Fixed zones: natural content height, never grow, never shrink. */
+.read-wrap > * { flex: 0 0 auto; }
+/* The verse pane: the ONLY flexible element on the page. min-height: 0 is
+   REQUIRED — without it a flex item refuses to shrink below its content's
+   natural height, which is what pushed the player off-screen in early builds. */
 #passage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; }
 .read-wrap #passage.reader-pane {
   flex: 1 1 auto; min-height: 0; max-height: none; height: 100%;
   overflow-y: auto; margin: 0;
+  overscroll-behavior: contain;
+}
+/* The bottom nav, relocated INTO .read-wrap on this page: a normal flow
+   child (flex: 0 0 auto), pinned below the player by the flex column itself. */
+.read-wrap > nav.bottom {
+  position: static; flex: 0 0 auto;
+  margin: 2px -12px -8px; /* bleed to the container's edges */
 }
 /* Compact header — two slim rows. */
 .rd-top { display: flex; align-items: center; gap: 8px; }
@@ -378,10 +383,9 @@ body.read-page {
 #overflow-menu label { margin: 0; }
 #overflow-menu .om-nav { display: flex; gap: 6px; flex-wrap: wrap; }
 #overflow-menu #om-attrib { line-height: 1.45; }
-/* Slim mark-complete strip (replaces the stacked completion card). */
-.mark-strip { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 2px 0; }
-.mark-strip .check { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
-.mark-strip .btn.small { width: auto; }
+/* The mark-complete strip was REMOVED from page flow in
+   reading_layout_flexbox_v1 (task-x02): the page keeps exactly five zones, so
+   mark-complete moved into the header overflow menu. Its CSS is deleted. */
 /* Compact audio player — the last element above the bottom nav. */
 #audio-card { padding: 6px 10px; margin: 0; display: flex; flex-direction: column; gap: 4px; position: relative; }
 #audio-card .ac-row { display: flex; align-items: center; gap: 10px; }
@@ -390,11 +394,9 @@ body.read-page {
 #audio-card .ac-controls { gap: 8px; }
 #audio-card .ac-controls #audio-cur, #audio-card .ac-controls #audio-dur { min-width: 32px; font-variant-numeric: tabular-nums; }
 #audio-card .ac-controls #audio-cur { text-align: right; }
-#audio-card .ac-controls #audio-seek { flex: 1; margin: 0; min-width: 60px; }
+#audio-card .ac-controls #audio-seek { flex: 1 1 auto; margin: 0; min-width: 0; /* task-x05: a range input without min-width:0 can force the controls row wider than the screen, wrapping it and adding unexpected height */ }
 #audio-card #audio-play { width: 38px; height: 38px; }
 #audio-card #audio-back, #audio-card #audio-fwd { width: 32px; height: 32px; }
-#audio-card #audio-chapters { margin-top: 0; padding: 2px; }
-#audio-card #audio-chapters button { padding: 3px 9px; font-size: 11.5px; }
 /* Download menu: one compact toggle opens a small menu with BOTH actions. */
 #dl-menu {
   position: absolute; top: 34px; right: 10px; z-index: 72;
