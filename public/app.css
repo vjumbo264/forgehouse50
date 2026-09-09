@@ -513,6 +513,15 @@ p:last-child { margin-bottom: 0; }
 .iconbtn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .iconbtn.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
 .iconbtn svg { width: 18px; height: 18px; display: block; }
+.iconbtn.small {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: var(--t-xs);
+  border-radius: 11px;
+}
+.iconbtn.small svg { width: 15px; height: 15px; }
+.iconbtn.is-loading { color: transparent !important; pointer-events: none; }
 
 /* ============================================================================
    FORM CONTROLS
@@ -1261,6 +1270,21 @@ nav.bottom a.active::before {
   gap: var(--s-3); font-size: var(--t-xs); color: var(--text-mute);
 }
 .note-card .note-actions { display: flex; gap: 6px; }
+/* Inline note editing (task-u06) */
+.note-edit-wrap { margin: var(--s-3) 0; }
+.note-edit {
+  width: 100%;
+  font: inherit;
+  line-height: 1.6;
+  padding: var(--s-3);
+  background: var(--surface-2);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  resize: vertical;
+}
+.note-edit:focus { outline: 3px solid var(--ring); outline-offset: 1px; }
+
 /* legacy */
 .note-item { border-left: 4px solid var(--accent); }
 
@@ -1660,6 +1684,106 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: var(--s-5) 0; }
 }
 
 /* ============================================================================
+   PROGRESS PAGE TOTALS (task-u07)
+   ========================================================================== */
+.prog-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  margin-bottom: var(--s-5);
+}
+.prog-copy { min-width: 0; display: grid; gap: 6px; justify-items: start; }
+.prog-t { font-size: var(--t-lg); font-weight: 800; letter-spacing: -0.02em; }
+.prog-s { font-size: var(--t-sm); color: var(--text-mute); }
+.prog-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+  font-size: var(--t-sm);
+  color: var(--text-mute);
+}
+.prog-foot svg { width: 15px; height: 15px; flex-shrink: 0; }
+.prog-foot strong { color: var(--text); font-weight: 800; }
+@media (max-width: 380px) {
+  .prog-head { gap: var(--s-4); }
+  .prog-head .ring { --ring-size: 88px; --ring-w: 9px; }
+}
+.dayrow .tail svg { width: 17px; height: 17px; }
+
+/* ============================================================================
+   READING-DAY HERO / COMPLETION / DAY NAV
+   Added with the recovered public/js/read.js (task-u05). These were referenced
+   by the reader module but had no rules yet.
+   ========================================================================== */
+.day-hero { margin: var(--s-2) 0 var(--s-4); }
+.day-hero h1 {
+  margin: var(--s-3) 0 var(--s-2);
+  font-size: var(--t-2xl);
+  letter-spacing: -0.02em;
+}
+.day-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--text-mute);
+}
+.day-hero-meta .mi { display: inline-flex; align-items: center; gap: 5px; }
+.day-hero-meta .mi svg { width: 14px; height: 14px; }
+
+/* Big primary action (Mark Complete) */
+.btn.big {
+  gap: var(--s-2);
+  padding: 16px 22px;
+  font-size: var(--t-md);
+  border-radius: var(--r-md);
+}
+.btn.big svg { width: 19px; height: 19px; }
+
+/* Completion confirmation card — the reward moment for finishing a day */
+.done-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-2);
+  padding: var(--s-6) var(--s-5);
+  background: linear-gradient(170deg, var(--ok-soft), var(--surface) 78%);
+  border: 1px solid color-mix(in srgb, var(--ok) 34%, var(--border));
+  border-radius: var(--r-lg);
+  text-align: center;
+  box-shadow: var(--sh-1);
+}
+.done-card .done-ico {
+  width: 52px; height: 52px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--ok);
+  color: #fff;
+  animation: fh-pop var(--d-3) var(--e-spring) both;
+}
+.done-card .done-ico svg { width: 26px; height: 26px; }
+.done-card .done-t { font-size: var(--t-lg); font-weight: 800; letter-spacing: -0.02em; }
+.done-card .done-s { font-size: var(--t-sm); color: var(--text-mute); }
+.done-card .btn { margin-top: var(--s-3); }
+.done-card .btn svg { width: 16px; height: 16px; }
+@keyframes fh-pop {
+  from { opacity: 0; transform: scale(.5); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Previous / next reading day */
+.daynav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin: var(--s-5) 0 0;
+}
+
+/* ============================================================================
    REDUCED MOTION — honour the OS setting everywhere
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
@@ -1678,4 +1802,6 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: var(--s-5) 0; }
   .stat:hover, .badge-tile.earned:hover, .avatar-picker button:hover .avatar { transform: none !important; }
   .celebrate { display: none !important; }
   .skeleton { animation: none !important; background: var(--surface-2); }
+  .done-card .done-ico { animation: none !important; transform: none !important; opacity: 1 !important; }
+  .fn-panel { animation: none !important; }
 }
