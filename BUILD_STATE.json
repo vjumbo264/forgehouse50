@@ -531,107 +531,119 @@
   "ui_overhaul_v1": {
     "scope": "Premium UI overhaul: manual light/dark toggle removed in favour of live prefers-color-scheme auto theming (no stored preference); premium-blue brand with complete light + dark palettes (WCAG AA body text); full component redesign (nav, buttons, cards, progress ring/bar, streaks, reading surface, notes editor, modals, inputs, avatar grid, admin data views); design tokens documented in DESIGN_SYSTEM.md; reading-page footnote fix (one marker per verse, single inline panel, one open at a time); purposeful micro-interactions honouring prefers-reduced-motion. Frontend-only: no data model, D1 schema, API contract, auth, VerseWell or points/badge logic changes.",
     "started_utc": "2026-09-08",
-    "last_push_utc": "2026-09-09T01:48:47.631Z",
+    "last_push_utc": "2026-09-09T02:23:17.517Z",
     "pushed_via": "tools/PUSH_TO_GITHUB.html (browser-side GitHub Contents API; no credential ever left the operator browser)",
     "tasks": [
       {
         "id": "task-p00",
-        "title": "Build/update the self-contained pusher HTML tool (PART 0) and code-review it",
+        "title": "Check real repo for existing pusher tool; build/update the self-contained pusher HTML per PART 0 and code-review it.",
         "status": "done",
-        "notes": "No tools/PUSH_TO_GITHUB.html existed in the repo, so built fresh at local PUSH_TO_GITHUB.html -> tools/PUSH_TO_GITHUB.html. Reads LOCAL_BUILD_STATE.json.file_map live at push time. Code-reviewed (see pusher_tool.code_review) and render-verified."
+        "notes": "tools/PUSH_TO_GITHUB.html ALREADY EXISTED in the real repo and was fetched and REUSED, not rebuilt. Local copy written with the injected genspark script removed. Full code review recorded under pusher_tool.code_review (sha handling, UTF-8 base64, credential non-persistence, manifest freshness all confirmed correct) plus a headless render check."
       },
       {
         "id": "task-u00",
-        "title": "Fetch + save local copies of every current frontend source file; seed LOCAL_BUILD_STATE.json",
+        "title": "Fetch every relevant current frontend file; read them fully; save local copies of originals.",
         "status": "done",
-        "notes": "Saved under _fetched/: BUILD_STATE.json, DESIGN_SYSTEM.md, public/{index,read,notes,progress,leaderboard,profile,admin,login}.html, public/app.css, public/app.js, public/js/{home,read,notes,progress}.js. Confirmed js/{leaderboard,profile,admin,auth}.js return 404. State seeded."
+        "notes": "Repo tree enumerated via GitHub API (125 blobs). ALL current sources saved under _fetched/: BUILD_STATE.json, tools_PUSH_TO_GITHUB.html, DESIGN_SYSTEM.md, app.css (57776 b), app.js (20709 b), all 10 pages (index/read/notes/progress/leaderboard/profile/admin/login/signup/verify .html) and all 10 js/*.js. Note these are the ALREADY-REDESIGNED versions, which is the correct starting point per contract."
       },
       {
         "id": "task-u01",
-        "title": "Remove manual light/dark toggle; implement prefers-color-scheme automatic theming",
-        "status": "in_progress",
-        "notes": "Already done by the prior instance in app.css/app.js (no toggle, no persisted pref, initTheme() clears legacy fh50_theme + data-theme, syncThemeColor listens to the media query). REMAINING: admin.html/login.html/signup.html/verify.html still hardcode data-theme=\"dark\" and theme-color #0f1216 — fixed as part of task-u10."
+        "title": "Remove manual light/dark toggle; implement prefers-color-scheme automatic theming.",
+        "status": "done",
+        "notes": "Verified complete in the fetched sources. app.css declares both palettes behind prefers-color-scheme with no [data-theme] hook; app.js initTheme() removes the legacy localStorage 'fh50_theme' key and any stale data-theme attribute, and syncThemeColor() is bound to the media query so live OS changes need no reload. The four screens that previously hardcoded data-theme=\"dark\" (login/signup/verify/admin) no longer do — confirmed by grep. Nothing left to change; BUILD_STATE.json's 'in_progress' was simply stale."
       },
       {
         "id": "task-u02",
-        "title": "Write DESIGN_SYSTEM.md with the full token system",
+        "title": "Write DESIGN_SYSTEM.md with the full token system.",
         "status": "done",
-        "notes": "Already written and pushed by the prior instance (Design System v2, 13.5KB): theming rules, brand ramp with light+dark AA-checked contrast values, spacing/radius/shadow/type scales, component contract. Verified present and complete; not rewritten."
+        "notes": "Already written and pushed (Design System v2, 13.5 KB): theming rules, brand ramp with light+dark AA contrast values, spacing/radius/shadow/type scales, component contract, and the section-9 footnote rule. Verified present and complete; deliberately not rewritten."
       },
       {
         "id": "task-u03",
-        "title": "Redesign global navigation and shared shell",
+        "title": "Redesign global navigation and shared shell.",
         "status": "done",
-        "notes": "Already done by the prior instance: FH.nav() bottom nav with 6 stroked rounded SVG icons + aria-current, FH.topbar() appbar with brand mark, toast host, confirmDialog modal, skeletons, empty states, ring/streak-chip helpers — all in the pushed app.js/app.css."
+        "notes": "Verified in app.js/app.css: FH.nav() bottom nav with 6 stroked rounded SVG icons + aria-current, FH.topbar() appbar with the house+flame brand mark, toast host, confirmDialog modal, skeletons, empty states, ring + streak-chip helpers."
       },
       {
         "id": "task-u04",
-        "title": "Redesign the Home/Dashboard page",
+        "title": "Redesign the Home/Dashboard page.",
         "status": "done",
-        "notes": "Already done by the prior instance: public/index.html shell + public/js/home.js on the v2 system."
+        "notes": "Verified: public/index.html v2 shell (semantic sections: today-banner, cta, progress-card, stats, next-day, whatsapp) + public/js/home.js on the v2 system."
       },
       {
         "id": "task-u05",
-        "title": "Redesign the Reading page, including the footnote single-marker fix",
+        "title": "Redesign the Reading page, including the footnote single-marker fix.",
         "status": "done",
-        "notes": "Already done by the prior instance: public/read.html + public/js/read.js. Footnote fix verified in the fetched source — fnStore Map keyed 'ch:v', exactly ONE .fn-marker per verse with an .fn-count badge when N>1, one .fn-panel listing all notes, closeFootnote() before open guarantees a single open panel per chapter. All 12 API call shapes unchanged."
+        "notes": "Verified in the fetched public/js/read.js: fnStore Map keyed 'ch:v', exactly ONE .fn-marker per verse carrying an .fn-count badge when N>1, one .fn-panel listing all of that verse's footnotes together, and closeFootnote() called before opening so only one panel is ever open per chapter. Reading surface uses --font-read with the fs-small/medium/large/xl scale. All API call shapes unchanged."
       },
       {
         "id": "task-u06",
-        "title": "Redesign the Notes system UI",
+        "title": "Redesign the Notes system UI.",
         "status": "done",
-        "notes": "Already done by the prior instance: public/notes.html (type-grid radiogroup + hidden canonical select posting note_type, search + type filter) + public/js/notes.js."
+        "notes": "Verified: public/notes.html type-grid radiogroup + hidden canonical select still posting note_type, search + type filter; public/js/notes.js on the v2 system."
       },
       {
         "id": "task-u07",
-        "title": "Redesign the Progress page",
+        "title": "Redesign the Progress page.",
         "status": "done",
-        "notes": "Already done by the prior instance: public/progress.html + public/js/progress.js."
+        "notes": "Verified: public/progress.html + public/js/progress.js."
       },
       {
         "id": "task-u08",
-        "title": "Redesign the Leaderboard page and badge tiles",
+        "title": "Redesign the Leaderboard page and badge tiles.",
         "status": "done",
-        "notes": "WROTE public/js/leaderboard.js (was missing/404, live page was blank). All 6 categories as pill tabs (.tabs), .lrow rows with medal ranks for top 3, avatars via FH.avatarHtml(avatar_id,...), is-me highlight for the signed-in user, consistency category renders the streak_current/streak_longest the API attaches, reading_time formatted via FH.fmtTime. Badge tiles use the existing .badge-grid/.badge-tile earned|locked CSS, catalogue mirrors the 10 rule ids in functions/lib/points.mjs. API: only GET /api/auth/me + GET /api/leaderboard?category= — unchanged. Stale-response guard (inFlight token) so fast tab presses can't render out of order. Rows rise-animate only when not prefers-reduced-motion. Files toward this task: DONE public/js/leaderboard.js. No leaderboard.html change needed (shell ids matched exactly)."
+        "notes": "Verified: public/js/leaderboard.js exists and is the v2 build (was 404/blank before). 6 categories as pill tabs, .lrow rows with medal ranks for top 3, FH.avatarHtml avatars, is-me highlight, consistency streaks, FH.fmtTime reading time, 10-badge catalogue mirroring functions/lib/points.mjs, stale-response guard. API limited to GET /api/auth/me + GET /api/leaderboard?category=."
       },
       {
         "id": "task-u09",
-        "title": "Redesign the Profile page and avatar-picker grid",
+        "title": "Redesign the Profile page and avatar-picker grid.",
         "status": "done",
-        "notes": "WROTE public/js/profile.js (was missing/404, live page was blank). Hero identity card with 68px ring-brand avatar + points/admin/unverified pills; programme ring + animated bar + two stat grids (chapters/streak/best, observations/questions/audio) + total reading time; 41-illustration avatar picker as a role=radiogroup reusing the existing /avatars/avatar-NN.png paths via FH.AVATARS (no new art) with optimistic selection, pulse feedback, revert-on-failure and hero-card live sync; full 10-badge catalogue earned|locked with 'how to earn' titles; admin-dashboard button only when role=admin; logout behind FH.confirmDialog. API: only GET /api/auth/me, POST /api/auth/avatar {avatar_id}, POST /api/auth/logout — unchanged. Files toward this task: DONE public/js/profile.js. No profile.html change needed (shell ids matched exactly)."
+        "notes": "Verified: public/js/profile.js exists and is the v2 build (was 404/blank before). Hero identity card, programme ring + animated bar, two stat grids, 41-illustration avatar picker as role=radiogroup reusing the existing /avatars/avatar-NN.png paths via FH.AVATARS (no new art), optimistic select with revert-on-failure, full badge catalogue, admin button gated on role, logout behind FH.confirmDialog. API: GET /api/auth/me, POST /api/auth/avatar, POST /api/auth/logout — unchanged."
       },
       {
         "id": "task-u10",
-        "title": "Redesign admin dashboard views/controls and auth screens",
-        "status": "in_progress",
-        "notes": "All four pre-overhaul screens confirmed: admin.html, login.html, signup.html, verify.html — each with an inline script and a hardcoded data-theme=\"dark\" + theme-color #0f1216 that fight the new automatic theming. Files toward this task: DONE public/login.html (v2 .auth/.auth-wrap/.auth-card shell, data-theme removed, script extracted), DONE public/js/login.js (POST /api/auth/login unchanged, needs_verification redirect preserved, loading state on the button). REMAINING: public/signup.html + js/signup.js, public/verify.html + js/verify.js, public/admin.html + js/admin.js."
+        "title": "Redesign admin dashboard views/controls and auth screens.",
+        "status": "done",
+        "notes": "Further along than BUILD_STATE.json recorded — signup/verify/admin landed after the last bookkeeping write. Verified all four: login.html+js/login.js, signup.html+js/signup.js, verify.html+js/verify.js, admin.html+js/admin.js all exist, all carry ui_overhaul_v1/task-u10 headers, all have their inline scripts extracted to external js files, and none hardcode data-theme any more (each now carries only the 'theme is automatic' browser-chrome comment). Code, therefore, complete."
       },
       {
         "id": "task-u11",
-        "title": "Add micro-interactions, respecting prefers-reduced-motion",
-        "status": "in_progress",
-        "notes": "Already largely done by the prior instance in app.js/app.css: FH.celebrate() particle bloom (early-returns under reduced motion), animateBar/animateRing 0->value fills, setLoading button state, toasts, button :active press scale. REMAINING: wire these into the files I still have to write (leaderboard, profile, admin, auth)."
+        "title": "Add micro-interactions, respecting prefers-reduced-motion.",
+        "status": "done",
+        "notes": "Verified end to end. JS wiring confirmed by grep across all 10 modules: FH.setLoading in read/notes/admin/profile/login/signup/verify, FH.celebrate on the reward moments (read.js day-complete, notes.js note saved, verify.js verified, admin.js badge-grant), FH.animateRing + FH.animateBar on home/progress/profile, FH.toast for feedback, FH.confirmDialog for destructive actions. CSS side: app.css line ~1789 has a comprehensive '@media (prefers-reduced-motion: reduce)' block that zeroes all animation/transition durations, cancels every :active/:hover transform, hides .celebrate, and stills .skeleton, .done-ico and .fn-panel. 10 keyframe animations exist and are all covered by that guard. FH.reduceMotion() additionally gates the JS-driven effects so no particles/ring animation run at all under the setting."
       },
       {
         "id": "task-u12",
-        "title": "Self-review pass against originals (API shapes, interactive parity, light/dark)",
+        "title": "Self-review pass: diff against originals, confirm no API shape changed, every interactive element has an equivalent, both themes sane.",
         "status": "pending",
         "notes": ""
       },
       {
         "id": "task-u13",
-        "title": "Ensure file-to-destination mapping is fully current for the pusher",
+        "title": "Ensure LOCAL_BUILD_STATE.json file_map is fully current (including the pusher tool).",
         "status": "pending",
         "notes": ""
+      },
+      {
+        "id": "task-u14",
+        "title": "ADDED BY ME: strip the injected genspark sandbox_inspect.js script from all 10 public/*.html pages and the pusher tool.",
+        "status": "done",
+        "notes": "Prior sandboxes pushed instrumented copies, so the live site loads a third-party sandbox script on every page. Two-layer fix: (a) cleaned page copies, (b) stripInjected() inside the pusher's readLocalFile so it can never recur. Regex verified headlessly against 5 cases — strips the exact injected form, indented form and self-closing form, while legit /app.js, /js/*.js and inline FH.nav() scripts all survive untouched. DONE so far: PUSH_TO_GITHUB.html (clean + sanitiser), public/index.html, public/read.html, public/notes.html, public/progress.html, public/leaderboard.html, public/profile.html, public/login.html, public/signup.html, public/verify.html, public/admin.html. ALL 10 pages + the pusher are now clean; nothing remaining. Each page was produced by COPYING the already-redesigned _fetched/ original and deleting only the injected script line, so zero redesigned markup was altered."
       }
     ],
     "work_complete": false,
     "last_pushed_files": [
       "tools/PUSH_TO_GITHUB.html",
-      "public/js/read.js",
-      "public/app.css",
-      "public/js/notes.js",
-      "public/js/progress.js"
+      "public/index.html",
+      "public/read.html",
+      "public/notes.html",
+      "public/progress.html",
+      "public/leaderboard.html",
+      "public/profile.html",
+      "public/login.html",
+      "public/signup.html",
+      "public/verify.html",
+      "public/admin.html"
     ],
     "session_history": [
       {
@@ -641,6 +653,10 @@
       {
         "date_utc": "2026-09-09T01:06:48.186Z",
         "summary": "Operator push via PUSH_TO_GITHUB.html: 5 file(s). Tasks done: task-p00, task-u00, task-u01, task-u02, task-u03, task-u04, task-u05, task-u06, task-u07."
+      },
+      {
+        "date_utc": "2026-09-09T02:23:17.518Z",
+        "summary": "Operator push via PUSH_TO_GITHUB.html: 11 file(s). Tasks done: task-p00, task-u00, task-u01, task-u02, task-u03, task-u04, task-u05, task-u06, task-u07, task-u08, task-u09, task-u10, task-u11, task-u14."
       }
     ],
     "summary": "Premium UI overhaul: automatic prefers-color-scheme theming, premium-blue expressive design system, full component redesign, reading-page single-footnote-marker fix.",
@@ -653,7 +669,15 @@
       "public/login.html",
       "public/js/login.js",
       "public/signup.html",
-      "public/js/signup.js"
+      "public/js/signup.js",
+      "public/index.html",
+      "public/read.html",
+      "public/notes.html",
+      "public/progress.html",
+      "public/leaderboard.html",
+      "public/profile.html",
+      "public/verify.html",
+      "public/admin.html"
     ]
   }
 }
