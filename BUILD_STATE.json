@@ -771,5 +771,68 @@
         "summary": "Session start: identified pre-overhaul commit 1edc454 precisely via git history + BUILD_STATE.json; seeded revert_and_v2_redesign task list."
       }
     ]
+  },
+  "redesign_correction_v1": {
+    "started_utc": "2026-09-09",
+    "work_complete": false,
+    "scope": "Correction session. The prior session's revert_and_v2_redesign.work_complete=true report was wrong in two ways confirmed by the operator on the live site: (1) audio player buttons rendered the literal text 'undefined' prefixed onto every label (undefined5s / undefinedPlay / undefinedDownload this chapter / ...); (2) Part D simplified Claude-like redesign was never actually applied \u2014 live site still showed the old dark-card style. This session: reproduce the undefined-labels bug by RENDERING the real page (not grep), fix the broken icon code path everywhere, then genuinely build the simplified redesign and verify it VISUALLY (screenshots in light+dark on all 10 pages) before marking anything done.",
+    "trust_rules": "revert_and_v2_redesign.task-r06/task-r07 (redesign) and task-r03/task-r04 (audio) 'verified live' claims are NOT trusted; they are re-opened and re-verified here against real rendered pages. The revert itself (r01/r02), cache busting (r05), clipped reading pane (r08) and icon-corner fix (r09) are trusted unless inspection finds concrete breakage.",
+    "tasks": [
+      {
+        "id": "task-c01",
+        "title": "Reproduce the 'undefined' label bug by inspecting the actual rendered audio player; identify the exact broken icon-rendering code path and every other place using the same helper; append this task list; commit+push seed.",
+        "status": "in_progress",
+        "notes": "Seed commit. REPRODUCTION FINDINGS so far (2026-09-09): (a) ROOT CAUSE via git history \u2014 at deploy f27cc951 (task-r03/r04), public/read.html referenced FH.ICONS.play/pause/back5/fwd5/download/check but public/app.js at that same commit defined ONLY the 6 nav icon keys (home/read/notes/progress/board/profile). The action icons evaluated to JS undefined and were string-concatenated into button innerHTML => literal 'undefined5s', 'undefinedPlay', 'undefinedDownload this chapter' text. The action icon keys were only added later at 9b4048cf. The operator's screenshot matches that deployment. (b) Live production currently runs HEAD 9b2ff636 (deploy 83bbc88f) where the keys DO resolve \u2014 rendered /read shows no literal 'undefined' text. HOWEVER a real Chromium render (both schemes) revealed the fix was incomplete: every inline SVG injected into .btn / .btn.ghost / .card elements is UNSIZED in CSS (only nav.bottom a svg and .iconbtn svg have width/height), so the download icon renders full-width (~290px tall) and the 'Reading complete' check icon renders ~180px tall, ballooning the cards. (c) Prior session's 'verification' grepped only for absence of emoji/toggle/animation strings \u2014 never rendered a page; the Part D redesign claim was therefore false-positive. Screenshots of the actual current render saved as evidence.",
+        "commit": ""
+      },
+      {
+        "id": "task-c02",
+        "title": "Fix the broken icon rendering everywhere it appears (not just the audio player). Verify by rendering real pages \u2014 zero literal 'undefined' text anywhere in the UI.",
+        "status": "pending",
+        "notes": "",
+        "commit": ""
+      },
+      {
+        "id": "task-c03",
+        "title": "Update DESIGN_SYSTEM.md with the corrected, actually-intended simplified token set (muted neutral surfaces, ONE restrained MUTED-BLUE accent, clear typographic hierarchy, minimal borders/shadows).",
+        "status": "pending",
+        "notes": "",
+        "commit": ""
+      },
+      {
+        "id": "task-c04",
+        "title": "Rebuild the audio player component per Part 2 \u2014 visual hierarchy between primary/secondary controls, properly rendering sized icons, calmer segmented chapter-selector styling (no high-contrast outline).",
+        "status": "pending",
+        "notes": "",
+        "commit": ""
+      },
+      {
+        "id": "task-c05",
+        "title": "Apply the corrected design system across Home, Notes, Progress, Leaderboard, Profile, admin, and auth screens.",
+        "status": "pending",
+        "notes": "",
+        "commit": ""
+      },
+      {
+        "id": "task-c06",
+        "title": "Live visual verification pass: render (screenshot, real browser, not source inspection) all 10 pages in BOTH light and dark; confirm calm simplified style (no old dark-card/bright-outline look) and zero 'undefined' text.",
+        "status": "pending",
+        "notes": "",
+        "commit": ""
+      },
+      {
+        "id": "task-c07",
+        "title": "Final commit/push with redesign_correction_v1.work_complete=true, only after task-c06's real visual verification genuinely passes.",
+        "status": "pending",
+        "notes": "",
+        "commit": ""
+      }
+    ],
+    "session_history": [
+      {
+        "date_utc": "2026-09-09",
+        "summary": "Session start (correction). Pulled repo HEAD 9b2ff636; read BUILD_STATE.json incl. revert_and_v2_redesign. Confirmed live production == HEAD via CF deployments API + byte-diff of live app.v3.js/css vs repo (IDENTICAL). Reproduced the audio-player state with a REAL headless-Chromium render (owner session minted in D1): no literal 'undefined' text at HEAD, but the action SVG icons are completely unsized (download icon renders ~290px, completion check ~180px) \u2014 the 'fixed' player is still visually broken. Root-cause of the operator-reported 'undefined' labels confirmed in git history (see task-c01 notes). Seeding correction task list and pushing before other work per protocol."
+      }
+    ]
   }
 }
