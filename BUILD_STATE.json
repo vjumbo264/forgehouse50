@@ -1092,4 +1092,46 @@
    }
   ]
  }
+,
+ "audio_player_padding_fix_v1":  {
+   "started_utc": "2026-09-09",
+   "work_complete": false,
+   "scope": "Undo reading_layout_flexbox_v1 entirely (it removed the bottom navigation) and restore the Reading page to its exact pre-flexbox state (commit 74ec970, known-good except audio-player controls cropped at bottom). Then apply ONE minimal surgical fix: bottom padding / safe-area clearance on the audio player container so its controls sit fully visible above the bottom nav. No layout restructure, no flex rewrite, no header/verse-pane/bottom-nav changes.",
+   "identified_commits": {
+     "flexbox_session_range": "30fa690 (task-x01 seed, BUILD_STATE only) .. de45244 (x06+x07 verification) - 3 commits, all 2026-09-09, all exclusively Reading-page layout / asset-rename / BUILD_STATE",
+     "flexbox_code_commit": "e4ebd55 (x02-x05): read.html restructured to five-zone 100dvh flex column with nav relocated in-flow, Ch1-6 strip removed, app.v7.css renamed to app.v8.css, 12 pages re-pointed, sw fh50-v11",
+     "revert_target": "74ec970 (audio_player_crop_fix_v1 final, work_complete=true) - the known-good-except-cropped state",
+     "isolation_check": "Range diff touches only read.html, the css rename, 1-line css-reference bumps in the other 11 pages, sw.js version/precache, and BUILD_STATE.json. Nothing unrelated; safe to revert as a unit."
+   },
+   "revert_method": "read.html restored byte-identical from 74ec970. Stylesheet restored as NEW file app.v9.css = byte-identical copy of app.v7.css@74ec970 (v8 retired rather than resurrecting v7, per the versioned-asset rule that a content change always ships under a NEW URL so no cache can serve a stale shell). All 12 pages re-pointed v8->v9. sw.js VERSION fh50-v11 -> fh50-v12 and precache app.v8.css -> app.v9.css.",
+   "tasks": [
+     {
+       "id": "task-p01",
+       "title": "Identify exact commit range for reading_layout_flexbox_v1 and the pre-flexbox target; append this session's task list to BUILD_STATE.json; commit+push and verify.",
+       "status": "done",
+       "notes": "Range 30fa690..de45244 (3 commits); code commit e4ebd55; revert target 74ec970. Recorded in identified_commits above.",
+       "commit": "this commit"
+     },
+     {
+       "id": "task-p02",
+       "title": "Revert Reading page files to 74ec970 (own clean commit). Verify live at 390x844 and 360x640 that bottom nav is restored and page matches known-good-except-cropped state.",
+       "status": "pending"
+     },
+     {
+       "id": "task-p03",
+       "title": "Apply minimal padding/safe-area fix to #audio-card container only (padding-bottom: max(value, env(safe-area-inset-bottom))); seek-bar alignment fix only if actually broken in the reverted version.",
+       "status": "pending"
+     },
+     {
+       "id": "task-p04",
+       "title": "Live verification at 390x844 and 360x640: full-page screenshots; bottom nav present; player controls fully visible with clear padding above nav; nothing else changed.",
+       "status": "pending"
+     },
+     {
+       "id": "task-p05",
+       "title": "Final commit/push with work_complete=true only after p04 screenshots genuinely confirm; record exact pixel evidence in notes.",
+       "status": "pending"
+     }
+   ]
+ }
 }
