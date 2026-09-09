@@ -350,7 +350,7 @@ body.read-page {
   display: flex; flex-direction: column; gap: 6px;
   height: 100%; max-height: 100%;
   max-width: min(720px, 100%);
-  margin: 0 auto; padding: 8px 12px 8px; /* bottom padding: player never flush against the nav */
+  margin: 0 auto; padding: 8px 12px 12px; /* audio_player_padding_fix_v1 task-p03: bottom pad 8px->12px so the player controls sit with clear spacing above the bottom nav */
   overflow: hidden; position: relative;
 }
 .read-wrap > * { flex: none; }
@@ -383,7 +383,7 @@ body.read-page {
 .mark-strip .check { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
 .mark-strip .btn.small { width: auto; }
 /* Compact audio player — the last element above the bottom nav. */
-#audio-card { padding: 6px 10px; margin: 0; display: flex; flex-direction: column; gap: 4px; position: relative; }
+#audio-card { padding: 6px 10px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); margin: 0; display: flex; flex-direction: column; gap: 4px; position: relative; } /* audio_player_padding_fix_v1 task-p03: guarantee >=12px clearance inside the player above the bottom nav, >= the device gesture-bar inset on safe-area devices */
 #audio-card .ac-row { display: flex; align-items: center; gap: 10px; }
 #audio-card .ac-status { justify-content: space-between; }
 #audio-card .ac-status #audio-note { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
