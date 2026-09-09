@@ -331,3 +331,79 @@ input[type="range"]#audio-seek:focus { box-shadow: none; border-color: var(--bor
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── Reading page compaction (reading_page_compaction_v1 / task-i03..i05) ──
+   Four vertical zones on screen at once with NO page-level scroll:
+   compact header → scrollable verse pane → compact audio player → bottom nav.
+   The body becomes a fixed-height flex column so the pane fills exactly the
+   space freed by compacting the header/player (no vh guesswork). */
+body.read-page {
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
+  padding-bottom: 56px; /* exact bottom-nav height */
+}
+.read-wrap {
+  display: flex; flex-direction: column; gap: 6px;
+  height: 100%; max-height: 100%;
+  max-width: min(720px, 100%);
+  margin: 0 auto; padding: 8px 12px 0;
+  overflow: hidden; position: relative;
+}
+.read-wrap > * { flex: none; }
+#passage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; }
+.read-wrap #passage.reader-pane {
+  flex: 1 1 auto; min-height: 0; max-height: none; height: 100%;
+  overflow-y: auto; margin: 0;
+}
+/* Compact header — two slim rows. */
+.rd-top { display: flex; align-items: center; gap: 8px; }
+.rd-brand { font-weight: 600; font-size: 16px; letter-spacing: .2px; color: var(--text); }
+.rd-brand span { color: var(--accent-text); }
+.rd-top .pill { flex: none; }
+.rd-sub { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.rd-sub .rd-assign { font-size: 16.5px; font-weight: 650; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-sub .rd-meta { font-size: 12px; flex: none; }
+/* Header overflow menu (translation, text size, bookmark, day nav, attribution). */
+#overflow-menu {
+  position: absolute; top: 44px; right: 12px; z-index: 70;
+  width: min(270px, calc(100% - 24px));
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); box-shadow: 0 6px 24px rgba(0,0,0,.14);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+#overflow-menu label { margin: 0; }
+#overflow-menu .om-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+#overflow-menu #om-attrib { line-height: 1.45; }
+/* Slim mark-complete strip (replaces the stacked completion card). */
+.mark-strip { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 2px 0; }
+.mark-strip .check { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; }
+.mark-strip .btn.small { width: auto; }
+/* Compact audio player — the last element above the bottom nav. */
+#audio-card { padding: 8px 12px; margin: 0; display: flex; flex-direction: column; gap: 6px; position: relative; }
+#audio-card .ac-row { display: flex; align-items: center; gap: 10px; }
+#audio-card .ac-status { justify-content: space-between; }
+#audio-card .ac-status #audio-note { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#audio-card .ac-controls { gap: 8px; }
+#audio-card .ac-controls #audio-cur, #audio-card .ac-controls #audio-dur { min-width: 32px; font-variant-numeric: tabular-nums; }
+#audio-card .ac-controls #audio-cur { text-align: right; }
+#audio-card .ac-controls #audio-seek { flex: 1; margin: 0; min-width: 60px; }
+#audio-card #audio-play { width: 40px; height: 40px; }
+#audio-card #audio-back, #audio-card #audio-fwd { width: 34px; height: 34px; }
+#audio-card #audio-chapters { margin-top: 0; padding: 2px; }
+#audio-card #audio-chapters button { padding: 4px 10px; font-size: 12px; }
+/* Download menu: one compact toggle opens a small menu with BOTH actions. */
+#dl-menu {
+  position: absolute; top: 34px; right: 10px; z-index: 72;
+  display: flex; flex-direction: column; gap: 6px; padding: 10px;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); box-shadow: 0 6px 24px rgba(0,0,0,.14);
+  width: max-content; max-width: calc(100vw - 32px);
+}
+#dl-menu .btn { width: 100%; justify-content: flex-start; }
+/* Auto-scroll resume affordance (task-i06). */
+#autoscroll-resume {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: 10px; z-index: 20;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--accent-text); border-radius: 99px; padding: 6px 14px;
+  font-size: 12.5px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
+}

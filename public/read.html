@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Read</title>
-<link rel="stylesheet" href="/app.v4.css">
+<link rel="stylesheet" href="/app.v5.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -15,53 +15,87 @@
 <meta name="apple-mobile-web-app-title" content="ForgeHouse 50">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 </head>
-<body>
-<div class="wrap">
+<body class="read-page">
+<div class="wrap read-wrap">
+  <!-- Compact header is rendered by the script into #top (two slim rows).
+       The old brand topbar / day heading / toolbar stack is gone from this
+       page only; other pages keep FH.topbar(). -->
   <div id="top"></div>
-  <div id="day-head"></div>
-  <div class="card flat between" style="gap:6px">
-    <div class="row">
-      <button class="iconbtn" id="fs-dec" title="Smaller text">A-</button>
-      <button class="iconbtn" id="fs-inc" title="Larger text">A+</button>
-      <select id="translation" style="width:auto;margin:0;padding:7px 10px;font-size:13px"></select>
-    </div>
-    <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage" aria-label="Bookmark this passage"></button>
+  <div id="overflow-menu" hidden></div>
+  <div id="passage-wrap">
+    <div id="passage" class="card scripture fs-medium reader-pane"><p class="muted">Loading passage…</p></div>
+    <button id="autoscroll-resume" hidden>Resume auto-scroll</button>
   </div>
-  <div id="passage" class="card scripture fs-medium reader-pane"><p class="muted">Loading passage…</p></div>
   <div class="reader-nav" id="chapter-nav" style="display:none">
     <button class="btn ghost small" id="ch-prev" style="width:auto">Previous chapter</button>
     <span class="small muted" id="ch-label"></span>
     <button class="btn ghost small" id="ch-next" style="width:auto">Next chapter</button>
   </div>
+  <!-- Mark-complete / write-a-note live as a slim strip between the chapter
+       nav and the player, never as a stacked card. -->
+  <div id="mark-area"></div>
+  <!-- Audio player is the LAST element above the fixed bottom nav. -->
   <div class="card flat" id="audio-card">
-    <div class="between small muted"><span>Audio</span><span id="audio-note">Checking availability…</span></div>
-    <div class="row player-row" style="margin-top:10px">
+    <div class="ac-row ac-status">
+      <span id="audio-note" class="small muted">Checking availability…</span>
+      <button class="iconbtn small" id="audio-done" style="display:none" title="Mark audio complete" aria-label="Mark audio complete"></button>
+      <button class="iconbtn small" id="dl-toggle" style="display:none" title="Download audio" aria-label="Download audio" aria-haspopup="menu"></button>
+    </div>
+    <div id="dl-menu" hidden>
+      <button class="btn ghost small" id="audio-dl">Download this chapter</button>
+      <button class="btn ghost small" id="audio-dl-all">Download all for today</button>
+    </div>
+    <div class="ac-row ac-controls">
       <button class="iconbtn" id="audio-back" disabled title="Back 5 seconds" aria-label="Back 5 seconds"></button>
       <button id="audio-play" disabled aria-label="Play"></button>
       <button class="iconbtn" id="audio-fwd" disabled title="Forward 5 seconds" aria-label="Forward 5 seconds"></button>
-    </div>
-    <div class="row" style="margin-top:12px;gap:8px">
-      <span class="small muted" id="audio-cur" style="min-width:36px;text-align:right">0:00</span>
-      <input type="range" id="audio-seek" min="0" max="1000" value="0" step="1" disabled
-             style="flex:1;margin:0;padding:0;height:auto;border:0" aria-label="Seek narration">
-      <span class="small muted" id="audio-dur" style="min-width:36px">0:00</span>
+      <span class="small muted" id="audio-cur">0:00</span>
+      <input type="range" id="audio-seek" min="0" max="1000" value="0" step="1" disabled aria-label="Seek narration">
+      <span class="small muted" id="audio-dur">0:00</span>
     </div>
     <div style="display:none" id="audio-chapters" aria-label="Choose chapter"></div>
-    <div class="row" style="margin-top:10px;flex-wrap:wrap">
-      <button class="btn ghost small" id="audio-dl" style="display:none;width:auto">Download this chapter</button>
-      <button class="btn ghost small" id="audio-dl-all" style="display:none;width:auto">Download all for today</button>
-      <button class="btn ghost small" id="audio-done" style="display:none;width:auto">Mark audio complete</button>
-    </div>
   </div>
-  <div id="mark-area"></div>
-  <div class="card flat small muted" id="attrib"></div>
+  <!-- Hidden holders: #day-head kept so legacy fills are inert; #attrib holds
+       the scripture attribution text which surfaces via the header overflow menu. -->
+  <div id="day-head" hidden></div>
+  <div class="card flat small muted" id="attrib" hidden></div>
 </div>
-<script src="/app.v4.js"></script>
+<script src="/app.v5.js"></script>
 <script>
 (async () => {
   const me = await FH.requireAuth();
   if (!me) return;
-  document.getElementById('top').innerHTML = FH.topbar('Daily Reading');
+  // Compact two-row header (reading_page_compaction_v1 task-i03): brand +
+  // day pill + overflow menu on row 1; assignment title + meta on row 2.
+  // The overflow menu absorbs translation, text size, bookmark, day-to-day
+  // navigation and the scripture-source attribution — everything that used
+  // to be stacked blocks adding ~216px above the pane. FH.topbar() is left
+  // untouched for the other nine pages.
+  document.getElementById('top').innerHTML = `
+    <div class="rd-top">
+      <div class="rd-brand">ForgeHouse <span>50</span></div>
+      <span class="pill" id="rd-day-pill"></span>
+      <span style="flex:1"></span>
+      <button class="iconbtn small" id="menu-btn" aria-label="Reading options" aria-haspopup="menu"></button>
+    </div>
+    <div class="rd-sub"><span class="rd-assign" id="rd-assign"></span><span class="rd-meta muted" id="rd-meta"></span></div>`;
+  document.getElementById('menu-btn').innerHTML = FH.ICONS.menu;
+  document.getElementById('overflow-menu').innerHTML = `
+    <label for="translation">Translation</label>
+    <select id="translation"></select>
+    <div class="row" style="gap:8px">
+      <span class="small muted">Text size</span>
+      <button class="iconbtn" id="fs-dec" title="Smaller text">A-</button>
+      <button class="iconbtn" id="fs-inc" title="Larger text">A+</button>
+      <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage" aria-label="Bookmark this passage"></button>
+    </div>
+    <div id="om-day-nav" class="om-nav"></div>
+    <div class="small muted" id="om-attrib"></div>`;
+  const om = document.getElementById('overflow-menu');
+  document.getElementById('menu-btn').onclick = (e) => { e.stopPropagation(); om.hidden = !om.hidden; };
+  document.addEventListener('click', (e) => {
+    if (!om.hidden && !om.contains(e.target)) om.hidden = true;
+  });
 
   const params = new URLSearchParams(location.search);
   const dayN = parseInt(params.get('day') || '1', 10);
@@ -73,12 +107,15 @@
 
   const assignText = day.assignments.map(a =>
     a.chapter_start === a.chapter_end ? `${a.book} ${a.chapter_start}` : `${a.book} ${a.chapter_start}–${a.chapter_end}`).join(' · ');
-  document.getElementById('day-head').innerHTML = `
-    <div class="between"><div>
-      <span class="pill">Reading Day ${day.day_number}</span>
-      <h1 style="margin:8px 0 2px">${FH.esc(assignText)}</h1>
-      <div class="muted small">${day.date} · ${day.chapter_count} chapters · ~${day.est_minutes} min</div>
-    </div></div>`;
+  // Fill the compact header (no stacked day heading block any more).
+  document.getElementById('rd-day-pill').textContent = `Day ${day.day_number}`;
+  document.getElementById('rd-assign').textContent = assignText;
+  document.getElementById('rd-assign').title = assignText;
+  document.getElementById('rd-meta').textContent = `${day.chapter_count} ch · ~${day.est_minutes} min`;
+  // Day-to-day navigation lives in the header overflow menu, not page flow.
+  document.getElementById('om-day-nav').innerHTML = `
+    ${dayN > 1 ? `<a class="btn ghost small" href="/read?day=${dayN - 1}">Previous · Day ${dayN - 1}</a>` : ''}
+    ${dayN < 50 ? `<a class="btn ghost small" href="/read?day=${dayN + 1}">Next · Day ${dayN + 1}</a>` : ''}`;
 
   const sel = document.getElementById('translation');
   const trList = tr?.translations || [];
@@ -174,6 +211,7 @@
     chapterIdx = Math.min(Math.max(0, i), chapterList.length - 1);
     const c = chapterList[chapterIdx];
     const cont = document.getElementById('passage');
+    if (typeof window.__fhAutoScrollReset === 'function') window.__fhAutoScrollReset();
     let html = `<h3 style="color:var(--accent-text);margin:0 0 10px">${FH.esc(c.book)} ${c.chapter}</h3>`;
     for (const intro of c.intros) html += renderIntroBlock(intro);
     html += c.verses.map(v => {
@@ -187,6 +225,7 @@
     cont.innerHTML = html;
     cont.scrollTop = 0; // new chapter always starts at the top of the pane
     document.getElementById('attrib').textContent = c.attribution || '';
+    document.getElementById('om-attrib').textContent = c.attribution || '';
     const nav = document.getElementById('chapter-nav');
     nav.style.display = 'flex';
     document.getElementById('ch-prev').disabled = chapterIdx === 0;
@@ -234,6 +273,8 @@
   const doneBtn = document.getElementById('audio-done');
   const dlBtn = document.getElementById('audio-dl');
   const dlAllBtn = document.getElementById('audio-dl-all');
+  const dlToggle = document.getElementById('dl-toggle');
+  const dlMenu = document.getElementById('dl-menu');
   const chapRow = document.getElementById('audio-chapters');
 
   // Icon glyphs (SVG, no emoji) for the player controls.
@@ -243,6 +284,8 @@
   fwdBtn.innerHTML = FH.ICONS.fwd5 + '<span>5s</span>';
   dlBtn.innerHTML = FH.ICONS.download + '<span>Download this chapter</span>';
   dlAllBtn.innerHTML = FH.ICONS.download + '<span>Download all for today</span>';
+  dlToggle.innerHTML = FH.ICONS.download;
+  doneBtn.innerHTML = FH.ICONS.check + '<span>Mark audio complete</span>';
   document.getElementById('bookmark-btn').innerHTML = FH.ICONS.bookmark;
   playBtn.innerHTML = ICON_PLAY;
 
@@ -255,7 +298,7 @@
     const d = audioEl.duration;
     const v = d && isFinite(d) ? Math.round(1000 * audioEl.currentTime / d) : 0;
     if (!seeking) seekEl.value = v;
-    // Filled accent portion of the scrubber track (see app.v4.css gradient).
+    // Filled accent portion of the scrubber track (see app.v5.css gradient).
     seekEl.style.setProperty('--fill', (v / 10) + '%');
     curEl.textContent = fmtSecs(audioEl.currentTime);
     durEl.textContent = fmtSecs(d);
@@ -271,14 +314,16 @@
       chapRow.innerHTML = audioQueue.map((a, i) =>
         `<button type="button" data-ai="${i}" class="${i === (audioIdx < 0 ? 0 : audioIdx) ? 'active' : ''}" aria-pressed="${i === (audioIdx < 0 ? 0 : audioIdx)}">Ch ${a.chapter}</button>`).join('');
       // Downloads are gated on real availability — only chapters in audioQueue exist.
+      // Both actions are folded into ONE compact download button opening a small menu.
+      dlToggle.style.display = '';
       dlBtn.style.display = '';
       dlAllBtn.style.display = audioQueue.length > 1 ? '' : 'none';
     } else {
       playBtn.innerHTML = ICON_PLAY;
       noteEl.textContent = 'Not yet available — narration is being generated by VerseWell';
       chapRow.style.display = 'none';
-      dlBtn.style.display = 'none';
-      dlAllBtn.style.display = 'none';
+      dlToggle.style.display = 'none';
+      dlMenu.hidden = true;
     }
   }
 
@@ -317,6 +362,13 @@
     audioEl.play().catch(() => {});
     playBtn.innerHTML = ICON_PAUSE;
     noteEl.textContent = `Playing ${audioQueue[i].book} ${audioQueue[i].chapter}`;
+    // Keep the verse pane on the chapter being narrated (auto-advance support).
+    // Match by book+chapter, not by index: partial audio availability means the
+    // audio queue can be a SUBSET of the day's chapter list (e.g. only ch 2 of
+    // 1-3 narrated), so audioIdx does not necessarily equal the chapter index.
+    const aq = audioQueue[i];
+    const ci = chapterList.findIndex(c => c.book === aq.book && c.chapter === aq.chapter);
+    if (ci >= 0 && ci !== chapterIdx) renderChapter(ci);
     chapRow.querySelectorAll('button').forEach((b, j) => {
       b.classList.toggle('active', j === i);
       b.setAttribute('aria-pressed', j === i ? 'true' : 'false');
@@ -377,6 +429,51 @@
     if (b) playIdx(parseInt(b.dataset.ai, 10));
   });
   audioEl.addEventListener('timeupdate', syncSeekUi);
+
+  // ── Time-estimated auto-scroll synced to audio (task-i06) ────────────────
+  // VerseWell audio has NO word/verse timing data, so precise sync is
+  // impossible. Instead the pane scrolls at the audio's proportional pace:
+  //   scrollTop = (currentTime / duration) * scrollableHeight
+  // recalculated every animation frame from the LIVE currentTime, so it stays
+  // correct through seeks, buffering and stalls. Audio-driven only — it never
+  // runs while paused. Manual scrolling pauses it until resumed.
+  const passageEl = document.getElementById('passage');
+  const asResumeBtn = document.getElementById('autoscroll-resume');
+  let autoScrollEnabled = true;
+  let asRaf = 0;
+  let lastAppliedTop = 0;
+  function asScrollable() { return Math.max(0, passageEl.scrollHeight - passageEl.clientHeight); }
+  function autoScrollFrame() {
+    asRaf = 0;
+    if (audioEl.paused || audioEl.ended) return;         // audio-driven only
+    const d = audioEl.duration;
+    if (!isFinite(d) || d <= 0) { asRaf = requestAnimationFrame(autoScrollFrame); return; }
+    if (autoScrollEnabled) {
+      const max = asScrollable();
+      const target = Math.min(max, (audioEl.currentTime / d) * max);
+      if (Math.abs(target - lastAppliedTop) > 0.5) { passageEl.scrollTop = target; lastAppliedTop = target; }
+      asResumeBtn.hidden = true;
+    }
+    asRaf = requestAnimationFrame(autoScrollFrame);
+  }
+  function asStart() { if (!asRaf) asRaf = requestAnimationFrame(autoScrollFrame); }
+  window.__fhAutoScrollReset = function () {
+    autoScrollEnabled = true; asResumeBtn.hidden = true; lastAppliedTop = 0;
+  };
+  // User scrolled manually while playing -> stop fighting them, offer resume.
+  passageEl.addEventListener('scroll', () => {
+    if (audioEl.paused || audioEl.ended || !autoScrollEnabled) return;
+    const d = audioEl.duration;
+    if (!isFinite(d) || d <= 0) return;
+    const expected = Math.min(asScrollable(), (audioEl.currentTime / d) * asScrollable());
+    if (Math.abs(passageEl.scrollTop - expected) > 30) {   // a real manual deviation
+      autoScrollEnabled = false;
+      asResumeBtn.hidden = false;
+    }
+  }, { passive: true });
+  asResumeBtn.onclick = () => { autoScrollEnabled = true; asResumeBtn.hidden = true; lastAppliedTop = -1; };
+  audioEl.addEventListener('play', asStart);
+  audioEl.addEventListener('seeked', () => { lastAppliedTop = -1; }); // resync after a seek
   // Apply any queued seek only once real metadata (a finite duration) exists.
   function applyPendingSeek() {
     if (pendingSeek != null && isFinite(audioEl.duration) && audioEl.duration > 0) {
@@ -391,12 +488,30 @@
   audioEl.addEventListener('loadedmetadata', applyPendingSeek);
   audioEl.addEventListener('durationchange', applyPendingSeek);
   audioEl.addEventListener('ended', () => {
-    if (audioIdx + 1 < audioQueue.length) playIdx(audioIdx + 1);
-    else {
-      playBtn.innerHTML = ICON_PLAY;
-      syncSeekUi();
-      doneBtn.style.display = '';
+    // Auto-advance to the next chapter (task-i07) — but only into the
+    // IMMEDIATELY FOLLOWING text chapter, and only when that chapter's audio
+    // genuinely exists. If the next chapter's audio is not yet available
+    // (progressive availability), stop cleanly: never skip ahead to a later
+    // chapter that has audio while leaving a gap, and never advance into a
+    // silent/broken state. The manual Next Chapter button stays the way forward.
+    const cur = audioQueue[audioIdx];
+    const curCi = cur ? chapterList.findIndex(c => c.book === cur.book && c.chapter === cur.chapter) : -1;
+    const nextCi = curCi + 1;
+    if (curCi >= 0 && nextCi < chapterList.length) {
+      const nc = chapterList[nextCi];
+      const ni = audioQueue.findIndex(a => a.book === nc.book && a.chapter === nc.chapter);
+      if (ni >= 0) { playIdx(ni); return; }  // renders new chapter text + resets auto-scroll via renderChapter
     }
+    playBtn.innerHTML = ICON_PLAY;
+    syncSeekUi();
+    doneBtn.style.display = '';
+  });
+
+  // Download menu: one compact button opens a small menu holding BOTH download
+  // actions (task-i04) — they no longer each occupy a full stacked row.
+  dlToggle.onclick = (e) => { e.stopPropagation(); dlMenu.hidden = !dlMenu.hidden; };
+  document.addEventListener('click', (e) => {
+    if (!dlMenu.hidden && !dlMenu.contains(e.target) && e.target !== dlToggle) dlMenu.hidden = true;
   });
 
   // ----- Audio downloads (blob fetch — VerseWell sends ACAO:* so cross-origin
@@ -494,14 +609,17 @@
       FH.api('/api/read/time', { method: 'POST', body: { day_number: dayN, seconds: 30 } });
   }, 30000);
 
-  // Mark complete
+  // Mark complete — a SLIM inline strip, not a stacked card (task-i05). The
+  // completion card + write-a-note used to add a large block that forced the
+  // page itself to scroll; now it is one slim row that never does.
   function renderMarkArea() {
     const done = !!day.progress.completed;
     document.getElementById('mark-area').innerHTML = done
-      ? `<div class="card center"><span class="check row" style="font-size:16px;justify-content:center">${FH.ICONS.check}<span>Reading complete</span></span>
-          <div class="small muted" style="margin-top:4px">Points awarded. Well done.</div>
-          <a class="btn ghost" style="margin-top:12px" href="/notes?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note</a></div>`
-      : `<button class="btn" id="mark-btn">Mark Complete · Day ${dayN}</button>`;
+      ? `<div class="mark-strip done-strip">
+           <span class="check">${FH.ICONS.check}<span>Reading complete</span></span>
+           <a class="btn ghost small" style="width:auto" href="/notes?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note</a>
+         </div>`
+      : `<div class="mark-strip"><button class="btn small" id="mark-btn">Mark Complete · Day ${dayN}</button></div>`;
     if (!done) document.getElementById('mark-btn').onclick = async () => {
       const btn = document.getElementById('mark-btn'); btn.disabled = true;
       const { ok, data } = await FH.api('/api/read/complete', { method: 'POST', body: { day_number: dayN } });
@@ -510,15 +628,8 @@
     };
   }
   renderMarkArea();
-
-  // Prev / next day navigation
-  const navRow = document.createElement('div');
-  navRow.className = 'between';
-  navRow.style.margin = '14px 0';
-  navRow.innerHTML = `
-    ${dayN > 1 ? `<a class="btn ghost small" href="/read?day=${dayN - 1}">Previous · Day ${dayN - 1}</a>` : '<span></span>'}
-    ${dayN < 50 ? `<a class="btn ghost small" href="/read?day=${dayN + 1}">Next · Day ${dayN + 1}</a>` : '<span></span>'}`;
-  document.getElementById('mark-area').appendChild(navRow);
+  // (Day-to-day Previous/Next navigation moved into the header overflow menu —
+  //  see the rd-top render above — so it no longer adds a stacked page block.)
 })();
 </script>
 </body>

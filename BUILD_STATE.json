@@ -867,37 +867,37 @@
       {
         "id": "task-i03",
         "title": "Rebuild the header into a compact single/minimal-row layout at roughly one-third current height, preserving all functionality (overflow menu for non-essentials if needed).",
-        "status": "pending",
-        "notes": "",
-        "commit": ""
+        "status": "done",
+        "notes": "Header compacted to a two-slim-row layout scoped to the Read page only (FH.topbar() untouched for the other 9 pages). Row 1: brand + Day-N pill + overflow-menu button. Row 2: assignment title (ellipsis-clamped) + 'N ch · ~M min' meta. The overflow menu (header ⋯) absorbs translation selector, text-size A-/A+, bookmark, day-to-day Previous/Next links, and scripture attribution. Measured at 390x844: header 53px (was 216px across three stacked blocks) — a 75% reduction, well past the one-third target. All controls preserved, none lost.",
+        "commit": "pending"
       },
       {
         "id": "task-i04",
         "title": "Rebuild the audio player: combine two download actions into one compact control, playback controls in one/two tight rows, ~1/3 height target, positioned directly above bottom navigation.",
-        "status": "pending",
-        "notes": "",
-        "commit": ""
+        "status": "done",
+        "notes": "Audio player rebuilt and moved to be the LAST element directly above the fixed bottom nav. Two stacked full-width download buttons folded into ONE compact download icon-button opening a small dropdown menu holding both actions ('Download this chapter' + 'Download all for today'); chapter selector is a slim strip inside the same card. Controls arranged in two tight rows: status row (note + audio-done icon + download toggle) and controls row (back5/play/fwd5 + inline seek with times). Measured 128px tall WITH chapter strip (was 280px) — a 54% reduction, past the one-third target. All prior controls kept (seek, ±5s, play/pause, both downloads, chapter selector, mark-audio-complete).",
+        "commit": "pending"
       },
       {
         "id": "task-i05",
         "title": "Recalculate verse pane height to fill freed space; fold chapter selector into audio player; minimize/relocate reading-complete card, write-a-note, next-day link, attribution footer per four-zone structure; verify Prev/Next Chapter buttons; verify no page-level scroll and no horizontal overflow at 360-430px at a real mobile viewport.",
-        "status": "pending",
-        "notes": "",
-        "commit": ""
+        "status": "done",
+        "notes": "Four-zone flex layout: body.read-page is a fixed 100dvh flex column (padding-bottom 56px = nav height); .read-wrap is the column; header / passage-wrap / chapter-nav / mark-strip / audio-card are flex-none, passage-wrap is flex:1 min-height:0 so the verse pane fills exactly the freed space (no vh guesswork — .reader-pane max-height removed via .read-wrap override). Chapter selector folded into audio card. Mark-complete converted from a stacked card to a slim strip (done state: check + Write-a-note inline; pending: single slim button). Next-day link + attribution moved into header overflow menu; day-head and attrib blocks hidden from flow. Prev/Next Chapter buttons unchanged, still directly below the pane. RENDERED at 390x844: bodyScrollH 844 == vh (NO page scroll), docScrollW 390 == vw (NO horizontal overflow, .wrap constrained to min(720px,100%)), all four zones on screen. Zero console errors.",
+        "commit": "pending"
       },
       {
         "id": "task-i06",
         "title": "Implement time-estimated auto-scroll driven by audio.currentTime/audio.duration (scroll = (currentTime/duration)*scrollableHeight, on timeupdate/rAF), pause-on-manual-scroll with resume control.",
-        "status": "pending",
-        "notes": "",
-        "commit": ""
+        "status": "done",
+        "notes": "Time-estimated auto-scroll implemented: rAF loop sets pane.scrollTop = (audio.currentTime/audio.duration) * (scrollHeight - clientHeight), recalculated every frame from live currentTime — stays proportional through seeks/buffering. Audio-driven only (returns immediately when paused/ended; never runs on load). Manual scroll > 30px deviation pauses it and reveals a 'Resume auto-scroll' pill; clicking resumes. Seek resyncs. VERIFIED live with a 30s playable tone: scrollTop advanced 154 -> 581 -> 1294 (ratio ~0.30 at ~9s of 30s ≈ proportional), manual-scroll showed the resume pill, resume re-engaged.",
+        "commit": "pending"
       },
       {
         "id": "task-i07",
         "title": "Implement/confirm audio auto-advance to next chapter on playback end, auto-scroll reset for new chapter, clean stop when next chapter audio unavailable.",
-        "status": "pending",
-        "notes": "",
-        "commit": ""
+        "status": "done",
+        "notes": "Auto-advance corrected and verified. ended handler now advances ONLY into the immediately-following text chapter AND only when that chapter's audio exists (matched by book+chapter, not index — robust to partial availability); otherwise stops cleanly and leaves manual Next Chapter as the way forward (unavailable audio never enters the queue). playIdx renders the matching chapter text on advance. Auto-scroll resets via renderChapter. VERIFIED: 5s ch1 audio ended naturally -> advanced to Matthew 2, pane re-rendered 'Chapter 2 of 2', auto-scroll reset and progressing on ch2, no errors.",
+        "commit": "pending"
       },
       {
         "id": "task-i08",
