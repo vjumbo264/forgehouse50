@@ -719,20 +719,20 @@
    {
     "id": "task-r06",
     "title": "Remove manual light/dark toggle again (permanently) + simplified Claude-like design system: lean DESIGN_SYSTEM.md, restrained accent, minimal motion, full emoji audit/removal (Part D).",
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Manual light/dark toggle removed properly this time: FH.toggleTheme deleted, toggle button removed from FH.topbar, legacy fh50_theme localStorage key + data-theme attribute actively purged on load by initTheme, data-theme=\"dark\" stripped from all 10 pages, theming now fully automatic via @media (prefers-color-scheme) in app.v3.css; theme-color meta syncs live to the OS scheme. New lean DESIGN_SYSTEM.md written (replaces reverted v2 doc): calm neutral palettes light+dark, single restrained green accent (#2f6a4f light / #7ab894 dark) used only for primary actions/key state, type/radius/spacing/shadow scales, minimal 0.12s transitions, global prefers-reduced-motion collapse. Full emoji audit: zero emoji/symbol glyphs remain in any page (verified by script over all public/*.html + app.v3.js/css); all former emoji glyphs (play/pause/bookmark/check/stars/arrows) replaced with the consistent inline SVG set in FH.ICONS or plain text."
    },
    {
     "id": "task-r07",
     "title": "Apply Part D redesign consistently across Home, Read, Notes, Progress, Leaderboard, Profile, admin, auth; restyle notes button to read clearly clickable.",
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Redesign applied app-wide via the shared v3 stylesheet + shared topbar/nav (all screens — Home, Read, Notes, Progress, Leaderboard, Profile, admin, login/signup/verify — already consume app.v3.css and FH.topbar/FH.nav, so the new tokens, buttons, cards, inputs, badges and motion apply uniformly; per-page markup cleaned of leftover symbols). Notes buttons restyled to read clearly clickable: primary \"Save note\" keeps the filled accent treatment with shadow + hover/active; inline note Edit/Delete and the edit-mode Save use bordered .iconbtn/.btn.small with visible borders and hover states (border+text pick up the accent). fn-marker footnote buttons also given a visible border + hover state."
    },
    {
     "id": "task-r08",
     "title": "Fixed-height clipped chapter reading pane with always-visible Prev/Next Chapter controls; footnote/section-intro behavior preserved (Part E).",
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Fixed-height clipped reading pane implemented in read.html: #passage is now .reader-pane (max-height: min(58vh, 620px); internal scroll; overscroll contained; stable scrollbar gutter). The day is flattened across ALL assignment ranges into chapterList; exactly one chapter renders in the pane at a time; Prev/Next chapter buttons + \"Chapter N of M\" label live in .reader-nav OUTSIDE the pane, always visible, disabled at bounds; chapter switch resets pane scrollTop to 0. Footnote/section-intro rendering logic unchanged (same renderIntroBlock + fn-marker/fn-pop handlers inside the pane). Verse highlight now reads data-book from the rendered verse so multi-book days highlight against the correct book."
    },
    {
     "id": "task-r09",

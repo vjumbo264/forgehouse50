@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Admin</title>
@@ -67,7 +67,7 @@
       <details style="margin-top:8px">
         <summary class="small muted">Admin actions</summary>
         <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">
-          <input type="number" placeholder="+/− pts" id="pts-${u.id}" style="width:80px">
+          <input type="number" placeholder="+/- pts" id="pts-${u.id}" style="width:80px">
           <input type="text" placeholder="Reason (required)" id="rsn-${u.id}" style="flex:1;min-width:120px">
           <button class="btn ghost small" data-act="points" data-uid="${u.id}">Apply points</button>
         </div>
@@ -122,7 +122,7 @@
       chapter_end: parseInt(document.getElementById('as-ce').value || '0', 10) } });
     btn.disabled = false;
     if (!res.ok) { err.textContent = res.data?.error || 'Save failed'; return; }
-    err.textContent = ''; document.getElementById('as-save').textContent = 'Saved ✓';
+    err.textContent = ''; document.getElementById('as-save').textContent = 'Saved';
     setTimeout(() => { document.getElementById('as-save').textContent = 'Replace day assignment'; }, 2000);
   });
 })();

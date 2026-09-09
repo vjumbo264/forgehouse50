@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Read</title>
@@ -21,19 +21,24 @@
   <div id="day-head"></div>
   <div class="card flat between" style="gap:6px">
     <div class="row">
-      <button class="iconbtn" id="fs-dec" title="Smaller text">A−</button>
+      <button class="iconbtn" id="fs-dec" title="Smaller text">A-</button>
       <button class="iconbtn" id="fs-inc" title="Larger text">A+</button>
       <select id="translation" style="width:auto;margin:0;padding:7px 10px;font-size:13px"></select>
     </div>
-    <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage">🔖</button>
+    <button class="iconbtn" id="bookmark-btn" title="Bookmark this passage" aria-label="Bookmark this passage"></button>
   </div>
-  <div id="passage" class="card scripture fs-medium"><p class="muted">Loading passage…</p></div>
+  <div id="passage" class="card scripture fs-medium reader-pane"><p class="muted">Loading passage…</p></div>
+  <div class="reader-nav" id="chapter-nav" style="display:none">
+    <button class="btn ghost small" id="ch-prev" style="width:auto">Previous chapter</button>
+    <span class="small muted" id="ch-label"></span>
+    <button class="btn ghost small" id="ch-next" style="width:auto">Next chapter</button>
+  </div>
   <div class="card flat" id="audio-card">
     <div class="between small muted"><span>Audio</span><span id="audio-note">Checking availability…</span></div>
     <div class="row" style="margin-top:8px">
-      <button class="iconbtn" id="audio-back" disabled title="Back 5 seconds" aria-label="Back 5 seconds">−5s</button>
-      <button class="iconbtn" id="audio-play" disabled>▶ Play</button>
-      <button class="iconbtn" id="audio-fwd" disabled title="Forward 5 seconds" aria-label="Forward 5 seconds">+5s</button>
+      <button class="iconbtn" id="audio-back" disabled title="Back 5 seconds" aria-label="Back 5 seconds"></button>
+      <button class="iconbtn" id="audio-play" disabled></button>
+      <button class="iconbtn" id="audio-fwd" disabled title="Forward 5 seconds" aria-label="Forward 5 seconds"></button>
     </div>
     <div class="row" style="margin-top:10px;gap:8px">
       <span class="small muted" id="audio-cur" style="min-width:36px;text-align:right">0:00</span>
@@ -121,7 +126,8 @@
       return;
     }
     currentParts = parts;
-    renderPassage(parts);
+    buildChapters(parts);
+    renderChapter(0);
     loadAudio(); // re-check audio for the newly selected translation
   }
 
@@ -137,31 +143,59 @@
     return `<div class="intro-block"><div class="intro-label">Introduction</div><p>${FH.esc(intro.text)}</p></div>`;
   }
 
-  function renderPassage(parts) {
-    const cont = document.getElementById('passage');
-    cont.innerHTML = parts.map(p => {
-      let curCh = null;
-      const intros = Array.isArray(p.intros) ? p.intros : [];
-      const introForCh = (ch) => intros.filter(i => i.chapter === ch);
+  // The day is flattened into an ordered chapter list across all assignment
+  // ranges (a day can span multiple books). Exactly ONE chapter renders in
+  // the fixed-height .reader-pane at a time; Prev/Next buttons live outside
+  // the pane so they are always visible (Part E).
+  let chapterList = [];  // [{book, chapter, verses, intros, attribution}]
+  let chapterIdx = 0;
+
+  function buildChapters(parts) {
+    chapterList = [];
+    for (const p of parts) {
       const bookName = p.reference.replace(/\s+\d.*$/, '');
-      const verses = p.verses.map(v => {
-        const hl = highlights.find(h => h.chapter === v.chapter && v.verse >= h.verse_start && v.verse <= h.verse_end);
-        let head = '';
-        if (v.chapter !== curCh) {
-          head = `<h3 style="color:var(--accent);margin:18px 0 8px">${FH.esc(bookName)} ${v.chapter}</h3>`;
-          for (const intro of introForCh(v.chapter)) head += renderIntroBlock(intro);
-          curCh = v.chapter;
-        }
-        const fn = (v.footnotes && v.footnotes.length)
-          ? v.footnotes.map(f =>
-              `<button class="fn-marker" data-fn="${FH.esc(f.text)}" title="Footnote">${FH.esc(f.marker)}</button>`).join('')
-          : '';
-        return `${head}<p class="v ${hl ? 'hl-' + hl.color : ''}" data-ch="${v.chapter}" data-v="${v.verse}"><span class="vn">${v.verse}</span>${FH.esc(v.text)}${fn}</p>`;
-      }).join('');
-      return verses;
-    }).join('');
-    document.getElementById('attrib').textContent = parts[0]?.attribution || '';
+      const intros = Array.isArray(p.intros) ? p.intros : [];
+      const byCh = new Map();
+      for (const v of p.verses) {
+        if (!byCh.has(v.chapter)) byCh.set(v.chapter, []);
+        byCh.get(v.chapter).push(v);
+      }
+      for (const [ch, verses] of byCh)
+        chapterList.push({
+          book: bookName, chapter: ch, verses,
+          intros: intros.filter(i => i.chapter === ch),
+          attribution: p.attribution,
+        });
+    }
   }
+
+  function renderChapter(i) {
+    if (!chapterList.length) return;
+    chapterIdx = Math.min(Math.max(0, i), chapterList.length - 1);
+    const c = chapterList[chapterIdx];
+    const cont = document.getElementById('passage');
+    let html = `<h3 style="color:var(--accent-text);margin:0 0 10px">${FH.esc(c.book)} ${c.chapter}</h3>`;
+    for (const intro of c.intros) html += renderIntroBlock(intro);
+    html += c.verses.map(v => {
+      const hl = highlights.find(h => h.chapter === v.chapter && v.verse >= h.verse_start && v.verse <= h.verse_end);
+      const fn = (v.footnotes && v.footnotes.length)
+        ? v.footnotes.map(f =>
+            `<button class="fn-marker" data-fn="${FH.esc(f.text)}" title="Footnote">${FH.esc(f.marker)}</button>`).join('')
+        : '';
+      return `<p class="v ${hl ? 'hl-' + hl.color : ''}" data-book="${FH.esc(c.book)}" data-ch="${v.chapter}" data-v="${v.verse}"><span class="vn">${v.verse}</span>${FH.esc(v.text)}${fn}</p>`;
+    }).join('');
+    cont.innerHTML = html;
+    cont.scrollTop = 0; // new chapter always starts at the top of the pane
+    document.getElementById('attrib').textContent = c.attribution || '';
+    const nav = document.getElementById('chapter-nav');
+    nav.style.display = 'flex';
+    document.getElementById('ch-prev').disabled = chapterIdx === 0;
+    document.getElementById('ch-next').disabled = chapterIdx === chapterList.length - 1;
+    document.getElementById('ch-label').textContent =
+      `Chapter ${chapterIdx + 1} of ${chapterList.length}`;
+  }
+  document.getElementById('ch-prev').onclick = () => renderChapter(chapterIdx - 1);
+  document.getElementById('ch-next').onclick = () => renderChapter(chapterIdx + 1);
 
   // Footnote marker: single tappable marker per footnote; tap toggles an
   // inline expansion directly under the verse (tap again or another to close).
@@ -201,6 +235,16 @@
   const dlAllBtn = document.getElementById('audio-dl-all');
   const chapRow = document.getElementById('audio-chapters');
 
+  // Icon glyphs (SVG, no emoji) for the player controls.
+  const ICON_PLAY = FH.ICONS.play + '<span>Play</span>';
+  const ICON_PAUSE = FH.ICONS.pause + '<span>Pause</span>';
+  backBtn.innerHTML = FH.ICONS.back5 + '<span>5s</span>';
+  fwdBtn.innerHTML = FH.ICONS.fwd5 + '<span>5s</span>';
+  dlBtn.innerHTML = FH.ICONS.download + '<span>Download this chapter</span>';
+  dlAllBtn.innerHTML = FH.ICONS.download + '<span>Download all for today</span>';
+  document.getElementById('bookmark-btn').innerHTML = FH.ICONS.bookmark;
+  playBtn.innerHTML = ICON_PLAY;
+
   function fmtSecs(s) {
     if (!isFinite(s) || s < 0) s = 0;
     s = Math.floor(s);
@@ -226,7 +270,7 @@
       dlBtn.style.display = '';
       dlAllBtn.style.display = audioQueue.length > 1 ? '' : 'none';
     } else {
-      playBtn.textContent = '▶ Play';
+      playBtn.innerHTML = ICON_PLAY;
       noteEl.textContent = 'Not yet available — narration is being generated by VerseWell';
       chapRow.style.display = 'none';
       dlBtn.style.display = 'none';
@@ -257,7 +301,7 @@
     audioIdx = i;
     audioEl.src = audioQueue[i].url;
     audioEl.play().catch(() => {});
-    playBtn.textContent = '⏸ Pause';
+    playBtn.innerHTML = ICON_PAUSE;
     noteEl.textContent = `Playing ${audioQueue[i].book} ${audioQueue[i].chapter}`;
     chapRow.querySelectorAll('button').forEach((b, j) =>
       b.style.borderColor = j === i ? 'var(--accent)' : 'var(--border-strong)');
@@ -267,10 +311,10 @@
     if (!audioQueue.length) return;
     if (audioEl.paused) {
       if (audioIdx < 0) playIdx(0);
-      else { audioEl.play().catch(() => {}); playBtn.textContent = '⏸ Pause'; }
+      else { audioEl.play().catch(() => {}); playBtn.innerHTML = ICON_PAUSE; }
     } else {
       audioEl.pause();
-      playBtn.textContent = '▶ Play';
+      playBtn.innerHTML = ICON_PLAY;
     }
   };
   // ±5-second skips via the native element's currentTime (clamped to bounds).
@@ -306,7 +350,7 @@
   audioEl.addEventListener('ended', () => {
     if (audioIdx + 1 < audioQueue.length) playIdx(audioIdx + 1);
     else {
-      playBtn.textContent = '▶ Play';
+      playBtn.innerHTML = ICON_PLAY;
       syncSeekUi();
       doneBtn.style.display = '';
     }
@@ -336,11 +380,10 @@
     const a = audioQueue[audioIdx >= 0 ? audioIdx : 0];
     if (!a) return;
     dlBtn.disabled = true;
-    const prev = dlBtn.textContent;
     dlBtn.textContent = 'Downloading…';
     try { await downloadOneAudio(a); }
     catch { noteEl.textContent = 'Download failed — please try again'; }
-    dlBtn.textContent = prev;
+    dlBtn.innerHTML = FH.ICONS.download + '<span>Download this chapter</span>';
     dlBtn.disabled = false;
   };
   dlAllBtn.onclick = async () => {
@@ -350,12 +393,12 @@
       dlAllBtn.textContent = `Downloading ${i + 1}/${audioQueue.length}…`;
       try { await downloadOneAudio(audioQueue[i]); } catch { /* continue with the rest */ }
     }
-    dlAllBtn.textContent = 'Download all for today';
+    dlAllBtn.innerHTML = FH.ICONS.download + '<span>Download all for today</span>';
     dlAllBtn.disabled = false;
   };
   doneBtn.onclick = async () => {
     await FH.api('/api/read/audio', { method: 'POST', body: { day_number: dayN } });
-    doneBtn.textContent = '✓ Audio complete';
+    doneBtn.innerHTML = FH.ICONS.check + '<span>Audio complete</span>';
     doneBtn.disabled = true;
   };
 
@@ -363,13 +406,13 @@
   await loadPassage();
   sel.addEventListener('change', loadPassage);
 
-  // Tap a verse to highlight (cycles amber → none) — simple, mobile-friendly
+  // Tap a verse to highlight (cycles amber -> none) — simple, mobile-friendly
   document.getElementById('passage').addEventListener('click', async (e) => {
     if (e.target.closest('.fn-marker')) return; // footnote taps handled above
     const p = e.target.closest('p.v');
     if (!p) return;
     const ch = parseInt(p.dataset.ch, 10), v = parseInt(p.dataset.v, 10);
-    const book = day.assignments[0].book;
+    const book = p.dataset.book || day.assignments[0].book;
     const existing = highlights.find(h => h.chapter === ch && v >= h.verse_start && v <= h.verse_end);
     if (existing) {
       await FH.api('/api/read/highlight', { method: 'DELETE', body: { id: existing.id } });
@@ -398,7 +441,8 @@
   document.getElementById('bookmark-btn').onclick = async () => {
     const a = day.assignments[0];
     await FH.api('/api/read/bookmark', { method: 'POST', body: { book: a.book, chapter: a.chapter_start, day_number: dayN } });
-    document.getElementById('bookmark-btn').textContent = '✅ Saved';
+    const bb = document.getElementById('bookmark-btn');
+    bb.innerHTML = FH.ICONS.check + '<span>Saved</span>';
   };
 
   // Reading-time heartbeat (30s)
@@ -411,9 +455,9 @@
   function renderMarkArea() {
     const done = !!day.progress.completed;
     document.getElementById('mark-area').innerHTML = done
-      ? `<div class="card center"><span class="check" style="font-size:18px">✓ Reading complete</span>
+      ? `<div class="card center"><span class="check row" style="font-size:16px;justify-content:center">${FH.ICONS.check}<span>Reading complete</span></span>
           <div class="small muted" style="margin-top:4px">Points awarded. Well done.</div>
-          <a class="btn ghost" style="margin-top:12px" href="/notes.html?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note →</a></div>`
+          <a class="btn ghost" style="margin-top:12px" href="/notes.html?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note</a></div>`
       : `<button class="btn" id="mark-btn">Mark Complete · Day ${dayN}</button>`;
     if (!done) document.getElementById('mark-btn').onclick = async () => {
       const btn = document.getElementById('mark-btn'); btn.disabled = true;
@@ -429,8 +473,8 @@
   navRow.className = 'between';
   navRow.style.margin = '14px 0';
   navRow.innerHTML = `
-    ${dayN > 1 ? `<a class="btn ghost small" href="/read.html?day=${dayN - 1}">← Day ${dayN - 1}</a>` : '<span></span>'}
-    ${dayN < 50 ? `<a class="btn ghost small" href="/read.html?day=${dayN + 1}">Day ${dayN + 1} →</a>` : '<span></span>'}`;
+    ${dayN > 1 ? `<a class="btn ghost small" href="/read.html?day=${dayN - 1}">Previous · Day ${dayN - 1}</a>` : '<span></span>'}
+    ${dayN < 50 ? `<a class="btn ghost small" href="/read.html?day=${dayN + 1}">Next · Day ${dayN + 1}</a>` : '<span></span>'}`;
   document.getElementById('mark-area').appendChild(navRow);
 })();
 </script>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Progress</title>
@@ -52,7 +52,7 @@
         <div style="font-weight:600">${FH.esc(d.assignment)}</div>
         <div class="small muted">${d.date} · ${d.chapter_count} ch${d.notes_count ? ' · ' + d.notes_count + ' note' + (d.notes_count > 1 ? 's' : '') : ''}${d.reading_seconds ? ' · ' + FH.fmtTime(d.reading_seconds) : ''}</div>
       </div>
-      <div class="${d.completed ? 'check' : 'muted'}">${d.completed ? '✓' : '·'}</div>
+      <div class="${d.completed ? 'check' : 'muted'}">${d.completed ? 'Done' : '·'}</div>
     </a>`).join('');
 })();
 </script>

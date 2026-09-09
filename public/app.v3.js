@@ -22,6 +22,15 @@ const FH = (() => {
     progress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
     board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
     profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>',
+    // UI action icons (revert_and_v2_redesign Part D: no emojis anywhere —
+    // every former emoji glyph is replaced by one of these consistent SVGs).
+    bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+    back5: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
+    fwd5: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m6 11 6 6 6-6"/><path d="M4 21h16"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg>',
   };
 
   function nav(active) {
@@ -36,12 +45,19 @@ const FH = (() => {
     document.body.appendChild(bar);
   }
 
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('fh50_theme', theme);
+  // Theming is automatic via prefers-color-scheme (CSS media query) — there
+  // is deliberately no manual toggle and no stored preference.
+  // initTheme() only removes any legacy stored theme / data-theme attribute
+  // left over from the pre-v3 builds so old visitors migrate cleanly.
+  function initTheme() {
+    try { localStorage.removeItem('fh50_theme'); } catch { /* private mode */ }
+    document.documentElement.removeAttribute('data-theme');
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const apply = () => { if (meta) meta.setAttribute('content', mq.matches ? '#171614' : '#faf9f6'); };
+    apply();
+    if (mq.addEventListener) mq.addEventListener('change', apply);
   }
-  function initTheme() { applyTheme(localStorage.getItem('fh50_theme') || 'dark'); }
-  function toggleTheme() { applyTheme((localStorage.getItem('fh50_theme') || 'dark') === 'dark' ? 'light' : 'dark'); }
 
   async function requireAuth() {
     const { ok, data } = await api('/api/auth/me');
@@ -58,7 +74,7 @@ const FH = (() => {
   function topbar(title, extra = '') {
     return `<div class="topbar"><div><div class="brand">ForgeHouse <span>50</span></div>
       <div class="tagline">${esc(title)}</div></div><div class="row">${extra}
-      <button class="iconbtn" onclick="FH.toggleTheme()" title="Toggle theme">◐</button></div></div>`;
+    </div></div>`;
   }
 
   // ── Illustration profile avatars (pwa_and_avatars_v1 Part B / task-w06..w09)
@@ -101,7 +117,7 @@ const FH = (() => {
   }
 
   // Old inline-SVG preset definitions removed in Part B (dead code).
-  return { api, el, esc, nav, initTheme, toggleTheme, requireAuth, fmtTime, topbar, ICONS, AVATARS, avatarHtml };
+  return { api, el, esc, nav, initTheme, requireAuth, fmtTime, topbar, ICONS, AVATARS, avatarHtml };
 })();
 FH.initTheme();
 
