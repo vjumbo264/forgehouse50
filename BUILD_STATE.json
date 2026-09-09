@@ -860,9 +860,9 @@
       {
         "id": "task-i02",
         "title": "Screenshot/render the current live Reading page at a real mobile viewport and record which elements consume excess header/audio-player height.",
-        "status": "pending",
-        "notes": "",
-        "commit": ""
+        "status": "done",
+        "notes": "Rendered the LIVE Reading page (/read?day=1) in real headless Chromium at 390x844 with realistic 2-chapter content (Matthew 1-2, stubbed only auth/day/highlights APIs; passage text + audio availability real-shaped). Measured zone heights: topbar 52px + day-head 93px + toolbar (A-/A+/translation/bookmark) 71px = 216px header stack across THREE stacked blocks; passage pane capped at 490px rendered height (scrollHeight 4766 - heavily clipped); audio card 280px tall (note row + centered player row + seek row + 36px chapter-picker row + stacked full-width labeled download buttons); mark-area 99px (Mark Complete button + day prev/next row); attrib 78px; bottom nav 56px. Total body scrollHeight 1433px vs 844px viewport => the PAGE scrolls, which defeats the clipped reading pane. HORIZONTAL OVERFLOW confirmed: documentElement.scrollWidth 468 vs innerWidth 390 (.wrap max-width 720px not width-constrained; no single wide element - whole layout sits wide). Header bulk = three stacked blocks (brand topbar, day heading, control toolbar). Audio bulk = two separately stacked full-width labeled download buttons + separate chapter-picker row + padded card. Audio note renders 'Not yet available' vs available states fine. Screenshots saved as evidence. These are the factual targets for i03/i04/i05.",
+        "commit": "pending"
       },
       {
         "id": "task-i03",
