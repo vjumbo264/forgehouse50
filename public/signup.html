@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeHouse 50 — Create account</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#0f1216">
+<!-- Theme is automatic (prefers-color-scheme); this is browser chrome only. -->
+<meta name="theme-color" content="#f4f7fc">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
@@ -14,59 +15,48 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ForgeHouse 50">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<style>body{padding-bottom:0}</style>
 </head>
-<body>
-<div class="wrap" style="max-width:440px;padding-top:48px">
-  <div class="center" style="margin-bottom:22px">
-    <div class="brand" style="font-size:26px">ForgeHouse <span>50</span></div>
-    <div class="tagline">Read the New Testament in 50 Reading Days</div>
-  </div>
-  <div class="card">
-    <h1 style="margin-top:0">Create your account</h1>
-    <p class="small muted">You'll receive a 6-digit verification code by email. It expires in 10 minutes.</p>
-    <form id="f">
-      <label>Name</label>
-      <input type="text" id="name" autocomplete="name" placeholder="Your name">
-      <label>Email</label>
-      <input type="email" id="email" required autocomplete="email" placeholder="you@example.com">
-      <label>Password</label>
-      <input type="password" id="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
-      <label style="margin-top:4px">Choose your avatar <span class="muted small">(optional — pick any time later)</span></label>
-      <div class="avatar-picker" id="avatar-picker"></div>
-      <div class="error" id="err"></div>
-      <button class="btn" type="submit">Sign up</button>
-    </form>
-    <p class="small muted center" style="margin:14px 0 0">Already have an account? <a href="/login.html">Log in</a></p>
-  </div>
-</div>
-<script src="/app.js"></script>
-<script>
-// Preset avatar picker — optional and non-blocking; a default is pre-selected
-// so the OTP verification flow is never complicated by this step.
-let chosenAvatar = FH.AVATARS[0].id;
-const picker = document.getElementById('avatar-picker');
-picker.innerHTML = FH.AVATARS.map(a =>
-  `<button type="button" data-avatar="${a.id}" class="${a.id === chosenAvatar ? 'selected' : ''}" title="${a.label}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
-picker.addEventListener('click', (e) => {
-  const b = e.target.closest('button[data-avatar]');
-  if (!b) return;
-  chosenAvatar = b.dataset.avatar;
-  picker.querySelectorAll('button').forEach(x => x.classList.toggle('selected', x.dataset.avatar === chosenAvatar));
-});
+<body class="auth">
+<main class="auth-wrap">
+  <div id="head"></div>
+  <section class="auth-card rise">
+    <h1 style="margin-bottom:var(--s-2)">Create your account</h1>
+    <p class="small muted" style="margin-bottom:var(--s-5)">
+      We'll email you a 6-digit code to confirm it's you. It expires in 10 minutes.</p>
 
-document.getElementById('f').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const err = document.getElementById('err'); err.textContent = '';
-  const btn = e.target.querySelector('button'); btn.disabled = true;
-  const email = document.getElementById('email').value;
-  const { ok, data } = await FH.api('/api/auth/signup', { method: 'POST', body: {
-    name: document.getElementById('name').value, email, password: document.getElementById('password').value,
-    avatar_id: chosenAvatar } });
-  btn.disabled = false;
-  if (ok) { location.href = '/verify.html?email=' + encodeURIComponent(email); return; }
-  err.textContent = data?.error || 'Signup failed';
-});
-</script>
-</body>
+    <form id="signup-form" novalidate>
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" autocomplete="name" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email"
+               inputmode="email" autocapitalize="off" spellcheck="false"
+               placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="8"
+               autocomplete="new-password" placeholder="At least 8 characters">
+        <p class="tiny muted" style="margin:6px 0 0">Minimum 8 characters.</p>
+      </div>
+
+      <div class="field">
+        <label id="avatar-label">Choose your avatar
+          <span class="muted">(optional — change it any time)</span></label>
+        <div class="avatar-picker" id="avatar-picker" role="radiogroup"
+             aria-labelledby="avatar-label"></div>
+      </div>
+
+      <div class="error" id="err" role="alert"></div>
+      <button class="btn" type="submit" id="submit-btn">Create account</button>
+    </form>
+
+    <p class="auth-foot">Already have an account? <a href="/login.html">Log in</a></p>
+  </section>
+</main>
+<script src="/app.js"></script>
+<script src="/js/signup.js"></script>
+<script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
 </html>
