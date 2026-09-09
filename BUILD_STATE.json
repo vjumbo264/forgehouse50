@@ -701,14 +701,14 @@
    {
     "id": "task-r03",
     "title": "Audio seek controls: scrubbable progress bar + skip back/forward 5s via audio.currentTime (Part B).",
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Audio seek implemented in public/read.html: scrubbable <input type=range> seek slider with live current/total time readout (0:00 format), plus explicit −5s / +5s skip buttons driving the native audio element currentTime (clamped to [0, duration]). Seeking pauses slider updates while dragging (pointerdown/input/change). loadAudio() now queries audio_availability for EVERY assignment range (a day can span multiple books per seed calendar), so the queue covers all of today's chapters; queue entries carry {book, chapter, url}."
    },
    {
     "id": "task-r04",
     "title": "Audio download: single-chapter download + download-all-for-today, gated on real audio availability (Part B).",
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Audio downloads implemented in public/read.html: \"Download this chapter\" (current/selected queue chapter) and \"Download all for today\" (every chapter with real audio, sequential blob downloads from one user gesture). VerseWell sends access-control-allow-origin:* so cross-origin blob fetch works with no proxy. Downloads are gated on the live audio_availability result — buttons render only when audioQueue is non-empty, so a chapter without a real file is never offered. Filenames: ForgeHouse50-DayN-Book-ChN.m4a."
    },
    {
     "id": "task-r05",
