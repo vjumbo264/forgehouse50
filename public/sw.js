@@ -17,7 +17,7 @@
 // Bump VERSION on every deploy that changes any shell file: the install
 // handler precaches under the new cache names and activate() deletes every
 // old cache, so no visitor can be stranded on a stale app shell.
-const VERSION = "fh50-v5";
+const VERSION = "fh50-v6";
 const SHELL_CACHE = `shell-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
 const CONTENT_CACHE = `versewell-${VERSION}`;
