@@ -1021,7 +1021,7 @@
  },
  "reading_layout_flexbox_v1": {
   "started_utc": "2026-09-09",
-  "work_complete": false,
+  "work_complete": true,
   "scope": "Operator-prescribed LITERAL structure for the Reading page (fourth attempt): single flex column exactly 100dvh tall; exactly one flexible child (verse pane); header/chapter-nav/audio-player/bottom-nav all flex 0 0 auto; verse pane flex 1 1 auto + min-height 0 + overflow-y auto. Header exactly two rows; audio player at most two internal rows (chapter-selector strip dropped if a third row would be needed); seek thumb and fill driven by one shared value.",
   "root_cause_audit": {
    "prior_attempts_checked": [
@@ -1079,16 +1079,16 @@
    {
     "id": "task-x06",
     "title": "Live rendered verification at 390x844 AND 360x640: all five zones simultaneously fully visible, zero cropping, verse pane the only scroller, seek thumb/fill aligned at 0%/~50%/100%, header exactly two rows as rendered.",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "RENDERED verification, headless Chromium 153, local static server with extensionless routing, APIs stubbed (Day 2 Matthew 7-12, 6 narrated chapters, realistic 25-verse chapters + intro + footnote), mobile emulation, four scenarios: 390x844, 360x640, plus both widths with audio unavailable. ALL FOUR PASS every gate. PIXEL EVIDENCE: 390x844 — header 8.0..60.6 (52.6px, exactly 2 rows at 27.0+25.6px, both flex-wrap:nowrap), verse pane 66.6..640.7 (clientH 572 vs scrollH 18089 = the only scroller; scrollTop 0->400 while body scrollTop stays 0), chapter-nav 656.7..690.7, audio player 696.7..779.7 (83px, exactly 2 .ac-row children, ZERO #audio-chapters element), nav 787.7..844.0 (bottom == viewport bottom exactly, position:static, INSIDE .read-wrap); bodyScrollH 844 == innerHeight (no page scroll), docScrollW 390 == innerWidth (no h-overflow), clipped-zones list EMPTY. 360x640 — header 8..60.6 (2 rows), pane 66.6..420.7 (352/19846, scrolls internally), chnav 436.7..486.7, audio 492.7..575.7, nav 583.7..640.0; bodyH 640==640, no clip, no overflow. SEEK ALIGNMENT (single shared value, thumb-centre fill math): 0% delta -0.09/-0.11px, 50% delta 0.00px, 100% delta +0.09/+0.11px (sub-pixel; before this fix the fill ran 8px past the thumb at 100%). Audio-unavailable state: same five-zone geometry, 'Not yet available' single status line, downloads hidden, no errors. Overflow menu: opens on menu button, contains Mark Complete control (mark area relocation works), zero page errors in all four scenarios."
    },
    {
     "id": "task-x07",
     "title": "Final commit/push with reading_layout_flexbox_v1.work_complete=true only after task-x06 genuinely passes at both widths; attach exact pixel evidence.",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Final commit/push with work_complete=true after genuine rendered PASS at BOTH widths x both audio states (4/4 scenarios, pixel measurements in task-x06). SUMMARY OF THE FOURTH ATTEMPT: the page is now literally one flex column exactly 100dvh tall with overflow hidden; exactly one flexible child (verse pane, flex 1 1 auto + min-height 0 + overflow-y auto); the four other zones flex 0 0 auto. The bottom nav was relocated from position:fixed-on-body (with reserved padding) to a normal in-flow flex child — eliminating the reserved-padding-mismatch cropping vector entirely. The sixth zone (mark strip) moved into the header overflow menu. The audio player's third row (Ch1..Ch6 strip) was removed — chapter switching via Prev/Next in zone 3. Seek thumb and fill are driven by one shared per-timeupdate value with thumb-centre geometry. Assets revved app.v7->app.v8, service worker fh50-v10->fh50-v11."
    }
   ]
  }
