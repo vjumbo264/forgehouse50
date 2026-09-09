@@ -1,452 +1,428 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
 <title>ForgeHouse 50 — Push to GitHub</title>
 <style>
-  /* Self-contained: no external fonts, scripts or styles. */
-  :root {
-    color-scheme: light dark;
-    --bg: #f4f7fb; --surface: #ffffff; --line: #d9e1ec; --text: #14213d; --dim: #56637a;
-    --brand: #1d5bd6; --brand-2: #1747a8; --ok: #1c8a4e; --bad: #c8322f; --warn: #b26a00; --soft: #e8effc;
+  :root{
+    --bg:#0b1220; --panel:#121b2e; --panel-2:#18243c; --line:#25334f;
+    --text:#e8eefb; --muted:#9fb0cd; --brand:#2f6df6; --brand-dk:#1f56d6;
+    --ok:#22c55e; --err:#ef4444; --warn:#f59e0b;
+    --r:14px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0e1522; --surface: #16202f; --line: #263244; --text: #e7edf6; --dim: #9fb0c8;
-      --brand: #5b8def; --brand-2: #7ea4f4; --ok: #4cc27f; --bad: #ef6b68; --warn: #f0b34a; --soft: #1d2b44;
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f7fd; --panel:#ffffff; --panel-2:#eef3fd; --line:#d8e2f5;
+      --text:#101a2e; --muted:#5a6b88; --brand:#1f56d6; --brand-dk:#17429f;
     }
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 15px; margin: 22px 0 8px; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); }
-  p { margin: 6px 0; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 14px 0; }
-  label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
-  input[type=password], input[type=text] { width: 100%; font: inherit; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
-  input:focus { outline: 3px solid var(--soft); border-color: var(--brand); }
-  .hint { font-size: 13px; color: var(--dim); }
-  button { font: inherit; font-weight: 700; border: 0; border-radius: 12px; padding: 13px 18px; cursor: pointer; background: var(--brand); color: #fff; width: 100%; margin-top: 12px; }
-  button:disabled { opacity: .5; cursor: default; }
-  button.secondary { background: var(--soft); color: var(--brand-2); }
-  button.tiny { width: auto; padding: 6px 10px; font-size: 13px; margin: 0; border-radius: 9px; }
-  .row { display: flex; gap: 10px; align-items: center; }
-  ul.files { list-style: none; margin: 0; padding: 0; }
-  ul.files li { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  ul.files li:last-child { border-bottom: 0; }
-  ul.files code { font-size: 12.5px; color: var(--dim); word-break: break-all; }
-  .path { flex: 1; min-width: 0; }
-  .status { font-size: 12.5px; font-weight: 700; white-space: nowrap; }
-  .status.ok { color: var(--ok); } .status.bad { color: var(--bad); } .status.run { color: var(--warn); } .status.idle { color: var(--dim); }
-  .banner { border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-top: 12px; }
-  .banner.ok { background: rgba(28,138,78,.12); color: var(--ok); }
-  .banner.bad { background: rgba(200,50,47,.12); color: var(--bad); }
-  .banner.info { background: var(--soft); color: var(--brand-2); }
-  #log { font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 260px; overflow: auto; margin-top: 10px; }
-  .hidden { display: none !important; }
-  .picker { border: 1px dashed var(--line); border-radius: 12px; padding: 12px; margin-top: 10px; }
-  .picker input[type=file] { font-size: 13px; }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:20px 16px 60px; background:var(--bg); color:var(--text);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:1.4rem;margin:0 0 4px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:.9rem;margin:0 0 20px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+  label{display:block;font-weight:600;font-size:.88rem;margin-bottom:6px}
+  .hint{color:var(--muted);font-size:.78rem;margin:6px 0 0}
+  input[type=password],input[type=text]{
+    width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--text);font-size:1rem;font-family:inherit;
+  }
+  input:focus{outline:2px solid var(--brand);outline-offset:1px}
+  button{
+    font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:11px;
+    padding:13px 18px;background:var(--brand);color:#fff;transition:transform .12s ease,background .12s ease;
+  }
+  button:hover{background:var(--brand-dk)}
+  button:active{transform:scale(.975)}
+  button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  button.ghost{background:transparent;color:var(--brand);border:1px solid var(--line)}
+  button.mini{padding:7px 11px;font-size:.8rem;border-radius:9px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .files{list-style:none;padding:0;margin:10px 0 0}
+  .files li{
+    display:flex;gap:10px;align-items:center;justify-content:space-between;
+    padding:9px 11px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;
+    background:var(--panel-2);font-size:.85rem;
+  }
+  .files .path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+  .st{font-weight:700;font-size:.76rem;white-space:nowrap;display:flex;gap:8px;align-items:center}
+  .st.pend{color:var(--muted)}
+  .st.work{color:var(--warn)}
+  .st.ok{color:var(--ok)}
+  .st.bad{color:var(--err)}
+  .err{color:var(--err);font-size:.78rem;margin-top:4px;word-break:break-word}
+  .summary{border-radius:11px;padding:12px 14px;font-size:.9rem;font-weight:600;display:none;margin-top:12px}
+  .summary.ok{display:block;background:rgba(34,197,94,.14);color:var(--ok);border:1px solid rgba(34,197,94,.35)}
+  .summary.bad{display:block;background:rgba(239,68,68,.14);color:var(--err);border:1px solid rgba(239,68,68,.35)}
+  .note{font-size:.8rem;color:var(--muted)}
+  code{background:var(--panel-2);padding:1px 5px;border-radius:5px;font-size:.85em}
+  .bar{height:7px;border-radius:99px;background:var(--panel-2);overflow:hidden;margin-top:12px;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;width:0;background:var(--brand);transition:width .25s ease}
 </style>
 </head>
 <body>
-<main>
-  <h1>Push to GitHub</h1>
-  <p class="hint">Pushes this sandbox's UI-overhaul files to <strong>vjumbo264/forgehouse50</strong> (branch <code>main</code>) using the GitHub REST API, straight from your browser. Nothing you type here leaves your browser except the direct HTTPS calls to <code>api.github.com</code>.</p>
+<div class="wrap">
+  <h1>ForgeHouse 50 — Push to GitHub</h1>
+  <p class="sub">Reads <code>LOCAL_BUILD_STATE.json</code> from the same folder as this page, then pushes every mapped file to
+    <code>vjumbo264/forgehouse50</code> via the GitHub Contents API. Your token stays in this page's memory only.</p>
 
-  <section class="card" id="source-card">
-    <h2 style="margin-top:0">1. Files to push</h2>
-    <div id="source-status" class="hint">Locating <code>LOCAL_BUILD_STATE.json</code>…</div>
-    <div class="picker hidden" id="picker">
-      <p class="hint" style="margin-top:0">This page was opened from disk, so it cannot read sibling files by itself. Select the sandbox workspace folder (the one containing <code>LOCAL_BUILD_STATE.json</code>). On phones without a folder picker, use the second button and multi-select <code>LOCAL_BUILD_STATE.json</code> together with the files.</p>
-      <div class="row" style="flex-wrap:wrap">
-        <input type="file" id="dir-input" webkitdirectory directory multiple>
-      </div>
-      <div class="row" style="flex-wrap:wrap;margin-top:8px">
-        <input type="file" id="multi-input" multiple>
-      </div>
+  <section class="card" id="manifest-card">
+    <div class="row" style="justify-content:space-between">
+      <label style="margin:0">Files to push</label>
+      <button class="ghost mini" id="reload-btn" type="button">Reload manifest</button>
     </div>
+    <p class="hint" id="manifest-status">Loading manifest…</p>
     <ul class="files" id="file-list"></ul>
-    <div class="row" style="margin-top:10px;flex-wrap:wrap">
-      <button class="tiny secondary" id="select-all" type="button">Select all</button>
-      <button class="tiny secondary" id="select-none" type="button">Select none</button>
-      <button class="tiny secondary" id="reload-state" type="button">Reload file list</button>
-    </div>
   </section>
 
   <section class="card">
-    <h2 style="margin-top:0">2. Credential</h2>
-    <label for="pat">GitHub Personal Access Token — pasted here only, never stored</label>
-    <input type="password" id="pat" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ghp_… or github_pat_…" aria-describedby="pat-hint">
-    <p class="hint" id="pat-hint">Needs <em>Contents: read &amp; write</em> on the repo (fine-grained) or the <code>repo</code> scope (classic). The token lives only in a local variable while a push is running; the field is cleared as soon as the push finishes.</p>
-    <label for="msg" style="margin-top:12px">Commit message (optional)</label>
-    <input type="text" id="msg" autocomplete="off" placeholder="UI overhaul batch: <timestamp>">
-    <button id="push-btn" type="button" disabled>Push to GitHub</button>
-    <div id="summary"></div>
+    <form id="push-form" autocomplete="off">
+      <label for="pat">GitHub Personal Access Token — pasted here only, never stored</label>
+      <input id="pat" name="pat" type="password" autocomplete="off" autocapitalize="off" autocorrect="off"
+             spellcheck="false" placeholder="ghp_… / github_pat_…">
+      <p class="hint">Needs <strong>Contents: read &amp; write</strong> on this repo. It is held in one local variable during
+        the push and cleared afterwards — never written to storage, a file, a URL, or the console.</p>
+      <div class="row" style="margin-top:14px">
+        <button id="push-btn" type="submit">Push to GitHub</button>
+        <span class="note" id="live-note"></span>
+      </div>
+      <div class="bar"><i id="bar-fill"></i></div>
+    </form>
+    <div class="summary" id="summary"></div>
   </section>
 
   <section class="card">
-    <h2 style="margin-top:0">Log</h2>
-    <div id="log" aria-live="polite"></div>
+    <p class="note" style="margin:0">
+      <strong>If a file fails</strong> (usually a stale <code>sha</code> because something else changed it), press its
+      <em>Retry</em> button — it re-fetches the current sha and pushes just that file. After every mapped file succeeds,
+      this tool also merges &amp; pushes an updated <code>BUILD_STATE.json</code> with the <code>ui_overhaul_v1</code> section.
+    </p>
   </section>
-</main>
+</div>
 
 <script>
-(() => {
-  'use strict';
-  // ─────────────────────────────────────────────────────────────────────────
-  // CONFIG
-  // ─────────────────────────────────────────────────────────────────────────
-  const OWNER = 'vjumbo264';
-  const REPO = 'forgehouse50';
-  const BRANCH = 'main';
-  const STATE_FILE = 'LOCAL_BUILD_STATE.json';
-  const REMOTE_BUILD_STATE = 'BUILD_STATE.json';
-  const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+(function () {
+  "use strict";
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // DOM
-  // ─────────────────────────────────────────────────────────────────────────
-  const $ = (id) => document.getElementById(id);
-  const logEl = $('log'), listEl = $('file-list'), summaryEl = $('summary');
-  const patEl = $('pat'), msgEl = $('msg'), pushBtn = $('push-btn');
-  const sourceStatus = $('source-status'), picker = $('picker');
+  var REPO = "vjumbo264/forgehouse50";
+  var BRANCH = "main";
+  var API = "https://api.github.com/repos/" + REPO + "/contents/";
+  var STATE_URL = "LOCAL_BUILD_STATE.json";
 
-  function log(line, cls) {
-    const t = new Date().toLocaleTimeString();
-    const div = document.createElement('div');
-    div.textContent = `[${t}] ${line}`;
-    if (cls) div.style.color = `var(--${cls})`;
-    logEl.appendChild(div);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
-  function banner(text, kind) {
-    summaryEl.innerHTML = '';
-    const d = document.createElement('div');
-    d.className = 'banner ' + kind;
-    d.textContent = text;
-    summaryEl.appendChild(d);
-  }
+  var manifest = [];      // [{local, dest, li, statusEl, errEl, retryBtn, done}]
+  var localState = null;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATE: how we read local files. Two modes:
-  //  - 'http'  : page is served (e.g. sandbox preview) → fetch() relative paths.
-  //  - 'files' : page opened from disk → operator picks folder/files; we index
-  //              them by workspace-relative path.
-  // ─────────────────────────────────────────────────────────────────────────
-  let mode = null;
-  let state = null;          // parsed LOCAL_BUILD_STATE.json
-  let localIndex = new Map(); // relative path → File (files mode only)
-  let entries = [];          // [{local, dest, checked, li, statusEl, retryBtn}]
+  var $ = function (id) { return document.getElementById(id); };
+  var listEl = $("file-list");
+  var manifestStatus = $("manifest-status");
+  var summaryEl = $("summary");
+  var pushBtn = $("push-btn");
+  var barFill = $("bar-fill");
+  var liveNote = $("live-note");
 
-  function bytesToBase64(bytes) {
-    // Chunked to avoid call-stack limits on large files. Handles any binary.
-    let bin = '';
-    const CHUNK = 0x8000;
-    for (let i = 0; i < bytes.length; i += CHUNK) {
+  /* ---------- helpers ---------- */
+
+  // UTF-8 safe base64 (btoa alone breaks on non-Latin1 chars such as curly quotes/em dashes).
+  function toBase64(str) {
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    var CHUNK = 0x8000;
+    for (var i = 0; i < bytes.length; i += CHUNK) {
       bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
     }
     return btoa(bin);
   }
-  function base64ToText(b64) {
-    // GitHub returns base64 with embedded newlines; strip all whitespace first.
-    const clean = String(b64 || '').replace(/\s+/g, '');
-    const bin = atob(clean);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder('utf-8').decode(bytes);
-  }
-  function textToBase64(text) {
-    return bytesToBase64(new TextEncoder().encode(text));
+
+  function setStatus(item, cls, text) {
+    item.statusEl.className = "st " + cls;
+    item.statusEl.textContent = text;
+    if (item.retryBtn && cls === "bad") item.statusEl.appendChild(item.retryBtn);
   }
 
-  async function readLocalBytes(relPath) {
-    if (mode === 'http') {
-      const res = await fetch('./' + relPath, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`local fetch ${relPath} → HTTP ${res.status}`);
-      return new Uint8Array(await res.arrayBuffer());
-    }
-    const f = localIndex.get(relPath) || localIndex.get(relPath.split('/').pop());
-    if (!f) throw new Error(`file not selected: ${relPath}`);
-    return new Uint8Array(await f.arrayBuffer());
+  function setError(item, msg) {
+    item.errEl.textContent = msg || "";
   }
 
-  function normaliseState(raw) {
-    // Accept a few shapes so a future session can evolve the file safely.
-    const map = raw.file_map || raw.files || raw.file_mapping || [];
-    const list = Array.isArray(map)
-      ? map.map(e => ({ local: e.local || e.src || e.from, dest: e.dest || e.destination || e.to, include: e.include !== false }))
-      : Object.entries(map).map(([local, dest]) => ({ local, dest, include: true }));
-    return {
-      raw,
-      sectionKey: raw.section_key || 'ui_overhaul_v1',
-      tasks: Array.isArray(raw.tasks) ? raw.tasks : [],
-      files: list.filter(e => e.local && e.dest && e.include),
-      meta: raw.remote_section_meta || {},
-    };
+  function updateBar() {
+    var total = manifest.length;
+    if (!total) { barFill.style.width = "0"; return; }
+    var done = manifest.filter(function (m) { return m.done; }).length;
+    barFill.style.width = Math.round((done / total) * 100) + "%";
   }
 
-  function renderList() {
-    listEl.innerHTML = '';
-    entries = state.files.map(f => {
-      const li = document.createElement('li');
-      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
-      const path = document.createElement('div'); path.className = 'path';
-      path.innerHTML = `<div>${escapeHtml(f.dest)}</div><code>from ${escapeHtml(f.local)}</code>`;
-      const st = document.createElement('span'); st.className = 'status idle'; st.textContent = 'ready';
-      const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'tiny secondary hidden'; retry.textContent = 'Retry';
-      li.append(cb, path, st, retry);
+  function showSummary(ok, msg) {
+    summaryEl.className = "summary " + (ok ? "ok" : "bad");
+    summaryEl.textContent = msg;
+  }
+
+  /* ---------- manifest ---------- */
+
+  function renderManifest() {
+    listEl.textContent = "";
+    manifest.forEach(function (item) {
+      var li = document.createElement("li");
+
+      var left = document.createElement("div");
+      var p = document.createElement("div");
+      p.className = "path";
+      p.textContent = item.dest;
+      left.appendChild(p);
+      if (item.local !== item.dest) {
+        var l = document.createElement("div");
+        l.className = "note";
+        l.textContent = "from " + item.local;
+        left.appendChild(l);
+      }
+      var err = document.createElement("div");
+      err.className = "err";
+      left.appendChild(err);
+
+      var st = document.createElement("span");
+      st.className = "st pend";
+      st.textContent = "pending";
+
+      li.appendChild(left);
+      li.appendChild(st);
       listEl.appendChild(li);
-      const entry = { ...f, cb, statusEl: st, retryBtn: retry, li, result: null };
-      retry.addEventListener('click', () => retryOne(entry));
-      return entry;
+
+      var retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "ghost mini";
+      retry.textContent = "Retry";
+      retry.addEventListener("click", function () {
+        var token = $("pat").value;
+        if (!token) { setError(item, "Paste your token first, then retry."); return; }
+        retry.disabled = true;
+        pushOne(item, token).then(function () {
+          retry.disabled = false;
+          token = "";
+        });
+      });
+
+      item.li = li;
+      item.statusEl = st;
+      item.errEl = err;
+      item.retryBtn = retry;
+      item.done = false;
     });
-    pushBtn.disabled = entries.length === 0;
-    sourceStatus.innerHTML = `${entries.length} mapped file(s) found in <code>${STATE_FILE}</code>` +
-      (state.raw.last_updated_utc ? ` · last updated ${escapeHtml(state.raw.last_updated_utc)}` : '') +
-      (mode === 'files' ? ` · reading from your selected folder` : ` · reading from this server`);
-  }
-  function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-
-  function setStatus(entry, text, cls) {
-    entry.statusEl.textContent = text;
-    entry.statusEl.className = 'status ' + cls;
+    updateBar();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // LOCAL STATE DISCOVERY
-  // ─────────────────────────────────────────────────────────────────────────
-  async function tryHttpMode() {
-    if (location.protocol === 'file:') return false;
-    try {
-      const res = await fetch('./' + STATE_FILE, { cache: 'no-store' });
-      if (!res.ok) return false;
-      const raw = await res.json();
-      mode = 'http';
-      state = normaliseState(raw);
-      return true;
-    } catch (_) { return false; }
+  function loadManifest() {
+    manifestStatus.textContent = "Loading manifest…";
+    return fetch(STATE_URL, { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (json) {
+        localState = json;
+        var map = Array.isArray(json.file_map) ? json.file_map : [];
+        manifest = map
+          .filter(function (m) { return m && m.local && m.dest; })
+          .map(function (m) { return { local: m.local, dest: m.dest }; });
+        renderManifest();
+        manifestStatus.textContent = manifest.length
+          ? manifest.length + " file(s) mapped, read live from LOCAL_BUILD_STATE.json."
+          : "LOCAL_BUILD_STATE.json has an empty file_map — nothing to push yet.";
+        pushBtn.disabled = manifest.length === 0;
+      })
+      .catch(function (e) {
+        manifestStatus.textContent =
+          "Could not read LOCAL_BUILD_STATE.json (" + e.message +
+          "). Keep this page in the same folder as that file. If you opened it with file:// and the browser blocked the read, " +
+          "serve the folder over http (or use a browser that allows local file reads).";
+        pushBtn.disabled = true;
+      });
   }
-  function showPicker(reason) {
-    picker.classList.remove('hidden');
-    sourceStatus.innerHTML = reason;
-  }
-  async function loadStateFromFiles(files) {
-    localIndex = new Map();
-    let stateFile = null;
-    for (const f of files) {
-      let rel = f.webkitRelativePath || f.name;
-      // webkitRelativePath includes the picked folder name as first segment; strip it.
-      if (f.webkitRelativePath && rel.includes('/')) rel = rel.split('/').slice(1).join('/');
-      localIndex.set(rel, f);
-      if (!localIndex.has(f.name)) localIndex.set(f.name, f); // basename fallback (multi-select mode)
-      if (rel === STATE_FILE || f.name === STATE_FILE) stateFile = f;
-    }
-    if (!stateFile) { showPicker(`<span style="color:var(--bad)">No <code>${STATE_FILE}</code> in that selection. Pick the workspace folder (or include the file).</span>`); return; }
-    try {
-      const raw = JSON.parse(await stateFile.text());
-      mode = 'files';
-      state = normaliseState(raw);
-      renderList();
-      log(`Loaded ${STATE_FILE} from selected files (${state.files.length} mapped).`);
-    } catch (e) {
-      showPicker(`<span style="color:var(--bad)">${STATE_FILE} is not valid JSON: ${escapeHtml(e.message)}</span>`);
-    }
-  }
-  async function init() {
-    if (await tryHttpMode()) {
-      renderList();
-      log(`Loaded ${STATE_FILE} from server (${state.files.length} mapped files).`);
-    } else {
-      showPicker(`Could not fetch <code>${STATE_FILE}</code> from this location — select the workspace folder below.`);
-    }
-  }
-  $('dir-input').addEventListener('change', e => loadStateFromFiles(Array.from(e.target.files)));
-  $('multi-input').addEventListener('change', e => loadStateFromFiles(Array.from(e.target.files)));
-  $('select-all').addEventListener('click', () => entries.forEach(e => e.cb.checked = true));
-  $('select-none').addEventListener('click', () => entries.forEach(e => e.cb.checked = false));
-  $('reload-state').addEventListener('click', async () => {
-    if (mode === 'http') { await tryHttpMode(); renderList(); log('Reloaded file list.'); }
-    else { $('dir-input').value = ''; $('multi-input').value = ''; showPicker('Re-select the workspace folder to reload.'); }
-  });
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // GITHUB API
-  // The token is passed as a parameter and never assigned to any long-lived
-  // variable, storage, URL, or log line.
-  // ─────────────────────────────────────────────────────────────────────────
+  /* ---------- GitHub API ---------- */
+
   function ghHeaders(token) {
     return {
-      'Authorization': 'token ' + token,
-      'Accept': 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'Content-Type': 'application/json',
+      "Authorization": "token " + token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
     };
   }
-  async function ghGetFile(token, path) {
-    // Returns { sha, contentB64 } or null when the file does not exist yet.
-    const url = API + encodePath(path) + `?ref=${encodeURIComponent(BRANCH)}&_=${Date.now()}`;
-    const res = await fetch(url, { headers: ghHeaders(token), cache: 'no-store' });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`GET ${path} → HTTP ${res.status}: ${await safeErr(res)}`);
-    const j = await res.json();
-    if (Array.isArray(j)) throw new Error(`${path} is a directory on GitHub, not a file`);
-    return { sha: j.sha, contentB64: j.content };
-  }
-  async function ghPutFile(token, path, contentB64, message, sha) {
-    const body = { message, content: contentB64, branch: BRANCH };
-    if (sha) body.sha = sha; // omit only for genuinely new files
-    const res = await fetch(API + encodePath(path), {
-      method: 'PUT', headers: ghHeaders(token), body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`PUT ${path} → HTTP ${res.status}: ${await safeErr(res)}`);
-    const j = await res.json();
-    return { sha: j.content && j.content.sha, commit: j.commit && j.commit.sha };
-  }
-  function encodePath(p) { return p.split('/').map(encodeURIComponent).join('/'); }
-  async function safeErr(res) {
-    try { const j = await res.json(); return j.message || JSON.stringify(j); } catch { return res.statusText || ''; }
-  }
 
-  // Push one mapped file with fetch-sha-then-put. Idempotent & retry-safe.
-  async function pushOne(token, entry, message) {
-    setStatus(entry, 'reading…', 'run');
-    const bytes = await readLocalBytes(entry.local);
-    const b64 = bytesToBase64(bytes);
-    setStatus(entry, 'checking sha…', 'run');
-    const existing = await ghGetFile(token, entry.dest);
-    if (existing && existing.contentB64 && existing.contentB64.replace(/\s+/g, '') === b64) {
-      setStatus(entry, 'unchanged', 'ok');
-      log(`= ${entry.dest} identical on GitHub, skipped.`);
-      entry.result = 'ok';
-      return;
-    }
-    setStatus(entry, existing ? 'updating…' : 'creating…', 'run');
-    const r = await ghPutFile(token, entry.dest, b64, message, existing ? existing.sha : undefined);
-    setStatus(entry, existing ? 'updated' : 'created', 'ok');
-    log(`✓ ${entry.dest} ${existing ? 'updated' : 'created'} (${bytes.length} bytes, commit ${String(r.commit || '').slice(0, 7)})`, 'ok');
-    entry.result = 'ok';
-  }
-
-  // Merge & push BUILD_STATE.json (fresh GET → merge section → PUT with sha).
-  async function pushBuildState(token, pushedDests, message) {
-    log(`Fetching fresh ${REMOTE_BUILD_STATE} from GitHub…`);
-    const existing = await ghGetFile(token, REMOTE_BUILD_STATE);
-    let remote = {};
-    if (existing) {
-      try { remote = JSON.parse(base64ToText(existing.contentB64)); }
-      catch (e) { throw new Error(`Remote ${REMOTE_BUILD_STATE} is not valid JSON; refusing to overwrite (${e.message})`); }
-    }
-    const key = state.sectionKey;
-    const now = new Date().toISOString();
-    const section = Object.assign({}, remote[key] || {});
-    section.scope = state.meta.scope || section.scope ||
-      'Premium UI overhaul: auto prefers-color-scheme theming (manual toggle removed), premium-blue light+dark palettes, full component redesign across every screen, design tokens in DESIGN_SYSTEM.md, footnote single-marker fix, micro-interactions with reduced-motion support. Frontend only; no API/schema/auth/points changes.';
-    section.started_utc = section.started_utc || (state.raw.started_utc || now.slice(0, 10));
-    section.last_push_utc = now;
-    section.pushed_via = 'tools/PUSH_TO_GITHUB.html (browser-side GitHub Contents API; no credential ever left the operator browser)';
-    // Merge tasks by id: local statuses win (they are the source of truth for this batch).
-    const byId = new Map((section.tasks || []).map(t => [t.id, t]));
-    for (const t of state.tasks) {
-      const prev = byId.get(t.id) || {};
-      byId.set(t.id, Object.assign({}, prev, {
-        id: t.id, title: t.title || prev.title || '',
-        status: t.status || prev.status || 'pending',
-        notes: t.notes || prev.notes || '',
-        files: t.files || prev.files || [],
-        completed_utc: t.status === 'done' ? (t.completed_utc || prev.completed_utc || now.slice(0, 10)) : (prev.completed_utc || undefined),
-      }));
-    }
-    section.tasks = Array.from(byId.values());
-    section.work_complete = section.tasks.length > 0 && section.tasks.every(t => t.status === 'done');
-    section.last_pushed_files = pushedDests;
-    section.session_history = Array.isArray(section.session_history) ? section.session_history : [];
-    section.session_history.push({
-      date_utc: now,
-      summary: `Operator push via PUSH_TO_GITHUB.html: ${pushedDests.length} file(s). Tasks done: ${section.tasks.filter(t => t.status === 'done').map(t => t.id).join(', ') || 'none yet'}.`,
-    });
-    remote[key] = section;
-    remote.last_updated_utc = now.slice(0, 10);
-    const b64 = textToBase64(JSON.stringify(remote, null, 2) + '\n');
-    const r = await ghPutFile(token, REMOTE_BUILD_STATE, b64, message + ' — update BUILD_STATE.json', existing ? existing.sha : undefined);
-    log(`✓ ${REMOTE_BUILD_STATE} merged & pushed (section "${key}", commit ${String(r.commit || '').slice(0, 7)})`, 'ok');
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // ORCHESTRATION
-  // ─────────────────────────────────────────────────────────────────────────
-  let busy = false;
-  function readToken() {
-    // Read once into a local string. The caller holds it only for the duration
-    // of the running operation and calls finishToken() in its `finally`.
-    return patEl.value.trim();
-  }
-  function finishToken() { patEl.value = ''; }
-
-  async function retryOne(entry) {
-    if (busy) return;
-    const token = readToken();
-    if (!token) { banner('Paste your token again to retry this file.', 'bad'); return; }
-    busy = true; pushBtn.disabled = true; entry.retryBtn.classList.add('hidden');
-    const message = (msgEl.value.trim() || `UI overhaul batch: ${new Date().toISOString()}`) + ` (retry ${entry.dest})`;
-    try {
-      await pushOne(token, entry, message);
-      banner(`Retry of ${entry.dest} succeeded. Press "Push to GitHub" again to re-run the full batch (identical files are skipped) and refresh BUILD_STATE.json.`, 'ok');
-    } catch (e) {
-      setStatus(entry, 'failed', 'bad'); entry.retryBtn.classList.remove('hidden');
-      log(`✗ ${entry.dest}: ${e.message}`, 'bad');
-      banner(`Retry failed for ${entry.dest}: ${e.message}`, 'bad');
-    } finally {
-      finishToken(); busy = false; pushBtn.disabled = false;
-    }
-  }
-
-  pushBtn.addEventListener('click', async () => {
-    if (busy || !state) return;
-    const token = readToken(); // local const — never stored anywhere else
-    if (!token) { banner('Paste a GitHub Personal Access Token first.', 'bad'); patEl.focus(); return; }
-    const selected = entries.filter(e => e.cb.checked);
-    if (!selected.length) { banner('Select at least one file.', 'bad'); return; }
-    busy = true; pushBtn.disabled = true; pushBtn.textContent = 'Pushing…';
-    summaryEl.innerHTML = '';
-    const message = msgEl.value.trim() || `UI overhaul batch: ${new Date().toISOString()}`;
-    log(`Starting push of ${selected.length} file(s) to ${OWNER}/${REPO}@${BRANCH}.`);
-    let okCount = 0, failCount = 0;
-    const pushedDests = [];
-    try {
-      // Sequential on purpose: parallel commits to the same branch race and
-      // produce 409/422 conflicts.
-      for (const entry of selected) {
-        entry.retryBtn.classList.add('hidden');
-        try {
-          await pushOne(token, entry, message);
-          okCount++; pushedDests.push(entry.dest);
-        } catch (e) {
-          failCount++;
-          setStatus(entry, 'failed', 'bad'); entry.retryBtn.classList.remove('hidden');
-          log(`✗ ${entry.dest}: ${e.message}`, 'bad');
-        }
+  // Returns current sha of dest path, or null when the file does not exist yet.
+  function getSha(dest, token) {
+    return fetch(API + encodeURI(dest) + "?ref=" + BRANCH, {
+      method: "GET",
+      headers: ghHeaders(token),
+      cache: "no-store"
+    }).then(function (r) {
+      if (r.status === 404) return null;            // genuinely new file -> omit sha
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          throw new Error("GET sha failed: HTTP " + r.status + " " + t.slice(0, 180));
+        });
       }
-      if (failCount === 0) {
-        try {
-          await pushBuildState(token, pushedDests, message);
-          banner(`All ${okCount} file(s) pushed and BUILD_STATE.json updated. GitHub Actions will deploy to forgehouse50.pages.dev automatically.`, 'ok');
-        } catch (e) {
-          log(`✗ BUILD_STATE.json: ${e.message}`, 'bad');
-          banner(`Files pushed (${okCount}), but BUILD_STATE.json update failed: ${e.message}. Press "Push to GitHub" again — unchanged files are skipped and the bookkeeping will be retried.`, 'bad');
+      return r.json().then(function (j) {
+        if (Array.isArray(j)) throw new Error("Destination is a directory, not a file.");
+        return j.sha || null;
+      });
+    });
+  }
+
+  function putFile(dest, contentText, token, message) {
+    return getSha(dest, token).then(function (sha) {
+      var body = {
+        message: message,
+        content: toBase64(contentText),
+        branch: BRANCH
+      };
+      if (sha) body.sha = sha;                       // required for updates, must be omitted for new files
+      return fetch(API + encodeURI(dest), {
+        method: "PUT",
+        headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders(token)),
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        if (!r.ok) {
+          return r.text().then(function (t) {
+            throw new Error("PUT failed: HTTP " + r.status + " " + t.slice(0, 220));
+          });
         }
-      } else {
-        banner(`${okCount} succeeded, ${failCount} failed. Use the Retry buttons (paste the token again first), then press "Push to GitHub" once more so BUILD_STATE.json gets updated.`, 'bad');
+        return r.json();
+      });
+    });
+  }
+
+  function readLocalFile(path) {
+    return fetch(path, { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("local read failed: HTTP " + r.status);
+      return r.text();
+    });
+  }
+
+  function commitMessage() {
+    return "UI overhaul batch: " + new Date().toISOString();
+  }
+
+  function pushOne(item, token) {
+    setStatus(item, "work", "reading…");
+    setError(item, "");
+    return readLocalFile(item.local)
+      .then(function (text) {
+        setStatus(item, "work", "pushing…");
+        return putFile(item.dest, text, token, commitMessage());
+      })
+      .then(function () {
+        item.done = true;
+        setStatus(item, "ok", "pushed ✓");
+        updateBar();
+      })
+      .catch(function (e) {
+        item.done = false;
+        setStatus(item, "bad", "failed");
+        setError(item, e.message);
+        updateBar();
+      });
+  }
+
+  /* ---------- BUILD_STATE.json merge ---------- */
+
+  function mergeBuildState(token) {
+    liveNote.textContent = "updating BUILD_STATE.json…";
+    return fetch(API + "BUILD_STATE.json?ref=" + BRANCH, {
+      headers: ghHeaders(token), cache: "no-store"
+    }).then(function (r) {
+      if (!r.ok) throw new Error("GET BUILD_STATE.json: HTTP " + r.status);
+      return r.json();
+    }).then(function (meta) {
+      var decoded = new TextDecoder().decode(
+        Uint8Array.from(atob((meta.content || "").replace(/\n/g, "")), function (c) { return c.charCodeAt(0); })
+      );
+      var remote = JSON.parse(decoded);
+
+      var tasks = (localState && Array.isArray(localState.tasks) ? localState.tasks : []).map(function (t) {
+        return { id: t.id, title: t.title, status: t.status, notes: t.notes || "" };
+      });
+
+      var section = remote.ui_overhaul_v1 || {};
+      section.started_utc = section.started_utc || new Date().toISOString().slice(0, 10);
+      section.last_push_utc = new Date().toISOString();
+      section.summary = "Premium UI overhaul: automatic prefers-color-scheme theming, premium-blue expressive design system, " +
+                        "full component redesign, reading-page single-footnote-marker fix.";
+      section.pusher_tool = "tools/PUSH_TO_GITHUB.html";
+      section.tasks = tasks;
+      section.overhaul_complete = tasks.length > 0 && tasks.every(function (t) { return t.status === "done"; });
+      section.files_pushed = manifest.map(function (m) { return m.dest; });
+      remote.ui_overhaul_v1 = section;
+      remote.last_updated_utc = new Date().toISOString().slice(0, 10);
+
+      var body = {
+        message: "BUILD_STATE.json: record ui_overhaul_v1 progress (" + new Date().toISOString() + ")",
+        content: toBase64(JSON.stringify(remote, null, 2) + "\n"),
+        sha: meta.sha,
+        branch: BRANCH
+      };
+      return fetch(API + "BUILD_STATE.json", {
+        method: "PUT",
+        headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders(token)),
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        if (!r.ok) {
+          return r.text().then(function (t) {
+            throw new Error("PUT BUILD_STATE.json: HTTP " + r.status + " " + t.slice(0, 220));
+          });
+        }
+        liveNote.textContent = "BUILD_STATE.json updated ✓";
+      });
+    });
+  }
+
+  /* ---------- main ---------- */
+
+  $("push-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var field = $("pat");
+    var token = field.value;                        // local variable only, for this handler's lifetime
+    if (!token) { showSummary(false, "Paste your GitHub token first."); return; }
+    if (!manifest.length) { showSummary(false, "Nothing mapped to push."); return; }
+
+    pushBtn.disabled = true;
+    summaryEl.className = "summary";
+    summaryEl.textContent = "";
+    liveNote.textContent = "pushing " + manifest.length + " file(s)…";
+    manifest.forEach(function (m) { m.done = false; setStatus(m, "pend", "pending"); setError(m, ""); });
+    updateBar();
+
+    var chain = Promise.resolve();
+    manifest.forEach(function (item) {
+      chain = chain.then(function () { return pushOne(item, token); });   // sequential: avoids sha races
+    });
+
+    chain.then(function () {
+      var failed = manifest.filter(function (m) { return !m.done; });
+      if (failed.length) {
+        showSummary(false, failed.length + " of " + manifest.length +
+          " file(s) failed. Fix or press Retry on each failed row; BUILD_STATE.json was not updated.");
+        liveNote.textContent = "";
+        return;
       }
-    } finally {
-      finishToken(); // clear the field; the `token` const goes out of scope here
-      busy = false; pushBtn.disabled = false; pushBtn.textContent = 'Push to GitHub';
-    }
+      return mergeBuildState(token).then(function () {
+        showSummary(true, "All " + manifest.length + " file(s) pushed, and BUILD_STATE.json updated with ui_overhaul_v1 progress.");
+      }).catch(function (e) {
+        showSummary(false, "All files pushed, but BUILD_STATE.json update failed: " + e.message +
+          " — press Push again to retry just the bookkeeping.");
+      });
+    }).then(function () {
+      token = "";                                   // drop the credential
+      field.value = "";
+      pushBtn.disabled = false;
+    });
   });
 
-  init();
+  $("reload-btn").addEventListener("click", loadManifest);
+  loadManifest();
 })();
 </script>
 <script src="https://www.genspark.ai/sandbox_inspect.js"></script></body>
