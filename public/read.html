@@ -223,6 +223,7 @@
   let audioQueue = [];   // [{chapter, url}] — chapters of THIS day with real audio
   let audioIdx = -1;
   let seeking = false;
+  let pendingSeek = null; // seconds (or 'ratio:0..1') applied once real metadata loads
   const playBtn = document.getElementById('audio-play');
   const backBtn = document.getElementById('audio-back');
   const fwdBtn = document.getElementById('audio-fwd');
@@ -285,13 +286,22 @@
     const translation = sel.value;
     audioQueue = [];
     audioIdx = -1;
+    pendingSeek = null;
     audioEl.pause();
     audioEl.removeAttribute('src');
     syncSeekUi();
     for (const a of day.assignments) {
       const { data } = await FH.api(`/api/read/audio_availability?book=${encodeURIComponent(a.book)}&chapter_start=${a.chapter_start}&chapter_end=${a.chapter_end}&translation=${encodeURIComponent(translation)}`);
       if (data && Array.isArray(data.available))
-        for (const av of data.available) audioQueue.push({ book: a.book, chapter: av.chapter, url: av.url });
+        for (const av of data.available)
+          audioQueue.push({ book: a.book, chapter: av.chapter, url: av.url,
+            // PLAYBACK goes through the same-origin proxy: VerseWell's static
+            // host does not honour HTTP Range requests, so playing the file
+            // directly made every seek restart from 0. The proxy answers with
+            // Accept-Ranges + proper 206 handling. Downloads still use the
+            // direct url (full-file fetch works fine cross-origin).
+            playUrl: '/api/read/audio_proxy?book=' + encodeURIComponent(a.book) +
+              '&chapter=' + av.chapter + '&translation=' + encodeURIComponent(translation) });
     }
     setAudioState();
   }
@@ -299,7 +309,8 @@
   function playIdx(i) {
     if (i < 0 || i >= audioQueue.length) return;
     audioIdx = i;
-    audioEl.src = audioQueue[i].url;
+    audioEl.preload = 'auto';
+    audioEl.src = audioQueue[i].playUrl || audioQueue[i].url;
     audioEl.play().catch(() => {});
     playBtn.innerHTML = ICON_PAUSE;
     noteEl.textContent = `Playing ${audioQueue[i].book} ${audioQueue[i].chapter}`;
@@ -320,9 +331,15 @@
   // ±5-second skips via the native element's currentTime (clamped to bounds).
   function skip(delta) {
     if (!audioQueue.length) return;
-    if (audioIdx < 0) { playIdx(0); return; }
-    const d = isFinite(audioEl.duration) ? audioEl.duration : Infinity;
-    audioEl.currentTime = Math.min(Math.max(0, audioEl.currentTime + delta), d === Infinity ? Infinity : Math.max(0, d - 0.1));
+    if (audioIdx < 0) { pendingSeek = 0; playIdx(0); return; }
+    if (isFinite(audioEl.duration) && audioEl.duration > 0) {
+      audioEl.currentTime = Math.min(Math.max(0, audioEl.currentTime + delta), Math.max(0, audioEl.duration - 0.1));
+    } else {
+      // Metadata not loaded yet — changing currentTime now would be dropped
+      // (and looked like a restart-from-0). Queue the skip; it applies the
+      // moment loadedmetadata/durationchange reports a real duration.
+      pendingSeek = Math.max(0, (pendingSeek ?? audioEl.currentTime ?? 0) + delta);
+    }
   }
   backBtn.onclick = () => skip(-5);
   fwdBtn.onclick = () => skip(5);
@@ -333,10 +350,20 @@
     if (d) curEl.textContent = fmtSecs(d * seekEl.value / 1000);
   });
   seekEl.addEventListener('change', () => {
-    if (!audioQueue.length) return;
-    if (audioIdx < 0) playIdx(0);
+    if (!audioQueue.length) { seeking = false; return; }
     const d = audioEl.duration;
-    if (d) audioEl.currentTime = d * seekEl.value / 1000;
+    if (isFinite(d) && d > 0) {
+      pendingSeek = null;
+      audioEl.currentTime = d * seekEl.value / 1000;
+    } else {
+      // Chapter never started (duration unknown): buffer WITHOUT autoplaying
+      // from 0, then jump to the tapped proportional position as soon as the
+      // duration arrives. Never call playIdx() here — it would reset the src
+      // and restart the stream from the beginning.
+      audioEl.preload = 'auto';
+      pendingSeek = 'ratio:' + (seekEl.value / 1000);
+      if (audioIdx < 0) { audioIdx = 0; audioEl.src = audioQueue[0].playUrl || audioQueue[0].url; }
+    }
     seeking = false;
     syncSeekUi();
   });
@@ -345,8 +372,19 @@
     if (b) playIdx(parseInt(b.dataset.ai, 10));
   });
   audioEl.addEventListener('timeupdate', syncSeekUi);
-  audioEl.addEventListener('loadedmetadata', syncSeekUi);
-  audioEl.addEventListener('durationchange', syncSeekUi);
+  // Apply any queued seek only once real metadata (a finite duration) exists.
+  function applyPendingSeek() {
+    if (pendingSeek != null && isFinite(audioEl.duration) && audioEl.duration > 0) {
+      const t = (typeof pendingSeek === 'string' && pendingSeek.startsWith('ratio:'))
+        ? parseFloat(pendingSeek.slice(6)) * audioEl.duration
+        : pendingSeek;
+      audioEl.currentTime = Math.min(Math.max(0, t), Math.max(0, audioEl.duration - 0.1));
+      pendingSeek = null;
+    }
+    syncSeekUi();
+  }
+  audioEl.addEventListener('loadedmetadata', applyPendingSeek);
+  audioEl.addEventListener('durationchange', applyPendingSeek);
   audioEl.addEventListener('ended', () => {
     if (audioIdx + 1 < audioQueue.length) playIdx(audioIdx + 1);
     else {
@@ -457,7 +495,7 @@
     document.getElementById('mark-area').innerHTML = done
       ? `<div class="card center"><span class="check row" style="font-size:16px;justify-content:center">${FH.ICONS.check}<span>Reading complete</span></span>
           <div class="small muted" style="margin-top:4px">Points awarded. Well done.</div>
-          <a class="btn ghost" style="margin-top:12px" href="/notes.html?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note</a></div>`
+          <a class="btn ghost" style="margin-top:12px" href="/notes?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note</a></div>`
       : `<button class="btn" id="mark-btn">Mark Complete · Day ${dayN}</button>`;
     if (!done) document.getElementById('mark-btn').onclick = async () => {
       const btn = document.getElementById('mark-btn'); btn.disabled = true;
@@ -473,8 +511,8 @@
   navRow.className = 'between';
   navRow.style.margin = '14px 0';
   navRow.innerHTML = `
-    ${dayN > 1 ? `<a class="btn ghost small" href="/read.html?day=${dayN - 1}">Previous · Day ${dayN - 1}</a>` : '<span></span>'}
-    ${dayN < 50 ? `<a class="btn ghost small" href="/read.html?day=${dayN + 1}">Next · Day ${dayN + 1}</a>` : '<span></span>'}`;
+    ${dayN > 1 ? `<a class="btn ghost small" href="/read?day=${dayN - 1}">Previous · Day ${dayN - 1}</a>` : '<span></span>'}
+    ${dayN < 50 ? `<a class="btn ghost small" href="/read?day=${dayN + 1}">Next · Day ${dayN + 1}</a>` : '<span></span>'}`;
   document.getElementById('mark-area').appendChild(navRow);
 })();
 </script>

@@ -32,7 +32,7 @@
       <div class="error" id="err"></div>
       <button class="btn" type="submit">Log in</button>
     </form>
-    <p class="small muted center" style="margin:14px 0 0">New here? <a href="/signup.html">Create an account</a></p>
+    <p class="small muted center" style="margin:14px 0 0">New here? <a href="/signup">Create an account</a></p>
   </div>
 </div>
 <script src="/app.v3.js"></script>
@@ -45,7 +45,7 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     email: document.getElementById('email').value, password: document.getElementById('password').value } });
   btn.disabled = false;
   if (ok) { location.href = '/'; return; }
-  if (data?.needs_verification) { location.href = '/verify.html?email=' + encodeURIComponent(data.email); return; }
+  if (data?.needs_verification) { location.href = '/verify?email=' + encodeURIComponent(data.email); return; }
   err.textContent = data?.error || 'Login failed';
 });
 </script>

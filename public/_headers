@@ -42,3 +42,8 @@
 
 /branding/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Audio streams through the proxy — browser range fetches must be cacheable
+# so scrubbing back/forward never re-downloads the whole chapter.
+/api/read/audio_proxy*
+  Cache-Control: public, max-age=3600

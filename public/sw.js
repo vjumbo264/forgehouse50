@@ -7,27 +7,38 @@
      of previously-fetched GETs).
    - Stale-while-revalidate for VerseWell scripture mirror content (text is
      immutable per version, audio grows over time).
+
+   Shell page URLs are the EXTENSIONLESS canonical routes (/read, /notes, …).
+   Cloudflare Pages 308-redirects /read.html -> /read, and a navigation that
+   dies mid-redirect against a stale shell cache was the "new tab won't load
+   unless I strip .html" bug — the app now only ever references the canonical
+   extensionless URLs, which never redirect.
 */
 // Bump VERSION on every deploy that changes any shell file: the install
 // handler precaches under the new cache names and activate() deletes every
 // old cache, so no visitor can be stranded on a stale app shell.
-const VERSION = "fh50-v3";
+const VERSION = "fh50-v4";
 const SHELL_CACHE = `shell-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
 const CONTENT_CACHE = `versewell-${VERSION}`;
+// Avatars live OUTSIDE the versioned caches on purpose: the set only changes
+// when new avatar images are added, so this cache survives every deploy and
+// avatar images are fetched from the network exactly once per device
+// (operator request: profile icons should never re-download on each visit).
+const AVATAR_CACHE = "fh50-avatars";
 
 const SHELL_FILES = [
   "/",
   "/index.html",
-  "/login.html",
-  "/signup.html",
-  "/verify.html",
-  "/read.html",
-  "/notes.html",
-  "/progress.html",
-  "/leaderboard.html",
-  "/profile.html",
-  "/admin.html",
+  "/login",
+  "/signup",
+  "/verify",
+  "/read",
+  "/notes",
+  "/progress",
+  "/leaderboard",
+  "/profile",
+  "/admin",
   "/app.v3.css",
   "/app.v3.js",
   "/manifest.webmanifest",
@@ -52,7 +63,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => ![SHELL_CACHE, API_CACHE, CONTENT_CACHE].includes(k))
+          .filter((k) => ![SHELL_CACHE, API_CACHE, CONTENT_CACHE, AVATAR_CACHE].includes(k))
           .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())
@@ -69,10 +80,12 @@ const isStaticShell = (url) =>
     /\.(css|js|png|ico|webmanifest|woff2?)$/.test(url.pathname));
 
 self.addEventListener("fetch", (event) => {
-  { // Avatar illustrations: cache-first (immutable per deploy), network fill.
+  { // Avatar illustrations: cache-first into the PERSISTENT, unversioned
+    // avatar cache (survives deploys) — load once, never re-download unless a
+    // genuinely new file is requested.
     const u = new URL(event.request.url);
     if (u.origin === self.location.origin && u.pathname.startsWith("/avatars/")) {
-      event.respondWith(caches.open(SHELL_CACHE).then(async (cache) => {
+      event.respondWith(caches.open(AVATAR_CACHE).then(async (cache) => {
         const hit = await cache.match(event.request);
         if (hit) return hit;
         const res = await fetch(event.request);

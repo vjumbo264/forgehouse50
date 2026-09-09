@@ -70,7 +70,7 @@
   // CTA
   const ctaDay = data.is_reading_day && data.today ? data.today.day_number : (data.next_reading_day?.day_number || 1);
   const ctaLabel = data.is_reading_day && data.today && !data.today.completed ? 'Continue Reading' : (data.is_reading_day ? 'Review Today\u2019s Reading' : 'Read Next Assignment');
-  document.getElementById('cta').innerHTML = `<a class="btn" href="/read.html?day=${ctaDay}">${ctaLabel}</a>`;
+  document.getElementById('cta').innerHTML = `<a class="btn" href="/read?day=${ctaDay}">${ctaLabel}</a>`;
 
   // Next day
   if (data.next_reading_day) {

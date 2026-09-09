@@ -53,7 +53,7 @@
   </div>`;
   const mePicker = document.getElementById('me-avatar-picker');
   mePicker.innerHTML = FH.AVATARS.map(a =>
-    `<button type="button" data-avatar="${a.id}" class="${a.id === myAvatar ? 'selected' : ''}" title="${a.label}">${FH.avatarHtml(a.id, '', 44)}</button>`).join('');
+    `<button type="button" data-avatar="${a.id}" class="${a.id === myAvatar ? 'selected' : ''}" title="${a.label}">${FH.avatarHtml(a.id, '', 44, true)}</button>`).join('');
   mePicker.addEventListener('click', async (e) => {
     const b = e.target.closest('button[data-avatar]');
     if (!b || b.dataset.avatar === myAvatar) return;
@@ -96,12 +96,12 @@
     <div>${CATALOGUE.map(([id, name]) => `<span class="badge ${earned.has(id) ? 'earned' : ''}">${name}</span>`).join('')}</div>`;
 
   if (me.role === 'admin') {
-    document.getElementById('admin-link').innerHTML = `<a class="btn ghost" style="margin:10px 0" href="/admin.html">Admin dashboard</a>`;
+    document.getElementById('admin-link').innerHTML = `<a class="btn ghost" style="margin:10px 0" href="/admin">Admin dashboard</a>`;
   }
 
   document.getElementById('logout').onclick = async () => {
     await FH.api('/api/auth/logout', { method: 'POST' });
-    location.href = '/login.html';
+    location.href = '/login';
   };
 })();
 </script>

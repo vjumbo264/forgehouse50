@@ -35,8 +35,8 @@ const FH = (() => {
 
   function nav(active) {
     const items = [
-      ['home', '/', 'Home'], ['read', '/read.html', 'Read'], ['notes', '/notes.html', 'Notes'],
-      ['progress', '/progress.html', 'Progress'], ['board', '/leaderboard.html', 'Leaders'], ['profile', '/profile.html', 'Profile'],
+      ['home', '/', 'Home'], ['read', '/read', 'Read'], ['notes', '/notes', 'Notes'],
+      ['progress', '/progress', 'Progress'], ['board', '/leaderboard', 'Leaders'], ['profile', '/profile', 'Profile'],
     ];
     const bar = document.createElement('nav');
     bar.className = 'bottom';
@@ -61,7 +61,7 @@ const FH = (() => {
 
   async function requireAuth() {
     const { ok, data } = await api('/api/auth/me');
-    if (!ok) { location.href = '/login.html'; return null; }
+    if (!ok) { location.href = '/login'; return null; }
     return data;
   }
 
@@ -104,11 +104,11 @@ const FH = (() => {
   // Render a user's avatar: the illustration image when avatar_id is known
   // (with a broken-image-proof fallback to the initial tile if the file is
   // missing), otherwise the legacy first-initial fallback. size = diameter.
-  function avatarHtml(avatarId, name, size = 34) {
+  function avatarHtml(avatarId, name, size = 34, eager = false) {
     if (avatarId && AVATAR_BY_ID[avatarId]) {
       const initial = esc(String(name || 'M').trim()[0]?.toUpperCase() || 'M');
       return `<div class="avatar" style="width:${size}px;height:${size}px">`
-        + `<img src="/avatars/${esc(avatarId)}.png" alt="" loading="lazy" `
+        + `<img src="/avatars/${esc(avatarId)}.png" alt="" ${eager ? '' : 'loading="lazy" '}`
         + `onerror="this.remove()">`
         + `<span class="avatar-fallback" style="font-size:${Math.round(size * 0.43)}px">${initial}</span></div>`;
     }

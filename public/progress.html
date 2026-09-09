@@ -46,7 +46,7 @@
     </div>`;
 
   document.getElementById('days').innerHTML = data.days.map(d => `
-    <a class="dayrow ${d.completed ? 'done' : ''}" href="/read.html?day=${d.day_number}" style="color:inherit">
+    <a class="dayrow ${d.completed ? 'done' : ''}" href="/read?day=${d.day_number}" style="color:inherit">
       <div class="num">${d.day_number}</div>
       <div class="meta">
         <div style="font-weight:600">${FH.esc(d.assignment)}</div>

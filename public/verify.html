@@ -38,7 +38,7 @@
 <script>
 const email = new URLSearchParams(location.search).get('email') || '';
 document.getElementById('em').textContent = email || 'your email';
-if (!email) location.href = '/signup.html';
+if (!email) location.href = '/signup';
 
 document.getElementById('f').addEventListener('submit', async (e) => {
   e.preventDefault();
