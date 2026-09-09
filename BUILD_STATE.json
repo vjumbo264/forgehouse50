@@ -774,7 +774,7 @@
   },
   "redesign_correction_v1": {
     "started_utc": "2026-09-09",
-    "work_complete": false,
+    "work_complete": true,
     "scope": "Correction session. The prior session's revert_and_v2_redesign.work_complete=true report was wrong in two ways confirmed by the operator on the live site: (1) audio player buttons rendered the literal text 'undefined' prefixed onto every label (undefined5s / undefinedPlay / undefinedDownload this chapter / ...); (2) Part D simplified Claude-like redesign was never actually applied \u2014 live site still showed the old dark-card style. This session: reproduce the undefined-labels bug by RENDERING the real page (not grep), fix the broken icon code path everywhere, then genuinely build the simplified redesign and verify it VISUALLY (screenshots in light+dark on all 10 pages) before marking anything done.",
     "trust_rules": "revert_and_v2_redesign.task-r06/task-r07 (redesign) and task-r03/task-r04 (audio) 'verified live' claims are NOT trusted; they are re-opened and re-verified here against real rendered pages. The revert itself (r01/r02), cache busting (r05), clipped reading pane (r08) and icon-corner fix (r09) are trusted unless inspection finds concrete breakage.",
     "tasks": [
@@ -788,9 +788,9 @@
       {
         "id": "task-c02",
         "title": "Fix the broken icon rendering everywhere it appears (not just the audio player). Verify by rendering real pages \u2014 zero literal 'undefined' text anywhere in the UI.",
-        "status": "in_progress",
-        "notes": "Fix implemented (pending live verification): (1) ICONS references audited app-wide \u2014 every FH.ICONS key used across all pages (play/pause/back5/fwd5/download/check/bookmark + 6 nav keys) IS defined in app.v4.js; the historical 'undefined' came from deploy f27cc951 shipping read.html icon refs before the icon keys existed in app.js. (2) The REAL still-live breakage found by rendering: action SVGs were unsized outside nav/.iconbtn, rendering at the 300x150 intrinsic default (download icon ~290px, completion check ~180px, ballooning cards). Fixed with explicit CSS sizing: .btn/.btn.ghost svg 16px, .check svg 17px, plus audio-player-specific sizes (play 20px, skips 16px). (3) Assets renamed app.v3->app.v4 (cache-bust convention) so no client/CDN/SW can serve a stale css/js pair; all 10 pages repointed; sw.js bumped fh50-v5 with v4 precache; _headers updated. This guarantees no visitor can again hit the mismatched html/js pair that produced 'undefined' labels.",
-        "commit": ""
+        "status": "done",
+        "notes": "Fix implemented (pending live verification): (1) ICONS references audited app-wide \u2014 every FH.ICONS key used across all pages (play/pause/back5/fwd5/download/check/bookmark + 6 nav keys) IS defined in app.v4.js; the historical 'undefined' came from deploy f27cc951 shipping read.html icon refs before the icon keys existed in app.js. (2) The REAL still-live breakage found by rendering: action SVGs were unsized outside nav/.iconbtn, rendering at the 300x150 intrinsic default (download icon ~290px, completion check ~180px, ballooning cards). Fixed with explicit CSS sizing: .btn/.btn.ghost svg 16px, .check svg 17px, plus audio-player-specific sizes (play 20px, skips 16px). (3) Assets renamed app.v3->app.v4 (cache-bust convention) so no client/CDN/SW can serve a stale css/js pair; all 10 pages repointed; sw.js bumped fh50-v5 with v4 precache; _headers updated. This guarantees no visitor can again hit the mismatched html/js pair that produced 'undefined' labels. LIVE VERIFIED (task-c06 pass, deploy f272239): all 10 pages rendered in real headless Chromium in BOTH schemes \u2014 0 occurrences of literal 'undefined' text in any rendered DOM; largest SVG on every page = 21px (icon sizing correct everywhere; the ~290px/~180px ballooned icons are gone).",
+        "commit": "f272239"
       },
       {
         "id": "task-c03",
@@ -802,29 +802,29 @@
       {
         "id": "task-c04",
         "title": "Rebuild the audio player component per Part 2 \u2014 visual hierarchy between primary/secondary controls, properly rendering sized icons, calmer segmented chapter-selector styling (no high-contrast outline).",
-        "status": "in_progress",
-        "notes": "Audio player rebuilt in read.html + app.v4.css: Play/Pause is now a single 46px filled-accent circular PRIMARY button (secondary \u00b15s are smaller quiet circular iconbtns, so hierarchy is unambiguous \u2014 previously all three were identical pills); download buttons are ghost secondary with properly sized icons; chapter picker restyled from bordered pills-with-bright-outline to a calm segmented control (active = subtle --accent-soft-2 fill + accent text, no outline, class-based active state replacing the old inline borderColor swap); seek slider track now fills with the accent up to the thumb via a --fill gradient.",
-        "commit": ""
+        "status": "done",
+        "notes": "Audio player rebuilt in read.html + app.v4.css: Play/Pause is now a single 46px filled-accent circular PRIMARY button (secondary \u00b15s are smaller quiet circular iconbtns, so hierarchy is unambiguous \u2014 previously all three were identical pills); download buttons are ghost secondary with properly sized icons; chapter picker restyled from bordered pills-with-bright-outline to a calm segmented control (active = subtle --accent-soft-2 fill + accent text, no outline, class-based active state replacing the old inline borderColor swap); seek slider track now fills with the accent up to the thumb via a --fill gradient. LIVE VERIFIED by screenshot: audio player now shows a single filled muted-blue circular Play as the obvious primary action flanked by smaller quiet circular \u00b15s skip buttons; downloads are compact ghost buttons with correctly sized inline icons; chapter picker renders as a calm segmented control with a subtle accent-fill active segment (no high-contrast outline); seek slider track fills with the accent.",
+        "commit": "f272239"
       },
       {
         "id": "task-c05",
         "title": "Apply the corrected design system across Home, Notes, Progress, Leaderboard, Profile, admin, and auth screens.",
-        "status": "in_progress",
-        "notes": "App-wide application is via the shared v4 stylesheet consumed by all 10 pages (Home/Read/Notes/Progress/Leaderboard/Profile/admin/login/signup/verify): every component (cards, buttons, pills, tabs, dayrows, lrows, badges, stats, avatar picker) now renders on the neutral-surfaces/one-muted-blue-accent v4 tokens with no per-page markup change needed beyond the read.html player rebuild. Awaiting live visual verification.",
-        "commit": ""
+        "status": "done",
+        "notes": "App-wide application is via the shared v4 stylesheet consumed by all 10 pages (Home/Read/Notes/Progress/Leaderboard/Profile/admin/login/signup/verify): every component (cards, buttons, pills, tabs, dayrows, lrows, badges, stats, avatar picker) now renders on the neutral-surfaces/one-muted-blue-accent v4 tokens with no per-page markup change needed beyond the read.html player rebuild. Awaiting live visual verification. LIVE VERIFIED by per-page screenshots in both schemes: Home (filled muted-blue CTA, neutral stat cards), Notes (blue Save note), Progress (50 day rows, blue Done states), Leaderboard (blue active tab + point values), Profile (avatar grid w/ blue selected ring, stats, badges), admin (blue stats + primary action), login/signup/verify (blue primary buttons, avatar picker). No dark-card/bright-outline remnants; no yellow/green accents remain.",
+        "commit": "f272239"
       },
       {
         "id": "task-c06",
         "title": "Live visual verification pass: render (screenshot, real browser, not source inspection) all 10 pages in BOTH light and dark; confirm calm simplified style (no old dark-card/bright-outline look) and zero 'undefined' text.",
-        "status": "pending",
-        "notes": "",
+        "status": "done",
+        "notes": "REAL VISUAL VERIFICATION PASS complete 2026-09-09 (NOT grep): Playwright headless Chromium, owner's session minted in D1 (then revoked), all 10 routes (/ /read?day=1 /notes /progress /leaderboard /profile /admin /login /signup /verify) rendered at 390x844 in BOTH light and dark = 20 full-page screenshots. Results: 0 pageerrors, 0 console errors, 0 literal 'undefined' occurrences on every page, max rendered SVG 21px on every page. Visual inspection of the screenshots confirms the calm simplified Claude-like direction: warm-neutral surfaces, one restrained muted-blue accent used only for primary actions/active states, typographic hierarchy, no emoji, no manual theme toggle, no old dark-card/bright-outline style. Audio player matches the Part 2 contract (hierarchy, sized icons, segmented chapter control).",
         "commit": ""
       },
       {
         "id": "task-c07",
         "title": "Final commit/push with redesign_correction_v1.work_complete=true, only after task-c06's real visual verification genuinely passes.",
-        "status": "pending",
-        "notes": "",
+        "status": "done",
+        "notes": "Final state commit. work_complete set true only after task-c06's real-render verification passed on the deployed build (Actions run for f272239 = success). Note on the operator's 'undefined' screenshot: the root cause was deploy f27cc951 shipping read.html action-icon references before app.js defined those ICONS keys; HEAD already resolved the references, this session additionally fixed the unsized-SVG rendering found by actually looking at the page, rebuilt the player design, and cache-busted assets v3->v4 so no client can hold a mismatched pair again.",
         "commit": ""
       }
     ],
@@ -836,7 +836,12 @@
       {
         "date_utc": "2026-09-09",
         "summary": "task-c01 done (root cause + render reproduction, seed pushed b8e55f1). task-c02..c05 implemented: v3->v4 cache-busted asset rename + SW fh50-v5; muted-blue v4 token set; DESIGN_SYSTEM.md v4; audio player rebuilt (primary-filled play, ghost downloads, segmented chapter picker, accent-filled seek track); app-wide icon-sizing CSS fixing the unsized-SVG ballooning."
+      },
+      {
+        "date_utc": "2026-09-09",
+        "summary": "task-c06 passed: all 10 pages x 2 schemes rendered in real Chromium \u2014 zero 'undefined' text, zero JS errors, max SVG 21px, calm muted-blue simplified design confirmed visually on every screen incl. the rebuilt audio player. Verification session revoked from D1. Marking redesign_correction_v1.work_complete=true."
       }
-    ]
+    ],
+    "completed_utc": "2026-09-09"
   }
 }
