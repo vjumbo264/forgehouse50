@@ -1140,5 +1140,22 @@
       }
     ],
     "fix_summary": "Reverted reading_layout_flexbox_v1 wholesale (read.html @74ec970, stylesheet back as new versioned app.v9.css, all pages re-pointed, sw fh50-v12). Then ONE-LINE padding fix on #audio-card: padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)). Gap from player controls to bottom nav went 14.7px -> 24.7px at both 390x844 and 360x640; zero clipped controls; bottom nav restored; nothing else changed."
+  },
+  "audio_player_delivery_fix_v1": {
+    "started": "2026-09-09T19:46:08.682996Z",
+    "problem": "audio_player_padding_fix_v1's CSS change never reached any real device. The previous session edited public/app.v9.css IN PLACE without renaming the file and kept the service worker at fh50-v12, while the project's own caching contract (sw.js + _headers) treats versioned assets (app.vN.css) as immutable/cache-first: a changed file MUST ship under a new URL. Every device that had ever visited the site holds the pre-fix app.v9.css in its shell cache cache-first and, because the URL never changed, will never re-fetch it \u2014 so the live site kept serving the old cropped audio-player stylesheet indefinitely. The fix existed in the repo but was physically undeliverable.",
+    "fix": [
+      "Shipped the corrected stylesheet as a NEW versioned file public/app.v10.css (immutable-cache contract satisfied: new content => new URL).",
+      "Audio player clearance: #audio-card padding-bottom raised to max(16px, env(safe-area-inset-bottom, 0px)) so the controls row sits clearly above the bottom nav, including on gesture-bar devices.",
+      "Re-pointed all 10 HTML pages from /app.v9.css to /app.v10.css.",
+      "Bumped service worker VERSION fh50-v12 -> fh50-v13 so every client re-installs the SW, purges every old shell/api/versewell cache on activate, precaches the new shell (including /app.v10.css), and open tabs auto-reload onto the new shell via the existing controllerchange reload.",
+      "Added /app.v8.css through /app.v10.css immutable entries to public/_headers (v8/v9 were missing from the file entirely)."
+    ],
+    "tasks": {
+      "task-d01": "Diagnose why the claimed fix never appeared live: immutable app.v9.css edited in place + SW version not bumped. DONE.",
+      "task-d02": "Re-ship fix deliverably: app.v10.css + repoint pages + sw fh50-v13 + _headers update. DONE."
+    },
+    "note_for_operator": "The old v12 service worker may keep control until the browser fetches the new sw.js (no-cache). If the page still looks cropped, fully close the tab/app and reopen once \u2014 the new SW activates and auto-reloads the page onto the fixed shell.",
+    "work_complete": true
   }
 }

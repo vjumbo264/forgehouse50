@@ -45,6 +45,15 @@
 /app.v7.js
   Cache-Control: public, max-age=31536000, immutable
 
+/app.v8.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/app.v9.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/app.v10.css
+  Cache-Control: public, max-age=31536000, immutable
+
 # Icons / branding — revalidate every load (content changes at stable URLs;
 # the service worker also fetches these network-first)
 /icons/*
