@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": true,
-  "last_updated_utc": "2026-09-08",
+  "last_updated_utc": "2026-09-09",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -531,126 +531,142 @@
   "ui_overhaul_v1": {
     "scope": "Premium UI overhaul: manual light/dark toggle removed in favour of live prefers-color-scheme auto theming (no stored preference); premium-blue brand with complete light + dark palettes (WCAG AA body text); full component redesign (nav, buttons, cards, progress ring/bar, streaks, reading surface, notes editor, modals, inputs, avatar grid, admin data views); design tokens documented in DESIGN_SYSTEM.md; reading-page footnote fix (one marker per verse, single inline panel, one open at a time); purposeful micro-interactions honouring prefers-reduced-motion. Frontend-only: no data model, D1 schema, API contract, auth, VerseWell or points/badge logic changes.",
     "started_utc": "2026-09-08",
-    "last_push_utc": "2026-09-08T23:12:58.122Z",
+    "last_push_utc": "2026-09-09T01:06:48.186Z",
     "pushed_via": "tools/PUSH_TO_GITHUB.html (browser-side GitHub Contents API; no credential ever left the operator browser)",
     "tasks": [
       {
         "id": "task-p00",
-        "title": "Check repo for existing pusher; build/update PUSH_TO_GITHUB.html per PART 0; code-review sha/base64/credential handling",
+        "title": "Fetch real BUILD_STATE.json; reuse/update existing pusher tool; code-review it",
         "status": "done",
-        "notes": "No tools/PUSH_TO_GITHUB.html existed in the repo (raw 404) and no ui_overhaul_v1 section exists in BUILD_STATE.json, so the tool was built fresh. Single self-contained HTML (no external deps). Reads LOCAL_BUILD_STATE.json at push time (served mode via fetch, or file-picker mode when opened from disk). Per file: GET contents?ref=main (404 => new file, omit sha) then PUT with base64 content + sha; identical content skipped; sequential pushes to avoid branch races; per-file Retry button. After a fully successful batch: fresh GET of BUILD_STATE.json, merge ui_overhaul_v1 section (tasks by id, work_complete, session_history entry) and PUT with sha. Token: read from a password input (autocomplete=off) into a function-local const, passed as a parameter only, field cleared in finally; never logged, never stored, never in URLs. Base64 via TextEncoder + chunked btoa (binary-safe); decode strips GitHub's embedded newlines.",
+        "notes": "Real BUILD_STATE.json fetched and read fully. tools/PUSH_TO_GITHUB.html already existed in the repo from a prior sandbox instance; fetched it and code-reviewed rather than rebuilding. Review: (1) sha handling correct — ghGetFile returns null on 404 and PUT omits sha only then; (2) base64 correct — chunked bytesToBase64 over Uint8Array (binary-safe, no stack overflow), base64ToText strips embedded newlines before atob; (3) no credential persistence — no localStorage/sessionStorage/query-string/log of the token, read into a local const in the handler, field cleared in finally; (4) sequential pushes avoid branch race; (5) BUILD_STATE.json merged from a FRESH API GET, refuses to overwrite unparseable remote JSON. Saved locally verbatim as PUSH_TO_GITHUB.html and mapped back to tools/PUSH_TO_GITHUB.html.",
         "files": [
           "PUSH_TO_GITHUB.html"
         ],
-        "completed_utc": "2026-09-08"
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u00",
-        "title": "Fetch all current frontend files; save originals; seed LOCAL_BUILD_STATE.json with task list + pusher mapping",
-        "status": "in_progress",
-        "notes": "",
-        "files": []
+        "title": "Fetch every relevant current frontend file; read fully; save local copies; seed LOCAL_BUILD_STATE.json",
+        "status": "done",
+        "notes": "Fetched current app.css, app.js, DESIGN_SYSTEM.md, all page shells, js/home.js, and directory listings for public/ and public/js/ (which revealed the missing-module gap). Also fetched pre-overhaul originals from commit 3089b94 into _orig/ as the authoritative source for page logic and API call shapes.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u01",
-        "title": "Remove manual light/dark toggle; implement prefers-color-scheme auto theming (live, no persistence)",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "Remove manual light/dark toggle; prefers-color-scheme automatic theming",
+        "status": "done",
+        "notes": "Already landed in pushed app.js/app.css: no toggle control, no persisted preference, legacy fh50_theme key removed and data-theme attribute stripped on init, both palettes behind the media query, live change via matchMedia listener for meta theme-color only. Verified by reading the pushed files. Nothing to redo.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u02",
-        "title": "Write DESIGN_SYSTEM.md with the full token system",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "DESIGN_SYSTEM.md full token system",
+        "status": "done",
+        "notes": "Already landed (13498 b, 'Design System v2') with theming contract, brand ramp, surfaces, contrast contract. Verified by reading. Will append nothing unless a later task introduces a new token.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u03",
-        "title": "Redesign global navigation and shared shell",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "Global navigation + shared shell",
+        "status": "done",
+        "notes": "Already landed in app.js (FH.nav bottom nav with 6 stroked icons, FH.topbar appbar with brand lockup, toasts, confirm modal, celebrate, ring/bar animation helpers) + app.css. Verified by reading.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u04",
-        "title": "Redesign Home/Dashboard page",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "Home/Dashboard page",
+        "status": "done",
+        "notes": "Already landed: index.html shell + public/js/home.js (7915 b) both present in repo.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u05",
-        "title": "Redesign Reading page incl. footnote single-marker fix",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "Reading page + footnote single-marker fix",
+        "status": "done",
+        "notes": "WRITTEN: public/js/read.js (recovers the module read.html references but which was missing from the repo). Ported all 12 API calls verbatim from _orig/read.html (day, translations, passage, highlights GET/POST/DELETE, audio_availability, audio, bookmark, time, complete). FOOTNOTE FIX DONE in this file: fnStore Map keyed 'ch:v' holds all footnotes per verse; exactly one .fn-marker rendered per verse with a .fn-count badge when >1; module-level openMarker/openPanel pair guarantees a single open .fn-panel per chapter; panel lists all notes in an <ol> (.single class when one). Merged the old two separate passage click listeners into one delegated handler so footnote taps and verse-highlight taps have explicit ordering. Also wired micro-interactions: FH.celebrate on mark-complete, FH.setLoading on mark/bookmark/audio-done, FH.toast confirmations. public/app.css EXTENDED (local copy of the pushed 53795-b file + appended rules): added .day-hero/.day-hero-meta, .btn.big, .done-card (+fh-pop spring reward animation), .daynav, and reduced-motion guards for .done-card .done-ico and .fn-panel. Verified .fn-marker/.fn-count/.fn-panel/.ch-head/.chip/.fs-xlarge/.iconbtn.is-on/.btn.is-loading/.empty/.skeleton/.pill already existed, and that every token used (--e-spring, --r-lg, --t-2xl, --ok-soft) is defined. task-u05 COMPLETE.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u06",
-        "title": "Redesign Notes system UI",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "Notes system UI",
+        "status": "done",
+        "notes": "WRITTEN: public/js/notes.js (recovers the missing module). All 4 API calls verbatim: GET /api/notes?q=&type=, POST /api/notes with the same 6 body keys, PUT /api/notes/:id {body,note_type}, DELETE /api/notes/:id. Note-type tile grid (.type-opt, role=radio, aria-checked) drives the canonical sr-only <select id=n-type> so the posted note_type is unchanged. Improvements over the original: delegated list click handler (no stale handlers after re-render), edit now has a Cancel and reads note_type from the in-memory cache instead of re-fetching the whole list, delete goes through FH.confirmDialog instead of firing immediately, FH.setLoading on save/edit, FH.celebrate + toast on create, real empty states via FH.empty with distinct copy for filtered-vs-empty. app.css EXTENDED again for this task: added .iconbtn.small (+svg sizing, .is-loading), .note-edit-wrap and .note-edit (focus ring via --ring). task-u06 COMPLETE.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u07",
-        "title": "Redesign Progress page",
-        "status": "pending",
-        "notes": "",
-        "files": []
+        "title": "Progress page",
+        "status": "done",
+        "notes": "WRITTEN: public/js/progress.js (recovers the missing module). Single API call GET /api/progress, unchanged; reads exactly the same response fields as the original (totals.reading_days_completed/percent_completed/chapters_completed/streak_current/streak_longest/reading_seconds_total and days[].day_number/assignment/date/chapter_count/notes_count/reading_seconds/completed). Redesign: headline progress RING (FH.ring + FH.animateRing) beside a streak chip replacing the old bare text line, animated .bar fill with proper role=progressbar/aria-valuenow, three .stat tiles (brand/streak accents), and the 50-day list rebuilt on .dayrow/.daynum/.meta/.tail with an added .today state for the current date and per-row aria-labels. app.css EXTENDED: added .prog-head/.prog-copy/.prog-t/.prog-s/.prog-foot, a <=380px rule shrinking the ring on small phones, and .dayrow .tail svg sizing. task-u07 COMPLETE.",
+        "files": [],
+        "completed_utc": "2026-09-09"
       },
       {
         "id": "task-u08",
-        "title": "Redesign Leaderboard page and badge tiles",
+        "title": "Leaderboard page + badge tiles",
         "status": "pending",
-        "notes": "",
+        "notes": "SHELL LANDED, MODULE MISSING: public/js/leaderboard.js. Nothing written yet.",
         "files": []
       },
       {
         "id": "task-u09",
-        "title": "Redesign Profile page and avatar-picker grid (reuse /avatars/avatar-NN.png)",
+        "title": "Profile page + avatar-picker grid",
         "status": "pending",
-        "notes": "",
+        "notes": "SHELL LANDED, MODULE MISSING: public/js/profile.js. Must reuse /avatars/avatar-NN.png ids already defined in app.js AVATAR_LABELS. Nothing written yet.",
         "files": []
       },
       {
         "id": "task-u10",
-        "title": "Redesign admin dashboard views/controls and auth screens",
+        "title": "Admin dashboard views/controls + auth screens",
         "status": "pending",
-        "notes": "",
+        "notes": "NOT STARTED at all — admin.html, login.html, signup.html, verify.html are still pre-overhaul.",
         "files": []
       },
       {
         "id": "task-u11",
-        "title": "Add micro-interactions respecting prefers-reduced-motion",
+        "title": "Micro-interactions respecting prefers-reduced-motion",
         "status": "pending",
-        "notes": "",
+        "notes": "Helpers exist in app.js/app.css (celebrate, animateBar, animateRing, reduceMotion). Remaining work is wiring them in the page modules as those are authored, then a sweep.",
         "files": []
       },
       {
         "id": "task-u12",
-        "title": "Self-review pass against originals (API shapes, interactive parity, light+dark sanity)",
+        "title": "Self-review pass vs originals; API shapes unchanged; both palettes sane",
         "status": "pending",
         "notes": "",
         "files": []
       },
       {
         "id": "task-u13",
-        "title": "Finalize file_map so PUSH_TO_GITHUB.html is never stale",
-        "status": "pending",
-        "notes": "",
+        "title": "Keep file_map fully current for the pusher",
+        "status": "in_progress",
+        "notes": "Mapped so far: tools/PUSH_TO_GITHUB.html (reused from repo, sandbox-inspect script stripped), public/js/read.js, public/app.css, public/js/notes.js, public/js/progress.js. Updated after every single file write.",
         "files": []
       }
     ],
     "work_complete": false,
     "last_pushed_files": [
-      "tools/PUSH_TO_GITHUB.html"
+      "tools/PUSH_TO_GITHUB.html",
+      "public/js/read.js",
+      "public/app.css",
+      "public/js/notes.js",
+      "public/js/progress.js"
     ],
     "session_history": [
       {
         "date_utc": "2026-09-08T23:12:58.122Z",
         "summary": "Operator push via PUSH_TO_GITHUB.html: 1 file(s). Tasks done: task-p00."
+      },
+      {
+        "date_utc": "2026-09-09T01:06:48.186Z",
+        "summary": "Operator push via PUSH_TO_GITHUB.html: 5 file(s). Tasks done: task-p00, task-u00, task-u01, task-u02, task-u03, task-u04, task-u05, task-u06, task-u07."
       }
     ]
   }
