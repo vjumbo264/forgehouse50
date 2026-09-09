@@ -713,8 +713,8 @@
    {
     "id": "task-r05",
     "title": "Cache busting: content-hashed/versioned asset URLs + long-lived immutable caching for hashed assets, no-cache HTML entry points (Part C). Verify fresh/incognito load.",
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Cache busting implemented: app.css/app.js renamed to versioned basenames app.v3.css/app.v3.js (every future deploy that touches them bumps vN -> new URL -> guaranteed browser+CDN invalidation); all 10 HTML pages updated to reference the v3 names; service worker bumped to fh50-v3 (old caches purged on activate) and precache list updated; new public/_headers (Cloudflare Pages native) sets no-cache/must-revalidate on *.html, /, sw.js and manifest, and public max-age=31536000 immutable on versioned assets + icons/avatars/branding. Live incognito verification deferred to task-r10 (needs deploy of the whole session's changes)."
    },
    {
     "id": "task-r06",

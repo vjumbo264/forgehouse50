@@ -8,7 +8,10 @@
    - Stale-while-revalidate for VerseWell scripture mirror content (text is
      immutable per version, audio grows over time).
 */
-const VERSION = "fh50-v2";
+// Bump VERSION on every deploy that changes any shell file: the install
+// handler precaches under the new cache names and activate() deletes every
+// old cache, so no visitor can be stranded on a stale app shell.
+const VERSION = "fh50-v3";
 const SHELL_CACHE = `shell-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
 const CONTENT_CACHE = `versewell-${VERSION}`;
@@ -25,8 +28,8 @@ const SHELL_FILES = [
   "/leaderboard.html",
   "/profile.html",
   "/admin.html",
-  "/app.css",
-  "/app.js",
+  "/app.v3.css",
+  "/app.v3.js",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",

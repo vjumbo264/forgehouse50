@@ -1,0 +1,44 @@
+# ForgeHouse 50 — cache policy (Cloudflare Pages _headers, deployed verbatim)
+#
+# Strategy (revert_and_v2_redesign / task-r05):
+#   * HTML entry points + service worker + manifest: NO caching — a visitor
+#     always fetches the latest document, which references the current
+#     versioned asset filenames. This is what guarantees a redeploy is
+#     immediately visible without a hard refresh.
+#   * Versioned app assets (app.vN.css / app.vN.js): the basename carries a
+#     deploy version, so any content change ships under a NEW URL — safe to
+#     cache immutably forever at both browser and CDN layers.
+#   * Icons / avatars / branding images: content-addressed by convention
+#     (files are only ever replaced together with a service-worker VERSION
+#     bump + new deploy), cached immutably.
+
+# HTML entry points — always revalidate
+/*.html
+  Cache-Control: no-cache, must-revalidate
+
+/
+  Cache-Control: no-cache, must-revalidate
+
+# Service worker must never be served stale, or old caches never get purged
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+
+/manifest.webmanifest
+  Cache-Control: no-cache, must-revalidate
+
+# Versioned app assets — immutable (new deploy => new vN filename)
+/app.v3.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/app.v3.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images — immutable per deploy (SW cache names version them too)
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/avatars/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/branding/*
+  Cache-Control: public, max-age=31536000, immutable
