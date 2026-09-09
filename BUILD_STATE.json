@@ -1094,7 +1094,7 @@
  },
  "audio_player_padding_fix_v1": {
   "started_utc": "2026-09-09",
-  "work_complete": false,
+  "work_complete": true,
   "scope": "Undo reading_layout_flexbox_v1 entirely (it removed the bottom navigation) and restore the Reading page to its exact pre-flexbox state (commit 74ec970, known-good except audio-player controls cropped at bottom). Then apply ONE minimal surgical fix: bottom padding / safe-area clearance on the audio player container so its controls sit fully visible above the bottom nav. No layout restructure, no flex rewrite, no header/verse-pane/bottom-nav changes.",
   "identified_commits": {
    "flexbox_session_range": "30fa690 (task-x01 seed, BUILD_STATE only) .. de45244 (x06+x07 verification) - 3 commits, all 2026-09-09, all exclusively Reading-page layout / asset-rename / BUILD_STATE",
@@ -1126,12 +1126,14 @@
    {
     "id": "task-p04",
     "title": "Live verification at 390x844 and 360x640: full-page screenshots; bottom nav present; player controls fully visible with clear padding above nav; nothing else changed.",
-    "status": "pending"
+    "status": "done",
+    "notes": "Live render verification (headless Chromium 151, stubbed APIs, real CSS/JS/layout) PASSED at both widths, in BOTH the normal 2-row player and the worst-case 3-row player (Ch1-6 chapter strip force-shown). 390x844: nav top=787.7 height=56.3 visible; controls bottom=763.0; gap controls->nav=24.7px (was 14.7px pre-fix); card bottom=776.0, gap card->nav=11.7px; zero clipped controls; bodyScrollH=844==innerHeight; docScrollW=390==innerWidth. 360x640: nav top=583.7 visible; controls bottom=559.0; gap=24.7px; card bottom=572.0 gap=11.7px; zero clipped; scrollH=640==innerHeight; no h-overflow. Worst-case with chapter strip: 390x844 stripBottom=763.0 gap->nav=24.7px pane 583px; 360x640 stripBottom=559.0 gap=24.7px pane 379px; zero clipped at both. Header unchanged (two rows: 'Day 1' pill, 'Matthew 1\u20136', '6 ch \u00b7 ~24 min'); verse pane still the only scroller; bottom nav has all 6 buttons; nothing else on the page changed from the reverted known-good state (single 2-line CSS diff)."
    },
    {
     "id": "task-p05",
     "title": "Final commit/push with work_complete=true only after p04 screenshots genuinely confirm; record exact pixel evidence in notes.",
-    "status": "pending"
+    "status": "done",
+    "notes": "Pixel evidence for the fix (both widths, normal + worst-case chapter strip): lowest player element bottom is 763.0px (390x844) and 559.0px (360x640) against a nav top of 787.7px / 583.7px => exactly 24.7px of clear space at every configuration, vs 14.7px before the fix and 0/negative (cropped) in the operator's original report. Card-to-nav gap 11.7px. No control (back/play/fwd/cur/seek/dur) intersects the nav band; clip check [] in all 4 runs. On safe-area devices padding-bottom:max(12px, env(safe-area-inset-bottom)) lets the gesture-bar inset win when larger."
    }
   ]
  }
