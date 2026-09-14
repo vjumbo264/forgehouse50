@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   avatar_id       TEXT,                          -- preset avatar id (app.js AVATARS); NULL = initial fallback
   role            TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member','admin')),
   email_verified  INTEGER NOT NULL DEFAULT 0,    -- boolean 0/1
+  programme_start_date TEXT,                     -- per_user_calendar_and_quiz_v1: this user's Day-1 anchor (ISO date),
+                                                 -- set at OTP verification; existing users backfilled to 2026-09-07
   created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
@@ -45,11 +47,30 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
 
 -- ─── Programme calendar ─────────────────────────────────────────────────────
 
+-- reading_days is the SHARED LEGACY reference calendar (start 2026-09-07).
+-- As of per_user_calendar_and_quiz_v1 the REAL schedule is per-user (see
+-- user_reading_days below); this table is kept as reference/provenance and
+-- because reading_assignments / reading_progress still FK to day_number.
 CREATE TABLE IF NOT EXISTS reading_days (
   day_number  INTEGER PRIMARY KEY CHECK (day_number BETWEEN 1 AND 50),
   date        TEXT NOT NULL UNIQUE,              -- ISO date; never a Tuesday or Friday
   label       TEXT NOT NULL DEFAULT ''
 );
+
+-- Per-user calendar (per_user_calendar_and_quiz_v1): (user, day_number) -> the
+-- calendar date that reading day falls on for THAT user. Each user's Day 1 is
+-- their own programme_start_date; Tuesdays & Fridays are skipped per-user.
+-- Generated lazily by functions/lib/calendar.mjs (materialised on first
+-- calendar read / at verification). Applied via migrations/per_user_calendar_v1.sql.
+CREATE TABLE IF NOT EXISTS user_reading_days (
+  user_id     TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  day_number  INTEGER NOT NULL CHECK (day_number BETWEEN 1 AND 50),
+  date        TEXT NOT NULL,                     -- ISO date; never Tue/Fri for THIS user
+  label       TEXT NOT NULL DEFAULT '',
+  created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  PRIMARY KEY (user_id, day_number)
+);
+CREATE INDEX IF NOT EXISTS idx_urd_user_date ON user_reading_days(user_id, date);
 
 CREATE TABLE IF NOT EXISTS reading_assignments (
   id             TEXT PRIMARY KEY,
@@ -171,6 +192,19 @@ CREATE TABLE IF NOT EXISTS user_badges (
   awarded_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   PRIMARY KEY (user_id, badge_id)
 );
+
+-- Quiz attempts (per_user_calendar_and_quiz_v1): EVERY attempt recorded.
+-- A reading day counts complete ONLY via a passing attempt (>= 67% correct).
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  day_number  INTEGER NOT NULL CHECK (day_number BETWEEN 1 AND 50),
+  score       INTEGER NOT NULL,                  -- questions correct
+  total       INTEGER NOT NULL,                  -- questions asked
+  passed      INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_quiz_user_day ON quiz_attempts(user_id, day_number, created_at);
 
 CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
   id           TEXT PRIMARY KEY,
