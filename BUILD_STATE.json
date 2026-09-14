@@ -1198,9 +1198,9 @@
    {
     "id": "task-q04",
     "title": "Hand-written 50-day quiz question bank (3-5 MCQ/day, comprehension-level, content from that day's chapters)",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Question bank written: functions/lib/quiz_questions.mjs — 50 days x 5 hand-written comprehension MCQs (250 total), every question drawn from that day's assigned chapters, 3 plausible options each, theologically neutral factual recall. REFINEMENT of q01 storage plan (documented judgment): bank lives as a checked-in static module in functions/lib and is served via API with answer indexes stripped — a public/quiz_questions.json containing answers would be trivially readable/cheatable; same static checked-in substance, cheat-resistant delivery. Grading (gradeDay) is server-side only. Automated integrity check: all 50 days present, 3-5 questions each, unique options, valid answer indexes, no answer leakage in the public payload; gradeDay(1) all-correct passes, wrong answers fail. Passing bar: ceil(2/3 * total) = 67% (4/5 for a 5-question day)."
    },
    {
     "id": "task-q05",
