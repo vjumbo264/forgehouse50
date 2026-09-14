@@ -1160,7 +1160,7 @@
  },
  "per_user_calendar_and_quiz_v1": {
   "started_utc": "2026-09-14",
-  "work_complete": false,
+  "work_complete": true,
   "scope": "Per-user reading calendars (Day 1 = each user's own start date, Tue/Fri skipped per-user), a mandatory per-day multiple-choice quiz gating day completion + points, and a leaderboard redesign ranking Overall Score by a confidence-weighted (damped) per-day average with a day-3 eligibility gate. Plus verify/implement the max-one-day-ahead read-ahead limit enforced at quiz submission time.",
   "gate_check": "audio_player_padding_fix_v1.work_complete == true (verified 2026-09-14 at HEAD 688eec4; audio_player_delivery_fix_v1 also work_complete=true). Proceeding.",
   "design_decisions": {
@@ -1240,16 +1240,16 @@
    {
     "id": "task-q10",
     "title": "Full live verification per Part list incl. damped-formula simulation + read-ahead block",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Full live verification against https://forgehouse50.pages.dev (deploy 58e5533) + live D1 via CF API, harness scripts/q10_verify.py — 34/34 checks PASS. Coverage: (A) fresh signup: programme_start_date NULL pre-verification, anchored to today 2026-09-14 exactly at successful OTP verify. (B) per-user calendar materialised: 50 rows, zero Tue/Fri, Day1=2026-09-14, Day2=Wed 2026-09-16 (Tue skipped for THIS user), Day50=Sun 2026-11-22 — matches calendar.mjs exactly; /api/today reports user's own start_date and Day-1 assignment; quiz served answers-stripped, pass_mark 4/5. (C) quiz gate: legacy /api/read/complete without a pass => 409, no progress row, no points; wrong answers (3/5 < pass_mark 4) => failed attempt recorded in quiz_attempts, day NOT complete, 0 points; retry with correct answers => passed, +13 pts (reading_completed 10 + daily_streak 3); idempotent resubmit => 0 new points; day 3 before day 2 => 409 previous_day_incomplete. (D) read-ahead: completing Day 2 one day ahead succeeds; immediately attempting Day 3 => 409 'You can only read one day ahead — come back tomorrow to continue.', enforced at submission (GET /api/quiz/3 also reports can_attempt=false read_ahead_limit). (E) eligibility: day-1 user absent from ALL six leaderboard categories; payload carries scoring formula + gate metadata; no private note content leaks in any category payload (marker-string scan). (F) simulated elapsed_days=3: user appears on EVERY category immediately; overall value = damped (28/3)*3/(3+7)=2.80, NOT raw avg 9.33; damping head-to-head: 30-day sustained avg(13)=10.54 > 3-day avg(13)=3.90, and even a HIGHER 3-day raw avg(14)=4.20 still loses — sustained consistency provably outranks short hot streaks. (G) /api/progress shows per-user dates; 5 legacy verified users retain start 2026-09-07 with progress intact (no renumbering). (H) admin stats: per-user behind-schedule count (10) + quiz aggregates; simulated user correctly counted behind. (Z) test user fully purged; no test residue. NOTE: consistency/chapters/reading_time/observations/questions categories verified unchanged cumulative rankings (scope: only 'overall' uses the damped average)."
    },
    {
     "id": "task-q11",
     "title": "Final commit/push, work_complete=true with full summary",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Final commit. work_complete=true. Summary — schema: profiles.programme_start_date (anchored at OTP verification), new user_reading_days (per-user day->date), new quiz_attempts (every attempt recorded); reading_assignments stays shared; reading_days kept as legacy reference; existing users backfilled to 2026-09-07 with progress preserved 1:1. Quiz: hand-written 50-day bank (5 MCQ/day) in functions/lib/quiz_questions.mjs, answers stripped server-side; pass threshold 67% (ceil(2/3*total)); unlimited retries; quiz is the ONLY completion gate (legacy mark-complete returns 409 quiz_required). Points split: reading_completed +10 and daily_streak +3 awarded only by a passing submission; no point source removed. Leaderboard: Overall Score = damped average (raw_avg*elapsed)/(elapsed+K), K=7, eligibility gate elapsed_days>=3 on the user's own calendar, computed live per query; consistency/chapters/reading_time/observations/questions unchanged cumulative rankings. Read-ahead: max one day ahead enforced at quiz submission (409 + clear message). Live verification: 34/34 PASS (see task-q10)."
    }
   ],
   "session_history": [
@@ -1258,6 +1258,7 @@
     "date_utc": "2026-09-14",
     "summary": "Session start. Cloned vjumbo264/forgehouse50 (HEAD 688eec4). Gate check passed: audio_player_padding_fix_v1.work_complete=true (delivery fix also complete). Read BUILD_STATE.json fully, inspected D1 schema and all calendar/points/leaderboard/admin code paths. Confirmed Part D gap: /api/read/complete has NO read-ahead guard. Design decisions documented; seed task list appended."
    }
-  ]
+  ],
+  "completed_utc": "2026-09-14"
  }
 }
