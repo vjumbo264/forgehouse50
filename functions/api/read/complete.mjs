@@ -1,7 +1,14 @@
-// POST /api/read/complete — mark a reading day complete (idempotent) and award points.
-import { json, badRequest, readJson, uuid, nowIso } from '../../lib/http.mjs';
+// POST /api/read/complete — legacy "mark complete" endpoint.
+// per_user_calendar_and_quiz_v1 / task-q07: as of this session the quiz is
+// the ONLY completion gate. This endpoint now acts as a thin compat alias:
+//   - day already quiz-passed complete  -> idempotent OK (no double points)
+//   - otherwise                         -> 409 quiz_required (the client must
+//     send the user through POST /api/quiz/submit; the same sequential and
+//     read-ahead gates are enforced there).
+// Direct self-reported completion no longer awards points or marks a day done.
+import { json, badRequest, readJson, conflict } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
-import { awardPoints } from '../../lib/points.mjs';
+import { TOTAL_DAYS } from '../../lib/calendar.mjs';
 
 export async function onRequestPost({ request, env }) {
   const { user, response } = await requireUser(request, env);
@@ -9,39 +16,23 @@ export async function onRequestPost({ request, env }) {
 
   const body = await readJson(request);
   const n = parseInt(body?.day_number ?? 0, 10);
-  if (!n || n < 1 || n > 50) return badRequest('A reading day between 1 and 50 is required');
+  if (!n || n < 1 || n > TOTAL_DAYS) return badRequest('A reading day between 1 and 50 is required');
 
-  // Chapter count for this day (from assignments).
-  const row = await env.DB.prepare(
-    'SELECT COALESCE(SUM(chapter_count),0) AS chapters FROM reading_assignments WHERE day_number = ?'
-  ).bind(n).first();
-  const chapters = row?.chapters ?? 0;
+  const progress = await env.DB.prepare(
+    'SELECT completed FROM reading_progress WHERE user_id = ? AND day_number = ?'
+  ).bind(user.id, n).first();
+  if (progress?.completed) return json({ ok: true, already_completed: true, day_number: n, points_awarded: 0 });
 
-  // Upsert progress row (idempotent completion).
-  await env.DB.prepare(
-    `INSERT INTO reading_progress (id, user_id, day_number, completed, completed_at, chapters_read)
-     VALUES (?, ?, ?, 1, ?, ?)
-     ON CONFLICT(user_id, day_number) DO UPDATE SET
-       completed = 1,
-       completed_at = COALESCE(reading_progress.completed_at, excluded.completed_at),
-       chapters_read = MAX(reading_progress.chapters_read, excluded.chapters_read),
-       updated_at = ?`
-  ).bind(uuid(), user.id, n, nowIso(), chapters, nowIso()).run();
-
-  // Points — idempotency keys make these exactly-once.
-  const reading = await awardPoints(env.DB, user.id, 'reading_completed', `reading_completed:${user.id}:${n}`, { dayNumber: n });
-
-  // Streak point: awarded once per completed day when it extends a run.
-  const streak = await awardPoints(env.DB, user.id, 'daily_streak', `daily_streak:${user.id}:${n}`, { dayNumber: n });
-
-  // Programme completion bonus once all 50 days are done.
-  const done = await env.DB.prepare(
-    'SELECT COUNT(*) AS c FROM reading_progress WHERE user_id = ? AND completed = 1'
-  ).bind(user.id).first();
-  let programme = { awarded: false, points: 0 };
-  if ((done?.c ?? 0) >= 50) {
-    programme = await awardPoints(env.DB, user.id, 'programme_completed', `programme_completed:${user.id}`);
+  const passed = await env.DB.prepare(
+    'SELECT id FROM quiz_attempts WHERE user_id = ? AND day_number = ? AND passed = 1 LIMIT 1'
+  ).bind(user.id, n).first();
+  if (passed) {
+    // Passed but progress row missing (edge case) — the submit endpoint is the
+    // authority; tell the client to re-submit so completion+points are atomic.
+    return conflict('Quiz passed but completion not recorded — resubmit the quiz for Day ' + n + '.');
   }
 
-  return json({ ok: true, day_number: n, points_awarded: reading.points + streak.points + programme.points });
+  return conflict('Complete the short quiz for Day ' + n + ' to mark it done.', {
+    headers: {},
+  });
 }

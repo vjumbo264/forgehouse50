@@ -1205,9 +1205,9 @@
    {
     "id": "task-q05",
     "title": "quiz_attempts-backed quiz flow: present after reading, block completion/points until pass, retries allowed, every attempt recorded",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "quiz_attempts-backed flow implemented: GET /api/quiz/:day returns questions with answers stripped + attempt history + can_attempt/block_reason; POST /api/quiz/submit is THE single completion gate — grades server-side, records EVERY attempt in quiz_attempts (pass or fail), and only on a passing attempt (>= 4/5 = 67%) upserts reading_progress and awards reading_completed/daily_streak/programme_completed via idempotent keys. Retries unlimited; a failed attempt returns score + pass_mark with a retry message, never a lockout."
    },
    {
     "id": "task-q06",
@@ -1219,9 +1219,9 @@
    {
     "id": "task-q07",
     "title": "Points: day-completion points only via passed quiz (documented split)",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Points split as documented in q01 design: day-completion points (reading_completed +10, daily_streak +3, programme_completed +100) are awarded ONLY inside a passing quiz submission. /api/read/complete converted to a legacy-compat alias: idempotent OK if the day is already quiz-complete, otherwise 409 directing the client to the quiz — self-reported completion no longer awards anything. No point source removed or reduced; notes/audio/badges paths untouched."
    },
    {
     "id": "task-q08",
@@ -1233,9 +1233,9 @@
    {
     "id": "task-q09",
     "title": "One-day-ahead read-ahead limit enforced at quiz submission/completion",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Read-ahead limit enforced AT THE GATE (quiz submission), not just display: submit.mjs requires day N-1 quiz-passed complete (sequential) AND N <= elapsed_days(today)+1 — max one day ahead of the user's own schedule; two-days-ahead gets 409 'You can only read one day ahead — come back tomorrow to continue.' Same rules surfaced read-only via GET /api/quiz/:day (can_attempt/block_reason) so the UI can explain before the user taps submit. Part D gap confirmed in q01 (old complete.mjs accepted any day 1-50 unconditionally) is now closed."
    },
    {
     "id": "task-q10",
