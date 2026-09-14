@@ -1263,7 +1263,7 @@
  },
  "quiz_redesign_and_launch_wipe_v1": {
   "started_utc": "2026-09-14",
-  "work_complete": false,
+  "work_complete": true,
   "scope": "CORRECTION of per_user_calendar_and_quiz_v1's quiz mechanic: remove the pass/fail gate, completion-blocking and all retry/retake logic; replace with one-attempt-only (server-enforced), always-shown results, and proportional quiz points ((score/total) x Q). Plus a separate launch-prep wipe of every non-admin user and all their per-user data.",
   "gate_check": "per_user_calendar_and_quiz_v1.work_complete == true (verified at HEAD ff34461). Proceeding.",
   "removed_exactly": {
@@ -1328,16 +1328,16 @@
    {
     "id": "task-w07",
     "title": "Live verification: admin-only participants, empty leaderboard state, fresh registration + fresh calendar, full quiz flow (any-score completion, immediate result, 409 on 2nd attempt, proportional pts)",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Live verification scripts/w07_verify.py against https://forgehouse50.pages.dev + live D1 \u2014 28/28 PASS. Post-wipe: exactly ONE profile remains = the admin (role field), admin dashboard participants=[admin] (via D1-inserted admin session), admin data intact (2 progress/4 pts/50 calendar rows/6 highlights), shared content untouched (72 assignments/50 reading_days/10 badges). Fresh registration end-to-end: signup -> OTP verify -> programme_start_date anchored 2026-09-14 -> 50 per-user calendar rows materialised on first /api/today (lazy by design), Day1=2026-09-14, zero Tue/Fri, Day50=2026-11-22. Quiz redesign: read/complete BEFORE any quiz attempt succeeds +13 pts (quiz is not a gate); 0/5 quiz attempt accepted on the completed day with the result returned immediately (+0 quiz pts); second submission rejected 409 attempt_used and exactly one attempt row persists (UNIQUE idx_quiz_one_attempt); Day 2 complete + 3/5 quiz -> exactly 3 quiz_score pts (Q11 total=29); sequential (Day 4 before Day 3 => 409) and read-ahead (Day 5 => 409) guards intact on both endpoints. Leaderboard empty state: after the wipe only the harness user could appear (admin excluded); damped score with proportional quiz pts = (29/3)*3/(3+7) = 2.90 exactly; admin (26 pts, day 4) absent from every category. Harness + R4 test users fully purged (profiles back to admin-only)."
    },
    {
     "id": "task-w08",
     "title": "Final commit/push with work_complete=true + exact non-admin removal count",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Final commit. work_complete=true. SUMMARY \u2014 QUIZ REDESIGN: the per_user_calendar_and_quiz_v1 gate is fully removed. No passing threshold (67%/4-of-5 gone), no completion-blocking (POST /api/read/complete restored as the pre-gate mark-complete trigger awarding reading_completed +10 / daily_streak +3 / programme_completed +100 idempotently), no retry/retake anywhere. ONE attempt per user per reading day, enforced server-side (409 on a second submission) AND at the DB (UNIQUE INDEX idx_quiz_one_attempt on quiz_attempts(user_id,day_number); live D1 had zero duplicates). Results always shown immediately (\"You scored X out of Y (+N quiz pts)\"). Proportional quiz points: quiz_score = round((score/total) x 5) (Q=5, new points action; points table rebuilt live with the CHECK extended, 18 rows/117 pts preserved verbatim). Never-attempted = no quiz_score row = 0 quiz pts (no special-casing). passed column repurposed as informational-only. Sequential + one-day-ahead guards kept (unrelated to the quiz) on both completion and quiz submission. Damped leaderboard (raw_avg x elapsed)/(elapsed+K), K=7, min-elapsed 3 verified to need NO structural change (11/11 function checks + live 2.90 confirmation); admins now excluded from all leaderboard categories (operators are not participants \u2014 satisfies the empty-leaderboard requirement without touching admin data). UI de-gated: quiz.html rewritten (informational, one-attempt, result+mark-complete), read.html Mark-complete direct + optional quiz link, progress.html \"Quiz due\" removed, sw fh50-v15. WIPE: exactly 9 non-admin users deleted via role-field identification + the migration_brevo_v1 cascading routine (quiz_attempts/user_reading_days added); cascaded rows: reading_progress 8, quiz_attempts 1, user_reading_days 450, bookmarks 9, highlights 4, points 14, sessions 26, otp_codes 8. Admin account (vjumbo264@gmail.com) + its data + all shared content untouched."
    }
   ],
   "session_history": [
@@ -1345,7 +1345,14 @@
     "session": 1,
     "date_utc": "2026-09-14",
     "summary": "Session start. Cloned vjumbo264/forgehouse50 (HEAD ff34461). Gate check passed. Read BUILD_STATE.json + full quiz-gate implementation. Applied live D1 migration (quiz_attempts one-attempt unique index; points rebuilt to add 'quiz_score', 18 rows/117 pts preserved verbatim). Server + UI rewrite complete for w02/w03/w05. task list appended."
+   },
+   {
+    "session": 1,
+    "date_utc": "2026-09-14",
+    "summary": "Complete. Quiz gate removed (no threshold/gate/retry), one-attempt server+DB enforcement, always-shown results, proportional quiz_score points, damped leaderboard verified unchanged-compatible, UI de-gated. Wiped 9 non-admin users (cascading across 12 per-user tables); admin-only D1, shared content intact. Live verification 28/28 PASS (scripts/w07_verify.py)."
    }
-  ]
+  ],
+  "completed_utc": "2026-09-14",
+  "non_admin_users_removed": 9
  }
 }

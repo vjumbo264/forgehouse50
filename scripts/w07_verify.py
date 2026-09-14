@@ -101,6 +101,7 @@ def main():
     row = d1("SELECT programme_start_date, email_verified FROM profiles WHERE id = ?", [uid])[0]
     check("R3 per-user calendar Day 1 anchored to actual registration date",
           row["programme_start_date"] == TODAY and row["email_verified"] == 1, f"start={row['programme_start_date']}")
+    c.call("GET", "/api/today")  # lazy materialisation trigger (ensureUserCalendar) — same as app usage
     cal = d1("SELECT COUNT(*) c, MIN(date) d1, MAX(date) d50 FROM user_reading_days WHERE user_id = ?", [uid])[0]
     check("R4 fresh calendar materialised: 50 rows, Day1 = today", cal["c"] == 50 and cal["d1"] == TODAY,
           f"rows={cal['c']} day1={cal['d1']}")
