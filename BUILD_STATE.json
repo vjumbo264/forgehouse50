@@ -1307,9 +1307,9 @@
    {
     "id": "task-w04",
     "title": "Verify damped-average leaderboard formula with proportional quiz points",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Damped formula (raw_avg x elapsed)/(elapsed+K), K=7, min-elapsed 3 \u2014 NO structural change needed: proportional quiz_score rows simply add to total_points. Function-level verification 11/11 PASS: quiz pts are exact integers (score/total)x5 for 0..5/5; sustained 30d-with-quiz (14.59) still outranks a hot perfect-quiz 3-day run (5.40); identical totals rank identically; zero-quiz users unchanged (damping degrades to pre-quiz formula, damped(390,30)=10.54); overall score monotonic non-decreasing in quiz score (3.90,4.20,4.50,4.80,5.10,5.40 over 3 days). Live-data confirmation folded into task-w07 (W4)."
    },
    {
     "id": "task-w05",
@@ -1321,9 +1321,9 @@
    {
     "id": "task-w06",
     "title": "Identify admin via role field; cascading wipe of every non-admin user across all per-user tables",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Admins identified via the actual profiles.role field (NOT email heuristics): exactly ONE role=admin account \u2014 the operator admin (vjumbo264@gmail.com). Reused the migration_brevo_v1 cascading routine scripts/purge_users.py (extended with quiz_attempts + user_reading_days; purge_user.mjs CHILD_TABLES updated to match). Executed against live D1: 9 non-admin users deleted (Victor vjumbo98, 2x VW E2E test, David Inyang, David George, Victor Okoi, Deborah Aniebiet Aniekan, Q Harness, JOSEPH EDADI). Cascading rows removed: reading_progress 8, quiz_attempts 1, user_reading_days 450, bookmarks 9, highlights 4, points 14, sessions 26, otp_codes 8 (notes/badges/audio/snapshots 0). Zero orphans after, every profile_gone=true. Post-check: profiles=1 (admin only); admin data intact (2 progress, 4 pts, 50 calendar rows, 6 highlights); shared content untouched (72 reading_assignments, 50 reading_days, 10 badges)."
    },
    {
     "id": "task-w07",
