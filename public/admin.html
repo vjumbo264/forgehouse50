@@ -67,11 +67,28 @@
   if (prog && !prog.started) {
     launch.innerHTML = `<p class="small muted" style="margin-top:0">The programme run has not started. Starting it opens the <strong>10-day join window</strong> from today: new registrations close automatically when the window ends, the programme end date is computed at that moment, and the permanent final rankings snapshot is taken once every participant's schedule has ended. This can only be done once.</p>
       <button class="btn" id="start-prog">Start Programme</button><div class="error" id="launch-err"></div>`;
-    document.getElementById('start-prog').addEventListener('click', async () => {
-      const btn = document.getElementById('start-prog'); btn.disabled = true;
-      const res = await FH.api('/api/admin/programme', { method: 'POST', body: { action: 'start' } });
-      if (!res.ok) { document.getElementById('launch-err').textContent = res.data?.error || 'Failed to start'; btn.disabled = false; return; }
-      location.reload();
+    // admin_reset_and_start_guardrail_v1: two-step, type-to-confirm guard so
+    // the one-shot Start button can never be pressed by accident. Step 1
+    // reveals a confirmation panel; the final button stays disabled until
+    // the operator types START exactly. The server independently requires
+    // confirm:'START' (functions/api/admin/programme.mjs), so a stray click,
+    // double-click, or scripted POST without the confirmation is a no-op.
+    document.getElementById('start-prog').addEventListener('click', () => {
+      launch.innerHTML = `<p class="small" style="margin-top:0"><strong>Confirm programme start.</strong> This is permanent and starts the 10-day join window from today. Type <strong>START</strong> to confirm.</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap"><input id="start-confirm" type="text" placeholder="Type START" autocomplete="off" style="width:130px">
+        <button class="btn" id="start-prog-final" disabled>Confirm start</button>
+        <button class="btn ghost" id="start-prog-cancel">Cancel</button></div>
+        <div class="error" id="launch-err"></div>`;
+      const input = document.getElementById('start-confirm');
+      const finalBtn = document.getElementById('start-prog-final');
+      input.addEventListener('input', () => { finalBtn.disabled = input.value.trim() !== 'START'; });
+      document.getElementById('start-prog-cancel').addEventListener('click', () => location.reload());
+      finalBtn.addEventListener('click', async () => {
+        finalBtn.disabled = true;
+        const res = await FH.api('/api/admin/programme', { method: 'POST', body: { action: 'start', confirm: 'START' } });
+        if (!res.ok) { document.getElementById('launch-err').textContent = res.data?.error || 'Failed to start'; finalBtn.disabled = false; return; }
+        location.reload();
+      });
     });
   } else if (prog) {
     launch.innerHTML = `<div class="grid2">

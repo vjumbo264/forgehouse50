@@ -19,7 +19,7 @@
 // Ordering guard (kept): a quiz attempt is only accepted for a day the user
 // could legitimately complete right now — day N-1 complete and at most one
 // day ahead of their own schedule (same rule as read/complete).
-import { json, badRequest, readJson, uuid, conflict } from '../../lib/http.mjs';
+import { json, badRequest, readJson, uuid, conflict, forbidden } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
 import { awardPoints } from '../../lib/points.mjs';
 import { ensureUserCalendar, elapsedDays, utcToday, TOTAL_DAYS } from '../../lib/calendar.mjs';
@@ -35,6 +35,10 @@ const BLOCK_MESSAGES = {
 export async function onRequestPost({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
+
+  // admin_reset_and_start_guardrail_v1: admin accounts operate the
+  // programme, they never participate in it — no quiz attempts, no points.
+  if (user.role === 'admin') return forbidden('Admin accounts cannot participate in the programme.');
 
   const body = await readJson(request);
   if (!body) return badRequest('Invalid JSON body');

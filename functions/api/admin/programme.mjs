@@ -50,6 +50,14 @@ export async function onRequestPost({ request, env }) {
   const action = String(body?.action || '');
   if (action !== 'start') return badRequest("action must be 'start'");
 
+  // admin_reset_and_start_guardrail_v1: server-side confirmation guard —
+  // the run only starts when the request carries the exact confirmation
+  // token the dashboard's type-to-confirm UI sends. A plain/accidental
+  // POST {action:'start'} is rejected and changes nothing.
+  if (body?.confirm !== 'START') {
+    return badRequest("Confirmation required — resend with confirm: 'START'. The programme was NOT started.");
+  }
+
   const cfg = await getProgrammeConfig(env.DB);
   if (cfg.started) {
     return json({
