@@ -1191,9 +1191,9 @@
    {
     "id": "task-q03",
     "title": "Per-user calendar generator + Home/Progress/admin behind-schedule rework",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Per-user calendar core added to functions/lib/calendar.mjs: ensureUserCalendar(db,userId) lazily sets programme_start_date (fallback if verification UPDATE missed) and materialises 50 user_reading_days rows from it (Tue/Fri skipped per-user); elapsedDays(rows,today)=user's current reading-day number; classifyUserDate keeps the Tuesday/Fri 'Fasting & Prayer' statuses but computed per-user. Endpoints reworked: today.mjs, read/day.mjs, progress.mjs (now also returns quiz_passed/quiz_attempts/is_future per day + start_date), admin/stats.mjs (behind-schedule = per-user due-day check; completed_today now counted by completed_at date since day numbers differ per user; added quiz aggregate stats). verify.mjs: successful OTP verification sets programme_start_date=COALESCE(existing, today) — the documented account-active trigger. All files node --check clean."
    },
    {
     "id": "task-q04",

@@ -105,3 +105,84 @@ export function classifyDate(dateStr, planByDate) {
   if (planByDate && planByDate.has(dateStr)) return 'reading';
   return 'rest';
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// per_user_calendar_and_quiz_v1 — PER-USER calendar core.
+//
+// "Reading day" is now per-user: each user's Day 1 is their own
+// profiles.programme_start_date (set at OTP verification / first active
+// fetch), and their 50 reading days proceed from there, still skipping
+// every Tuesday and Friday FOR THAT USER. reading_assignments stays shared
+// (everyone's Day N covers the same chapters); user_reading_days maps
+// (user, day_number) -> that user's calendar date.
+
+export function utcToday() { return new Date().toISOString().slice(0, 10); }
+
+export function weekdayOf(isoDate) {
+  return new Date(isoDate + 'T00:00:00Z').getUTCDay();
+}
+
+// Classify a date for a user's dashboard.
+// -> 'reading' | 'tuesday_prayer' | 'friday_prayer_study' | 'rest'
+export function classifyUserDate(dateStr, userPlanByDate) {
+  const wd = weekdayOf(dateStr);
+  if (wd === 2) return 'tuesday_prayer';
+  if (wd === 5) return 'friday_prayer_study';
+  if (userPlanByDate && userPlanByDate.has(dateStr)) return 'reading';
+  return 'rest';
+}
+
+// Resolve (and lazily initialise) a user's programme_start_date, then
+// materialise their 50 per-user calendar rows in user_reading_days.
+// Idempotent + cheap: fast SELECT path once rows exist. This is the single
+// entry point every per-user-aware endpoint uses, so a verified user can
+// never have a NULL start date even if the verification UPDATE was missed.
+export async function ensureUserCalendar(db, userId) {
+  const prof = await db.prepare(
+    'SELECT programme_start_date, email_verified FROM profiles WHERE id = ?'
+  ).bind(userId).first();
+  if (!prof) return { startDate: null, rows: [] };
+
+  // Lazy-set fallback (documented judgment): first per-user calendar use.
+  let startDate = prof.programme_start_date;
+  if (!startDate) {
+    startDate = utcToday();
+    await db.prepare(
+      'UPDATE profiles SET programme_start_date = ?, updated_at = ? WHERE id = ?'
+    ).bind(startDate, new Date().toISOString(), userId).run();
+  }
+
+  const { results } = await db.prepare(
+    'SELECT day_number, date FROM user_reading_days WHERE user_id = ? ORDER BY day_number'
+  ).bind(userId).all();
+  if ((results || []).length === TOTAL_DAYS) return { startDate, rows: results };
+
+  // (Re)build from the user's own start date. Only fills missing rows so any
+  // already-correct dates are untouched.
+  const dates = generateReadingDayDates(startDate, TOTAL_DAYS);
+  const have = new Set((results || []).map(r => r.day_number));
+  const stmts = dates
+    .filter(d => !have.has(d.day_number))
+    .map(d => db.prepare(
+      'INSERT OR IGNORE INTO user_reading_days (user_id, day_number, date, label) VALUES (?, ?, ?, ?)'
+    ).bind(userId, d.day_number, d.date, `Reading Day ${d.day_number}`));
+  if (stmts.length) await db.batch(stmts);
+
+  const { results: fresh } = await db.prepare(
+    'SELECT day_number, date FROM user_reading_days WHERE user_id = ? ORDER BY day_number'
+  ).bind(userId).all();
+  return { startDate, rows: fresh || [] };
+}
+
+// The reading-day number a user is ON for a real calendar date:
+// the latest day in their own schedule whose date is <= dateStr (0 if none
+// yet, i.e. before their Day 1). Drives the read-ahead cap, the leaderboard
+// elapsed_days input, and "behind schedule" logic.
+export function elapsedDays(rows, dateStr = utcToday()) {
+  let n = 0;
+  for (const r of rows || []) if (r.date <= dateStr && r.day_number > n) n = r.day_number;
+  return n;
+}
+
+export function userDateMap(rows) { return new Map((rows || []).map(r => [r.date, r.day_number])); }
+export function userDayMap(rows) { return new Map((rows || []).map(r => [r.day_number, r.date])); }

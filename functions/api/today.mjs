@@ -1,26 +1,25 @@
 // GET /api/today — today's programme status + assignment (authenticated).
+// per_user_calendar_and_quiz_v1: every date below is computed against THIS
+// user's own calendar (user_reading_days), not the shared reading_days.
 import { json } from '../lib/http.mjs';
 import { requireUser } from '../lib/auth.mjs';
-import { classifyDate, estimateMinutes } from '../lib/calendar.mjs';
+import { classifyUserDate, estimateMinutes, ensureUserCalendar, utcToday, userDateMap, elapsedDays, TOTAL_DAYS } from '../lib/calendar.mjs';
 import { userAggregates } from '../lib/points.mjs';
-
-function todayUtc() { return new Date().toISOString().slice(0, 10); }
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
-  const today = todayUtc();
-  const { results: allDays } = await env.DB.prepare(
-    'SELECT day_number, date FROM reading_days ORDER BY day_number'
-  ).all();
-  const byDate = new Map((allDays || []).map(d => [d.date, d.day_number]));
+  const today = utcToday();
+  const { startDate, rows } = await ensureUserCalendar(env.DB, user.id);
+  const byDate = userDateMap(rows);
 
-  const status = classifyDate(today, byDate);
+  const status = classifyUserDate(today, byDate);
   const todayDayNumber = byDate.get(today) || null;
 
-  // Next reading day (today if it's one and not yet completed, else next upcoming).
-  const upcoming = (allDays || []).filter(d => d.date >= today);
+  // Next reading day ON THE USER'S OWN SCHEDULE (today if it's one and not
+  // yet completed, else the next upcoming one).
+  const upcoming = (rows || []).filter(d => d.date >= today);
   const nextDay = upcoming[0] || null;
 
   async function assignmentFor(dayNumber) {
@@ -50,6 +49,8 @@ export async function onRequestGet({ request, env }) {
 
   return json({
     date: today,
+    start_date: startDate,                   // this user's own Day 1
+    elapsed_days: elapsedDays(rows, today),  // where their calendar places them today
     status,                                  // reading | tuesday_prayer | friday_prayer_study | rest
     is_reading_day: status === 'reading',
     today: todayDayNumber ? {
@@ -60,6 +61,6 @@ export async function onRequestGet({ request, env }) {
     } : null,
     next_reading_day: nextDay ? { day_number: nextDay.day_number, date: nextDay.date, assignment: await assignmentFor(nextDay.day_number) } : null,
     stats,
-    programme: { total_days: 50, total_chapters: 260 },
+    programme: { total_days: TOTAL_DAYS, total_chapters: 260 },
   });
 }

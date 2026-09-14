@@ -1,17 +1,20 @@
 // GET /api/read/day?n= — a reading day's assignments + this user's state.
+// per_user_calendar_and_quiz_v1: `date` is this user's OWN date for day n
+// (from user_reading_days), not the shared reading_days row.
 import { json, badRequest } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
-import { estimateMinutes } from '../../lib/calendar.mjs';
+import { estimateMinutes, ensureUserCalendar, userDayMap, TOTAL_DAYS } from '../../lib/calendar.mjs';
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
   const n = parseInt(new URL(request.url).searchParams.get('n') || '0', 10);
-  if (!n || n < 1 || n > 50) return badRequest('A reading day between 1 and 50 is required');
+  if (!n || n < 1 || n > TOTAL_DAYS) return badRequest('A reading day between 1 and 50 is required');
 
-  const day = await env.DB.prepare('SELECT day_number, date FROM reading_days WHERE day_number = ?').bind(n).first();
-  if (!day) return badRequest('Unknown reading day');
+  const { rows } = await ensureUserCalendar(env.DB, user.id);
+  const date = userDayMap(rows).get(n);
+  if (!date) return badRequest('Unknown reading day');
 
   const { results: assignments } = await env.DB.prepare(
     'SELECT book, chapter_start, chapter_end, chapter_count FROM reading_assignments WHERE day_number = ? ORDER BY rowid'
@@ -25,7 +28,7 @@ export async function onRequestGet({ request, env }) {
 
   return json({
     day_number: n,
-    date: day.date,
+    date,                                    // THIS user's date for day n
     assignments: assignments || [],
     chapter_count: chapters,
     est_minutes: estimateMinutes(chapters),

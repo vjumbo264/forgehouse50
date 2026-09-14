@@ -29,7 +29,12 @@ export async function onRequestPost({ request, env }) {
 
   await env.DB.batch([
     env.DB.prepare('UPDATE otp_codes SET consumed_at = ? WHERE id = ?').bind(nowIso(), otp.id),
-    env.DB.prepare('UPDATE profiles SET email_verified = 1, updated_at = ? WHERE id = ?').bind(nowIso(), user.id),
+    // per_user_calendar_and_quiz_v1: OTP verification is THE account-active
+    // trigger — anchor this user's personal Day 1 to today (COALESCE so a
+    // backfilled/re-verifying user keeps their original start date).
+    env.DB.prepare(
+      "UPDATE profiles SET email_verified = 1, updated_at = ?, programme_start_date = COALESCE(programme_start_date, ?) WHERE id = ?"
+    ).bind(nowIso(), new Date().toISOString().slice(0, 10), user.id),
   ]);
 
   const { token, expires } = await createSession(env.DB, user.id, request.headers.get('User-Agent') || '');
