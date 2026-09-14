@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ForgeHouse 50 — Day Quiz</title>
+<link rel="stylesheet" href="/app.v11.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0f1216">
+<link rel="icon" href="/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ForgeHouse 50">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+</head>
+<body>
+<div class="wrap">
+  <div id="top"></div>
+  <div id="quiz"></div>
+</div>
+<script src="/app.v7.js"></script>
+<script>
+// per_user_calendar_and_quiz_v1 / task-q06 — lightweight quiz screen.
+// One scrollable card: all questions at once, tap-to-select, single submit.
+// Server is the authority: questions arrive answerless; grading + all gates
+// (sequence, read-ahead, pass bar) happen in /api/quiz/submit.
+(async () => {
+  const me = await FH.requireAuth();
+  if (!me) return;
+
+  const dayN = parseInt(new URLSearchParams(location.search).get('day') || '0', 10);
+  if (!dayN || dayN < 1 || dayN > 50) { location.href = '/read'; return; }
+
+  document.getElementById('top').innerHTML = FH.topbar(`Reading Day ${dayN} Quiz`);
+  const box = document.getElementById('quiz');
+
+  const { ok, data } = await FH.api(`/api/quiz/${dayN}`);
+  if (!ok || !data) {
+    box.innerHTML = `<div class="card"><p class="muted">${FH.esc(data?.error || 'Could not load the quiz.')}</p>
+      <a class="btn ghost" href="/read?day=${dayN}">Back to reading</a></div>`;
+    return;
+  }
+
+  // Already done, or gated off — show the state and a way forward.
+  if (data.completed) {
+    box.innerHTML = `<div class="card center">
+      <span class="pill">Day ${dayN}</span>
+      <h2 style="margin:10px 0 4px">Day complete</h2>
+      <p class="muted small">You've already passed this quiz.</p>
+      <div class="row" style="margin-top:8px">
+        <a class="btn ghost small" style="flex:1" href="/read?day=${dayN}">Review reading</a>
+        <a class="btn small" style="flex:1" href="/progress">Progress</a>
+      </div></div>`;
+    return;
+  }
+  if (!data.can_attempt) {
+    const msgs = {
+      previous_day_incomplete: `Finish Day ${dayN - 1} first — reading days are completed in order.`,
+      read_ahead_limit: 'You can only read one day ahead — come back tomorrow to continue.',
+      already_completed: 'This day is already complete.',
+    };
+    box.innerHTML = `<div class="card center">
+      <span class="pill gray">Day ${dayN}</span>
+      <h2 style="margin:10px 0 4px">Not yet</h2>
+      <p class="muted small">${FH.esc(msgs[data.block_reason] || 'This quiz is not available yet.')}</p>
+      <a class="btn ghost small" href="/read?day=${Math.max(1, dayN - 1)}">Back to reading</a></div>`;
+    return;
+  }
+
+  // Main quiz form
+  const chosen = new Array(data.questions.length).fill(null);
+
+  function render() {
+    const answered = chosen.filter(c => c !== null).length;
+    box.innerHTML = `<div class="card">
+      <div class="between small muted"><span class="pill">Day ${data.day_number} Quiz</span><span>Pass: ${data.pass_mark}/${data.total}</span></div>
+      <p class="small muted" style="margin:8px 0 14px">Answer these to mark today's reading complete. You need ${data.pass_mark} of ${data.total} correct — and you can always try again.</p>
+      ${data.questions.map((q, qi) => `
+        <div class="quiz-q">
+          <div class="quiz-qt">${qi + 1}. ${FH.esc(q.q)}</div>
+          ${q.options.map((opt, oi) => `
+            <button type="button" class="quiz-opt ${chosen[qi] === oi ? 'sel' : ''}" data-q="${qi}" data-o="${oi}">${FH.esc(opt)}</button>`).join('')}
+        </div>`).join('')}
+      <div id="quiz-msg"></div>
+      <button class="btn" id="quiz-submit" ${answered < data.questions.length ? 'disabled' : ''}>Submit answers (${answered}/${data.questions.length})</button>
+    </div>`;
+
+    box.querySelectorAll('.quiz-opt').forEach(b => b.onclick = () => {
+      chosen[+b.dataset.q] = +b.dataset.o;
+      render();
+    });
+
+    const sub = document.getElementById('quiz-submit');
+    sub.onclick = async () => {
+      sub.disabled = true;
+      sub.textContent = 'Checking…';
+      const r = await FH.api('/api/quiz/submit', { method: 'POST', body: { day_number: dayN, answers: chosen } });
+      const msg = document.getElementById('quiz-msg');
+      if (r.ok && r.data?.passed) {
+        box.innerHTML = `<div class="card center">
+          <span class="pill">Passed</span>
+          <h2 style="margin:10px 0 4px">${r.data.score}/${r.data.total} correct</h2>
+          <p class="muted small">Day ${dayN} complete${r.data.points_awarded ? ` · +${r.data.points_awarded} pts` : ''}</p>
+          <div class="row" style="margin-top:8px">
+            <a class="btn ghost small" style="flex:1" href="/read?day=${dayN}">Review reading</a>
+            <a class="btn small" style="flex:1" href="/progress">Progress</a>
+          </div></div>`;
+        return;
+      }
+      if (r.ok && r.data && r.data.passed === false) {
+        msg.innerHTML = `<div class="quiz-fail small">${FH.esc(r.data.message)}</div>`;
+        sub.disabled = false;
+        sub.textContent = 'Try again';
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        return;
+      }
+      // Blocked (sequence/read-ahead) or error — surface the server's message.
+      msg.innerHTML = `<div class="quiz-fail small">${FH.esc(r.data?.error || 'Something went wrong — please try again.')}</div>`;
+      sub.disabled = false;
+      sub.textContent = 'Submit answers';
+    };
+  }
+  render();
+})();
+</script>
+</body>
+<script>FH.nav('read')</script>
+</html>

@@ -1212,9 +1212,9 @@
    {
     "id": "task-q06",
     "title": "Quiz UI consistent with the simplified design system",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Quiz UI shipped: new public/quiz.html (extensionless /quiz route) in the existing simplified design system — single scrollable card, all 5 questions at once, tap-to-select options, one Submit; states handled: already-complete, blocked (previous_day_incomplete / read_ahead_limit with the server's message), pass (score + points + links), fail (score/pass_mark + 'try again', no lockout). Server stays the sole authority; page only renders what /api/quiz/:day returns (answerless) and posts to /api/quiz/submit. Caching discipline followed exactly (audio_player_delivery_fix_v1 lesson): NEW versioned stylesheet app.v11.css (app.v10.css untouched/immutable) with .quiz-* styles appended; all 11 pages re-pointed to v11; sw bumped fh50-v13 -> fh50-v14 with /quiz, /quiz.html, /app.v11.css added to the precache shell; _headers gains the immutable /app.v11.css entry. read.html mark-complete strip now routes to /quiz?day=N ('Finish Reading · Take Day N Quiz'); progress.html day rows show Done / 'Quiz due' (attempted but not passed) / Open."
    },
    {
     "id": "task-q07",

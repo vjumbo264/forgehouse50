@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Read</title>
-<link rel="stylesheet" href="/app.v10.css">
+<link rel="stylesheet" href="/app.v11.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -298,7 +298,7 @@
     const d = audioEl.duration;
     const v = d && isFinite(d) ? Math.round(1000 * audioEl.currentTime / d) : 0;
     if (!seeking) seekEl.value = v;
-    // Filled accent portion of the scrubber track (see app.v10.css gradient).
+    // Filled accent portion of the scrubber track (see app.v11.css gradient).
     seekEl.style.setProperty('--fill', (v / 10) + '%');
     curEl.textContent = fmtSecs(audioEl.currentTime);
     durEl.textContent = fmtSecs(d);
@@ -619,13 +619,9 @@
            <span class="check">${FH.ICONS.check}<span>Reading complete</span></span>
            <a class="btn ghost small" style="width:auto" href="/notes?day=${dayN}&book=${encodeURIComponent(day.assignments[0].book)}&chapter=${day.assignments[0].chapter_start}">Write a note</a>
          </div>`
-      : `<div class="mark-strip"><button class="btn small" id="mark-btn">Mark Complete · Day ${dayN}</button></div>`;
-    if (!done) document.getElementById('mark-btn').onclick = async () => {
-      const btn = document.getElementById('mark-btn'); btn.disabled = true;
-      const { ok, data } = await FH.api('/api/read/complete', { method: 'POST', body: { day_number: dayN } });
-      if (ok) { day.progress.completed = 1; renderMarkArea(); }
-      else { btn.disabled = false; }
-    };
+      // per_user_calendar_and_quiz_v1 / task-q05+q06: completion now flows
+      // through the day's quiz — the button takes the reader to /quiz.
+      : `<div class="mark-strip"><a class="btn small" id="mark-btn" href="/quiz?day=${dayN}">Finish Reading · Take Day ${dayN} Quiz</a></div>`;
   }
   renderMarkArea();
   // (Day-to-day Previous/Next navigation moved into the header overflow menu —
