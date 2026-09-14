@@ -138,3 +138,27 @@ export async function leaderboard(db, category, limit = 50) {
   ).bind(limit).all();
   return (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, display_name: r.display_name || 'Member', avatar_url: r.avatar_url, avatar_id: r.avatar_id ?? null, value: r.value }));
 }
+
+// ── per_user_calendar_and_quiz_v1 / task-q08: damped-average Overall Score ──
+//
+// adjusted_score = (raw_average * elapsed_days) / (elapsed_days + K)
+//   raw_average  = total_points / elapsed_days
+//   elapsed_days = the reading-day number the user's OWN calendar places them
+//                  on today (max user_reading_days.day_number with date <= today)
+//   K = 7 (chosen damping constant): on a 50-day programme a user at day 3 is
+//   trusted at 3/(3+7)=30% of their raw average, day 14 at 67%, day 35 at 83%,
+//   day 50 at 88% — so sustained consistency ALWAYS outranks an equal (or
+//   slightly higher) short-run average, while newcomers still rank meaningfully
+//   by week 2. Documented in BUILD_STATE.json per the operator's brief.
+//
+// Eligibility gate: elapsed_days >= 3 required to appear on ANY leaderboard
+// category (before day 3 there is not enough data for a fair average, and
+// ranking them at the bottom from 1-2 days of data serves nobody).
+export const LEADERBOARD_K = 7;
+export const LEADERBOARD_MIN_ELAPSED_DAYS = 3;
+
+export function dampedScore(totalPoints, elapsed) {
+  if (!elapsed || elapsed <= 0) return 0;
+  const rawAvg = totalPoints / elapsed;
+  return Math.round((rawAvg * elapsed) / (elapsed + LEADERBOARD_K) * 100) / 100; // 2dp aggregate
+}

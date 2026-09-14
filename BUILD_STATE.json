@@ -1226,9 +1226,9 @@
    {
     "id": "task-q08",
     "title": "Leaderboard: damped-average Overall Score (K=7), day-3 eligibility gate, other categories unchanged",
-    "status": "pending",
+    "status": "done",
     "commits": [],
-    "notes": ""
+    "notes": "Overall Score redesigned as damped average: adjusted_score = (raw_average*elapsed_days)/(elapsed_days+K), K=7, elapsed_days = user's current reading-day number on their OWN calendar (MAX user_reading_days.day_number with date<=today), raw_average = total_points/elapsed_days. dampedScore() helper added to lib/points.mjs (K + min-gate constants exported). leaderboard.mjs rewritten: single aggregate query returns points+elapsed_days+all category counts per verified user; day-3 eligibility gate (elapsed_days>=3) applied to EVERY category; 'overall' ranks by damped score (response carries scoring formula + K for transparency); consistency keeps its own streak axis; chapters/reading_time/observations/questions remain plain cumulative rankings (scope decision: ONLY 'overall' uses the damped average). Formula verified numerically: 30 days @13/day = 10.54 > 3 days @15/day = 4.5 (sustained consistency outranks a higher short-run average); 10/day@30d=8.11 > 10/day@3d=3.00; converges toward raw average as days grow (10/day@50d=8.77). Aggregate values only — no note content exposed."
    },
    {
     "id": "task-q09",
