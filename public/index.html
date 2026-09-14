@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Home</title>
-<link rel="stylesheet" href="/app.v11.css">
+<link rel="stylesheet" href="/app.v12.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -18,6 +18,7 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
+  <div id="celebration"></div>
   <div id="today-banner"></div>
   <div id="stats"></div>
   <div id="progress-card"></div>
@@ -31,6 +32,33 @@
   const me = await FH.requireAuth();
   if (!me) return;
   document.getElementById('top').innerHTML = FH.topbar('Read the New Testament in 50 Reading Days');
+
+  // programme_launch_and_finale_v1 / task-l06: one-time placement celebration
+  // for the top three finishers on their first login after the final snapshot.
+  // Dismissing (or viewing results via POST ack) records the acknowledgement
+  // server-side so the banner is never shown again.
+  const { data: fin } = await FH.api('/api/final_results');
+  if (fin?.concluded && fin.me?.celebration_pending) {
+    const m = fin.me;
+    const ord = m.rank === 1 ? '1st' : m.rank === 2 ? '2nd' : '3rd';
+    const cel = document.getElementById('celebration');
+    cel.innerHTML = `<div class="card celebration-banner">
+      <div class="row" style="gap:12px;align-items:center">
+        <div class="medal m${m.rank}">${m.rank}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:650">Congratulations — you finished ${ord} in ForgeHouse 50!</div>
+          <div class="small muted">Final score ${m.total_points} pts · the final results are now permanent.</div>
+        </div>
+      </div>
+      <div class="row" style="gap:8px;margin-top:10px">
+        <a class="btn small" href="/leaderboard">View final results</a>
+        <button class="btn ghost small" id="cele-dismiss">Dismiss</button>
+      </div></div>`;
+    document.getElementById('cele-dismiss').addEventListener('click', async () => {
+      await FH.api('/api/final_results', { method: 'POST', body: { ack: true } });
+      cel.innerHTML = '';
+    });
+  }
 
   const { data } = await FH.api('/api/today');
   if (!data) return;

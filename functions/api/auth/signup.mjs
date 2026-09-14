@@ -3,10 +3,19 @@ import { json, badRequest, conflict, readJson, uuid, nowIso } from '../../lib/ht
 import { hashPassword, generateOtp, OTP_TTL_MS } from '../../lib/auth.mjs';
 import { sendEmail, otpEmailHtml } from '../../lib/email.mjs';
 import { normalizeAvatarId } from '../../lib/avatars.mjs';
+import { getProgrammeConfig, registrationOpen, REGISTRATION_CLOSED_MESSAGE } from '../../lib/programme.mjs';
+import { forbidden } from '../../lib/http.mjs';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function onRequestPost({ request, env }) {
+  // programme_launch_and_finale_v1 / task-l03: the 10-day join window. Open
+  // pre-launch (before the admin ever presses Start) and for exactly 10
+  // calendar days from the press; hard-closed afterwards. Existing users'
+  // logins are unaffected — this only gates NEW account creation.
+  const cfg = await getProgrammeConfig(env.DB);
+  if (!registrationOpen(cfg)) return forbidden(REGISTRATION_CLOSED_MESSAGE);
+
   const body = await readJson(request);
   if (!body) return badRequest('Invalid JSON body');
   const email = String(body.email || '').trim().toLowerCase();

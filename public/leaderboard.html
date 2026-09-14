@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Leaderboard</title>
-<link rel="stylesheet" href="/app.v11.css">
+<link rel="stylesheet" href="/app.v12.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -18,8 +18,11 @@
 <body>
 <div class="wrap">
   <div id="top"></div>
-  <div class="tabs" id="tabs"></div>
-  <div class="card" id="board" style="padding:6px 14px"></div>
+  <div id="final"></div>
+  <div id="inprogress" hidden>
+    <div class="tabs" id="tabs"></div>
+    <div class="card" id="board" style="padding:6px 14px"></div>
+  </div>
   <p class="small muted center">Only aggregate scores and counts are shown — never anyone's private notes.</p>
 </div>
 <script src="/app.v7.js"></script>
@@ -60,6 +63,59 @@
   }
 
   tabs.addEventListener('click', e => { const k = e.target.dataset?.k; if (k) load(k); });
+
+  // programme_launch_and_finale_v1 / task-l06: once the final snapshot exists,
+  // this page's primary view becomes the permanent final results — a calm
+  // celebration of 1st/2nd/3rd plus the FULL final rankings list (every
+  // finisher, not just the podium). The in-progress category boards remain
+  // reachable behind one tap, for transparency.
+  const { data: fin } = await FH.api('/api/final_results');
+  if (fin?.concluded) {
+    const r = fin.rankings || [];
+    const finalEl = document.getElementById('final');
+    if (r.length) {
+      const top3 = r.slice(0, 3);
+      const rest = r.slice(3);
+      const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean); // 2nd · 1st · 3rd
+      finalEl.innerHTML = `
+        <div class="card center" style="border-color:var(--accent)">
+          <h2 style="margin:4px 0 2px">Final Results</h2>
+          <div class="small muted">This ForgeHouse 50 run has concluded · final snapshot ${FH.esc((fin.snapshot_at || '').slice(0, 10))} · permanent</div>
+          <div class="podium">
+            ${podiumOrder.map(e => `
+              <div class="podium-card ${e.rank === 1 ? 'first' : ''}">
+                <div class="medal m${e.rank}">${e.rank}</div>
+                ${FH.avatarHtml(e.avatar_id, e.display_name, e.rank === 1 ? 56 : 44, true)}
+                <div style="font-weight:650">${FH.esc(e.display_name)}${e.user_id === me.id ? ' <span class="pill gray">you</span>' : ''}</div>
+                <div class="small muted">${e.total_points} pts</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        ${rest.length ? `<div class="card" style="padding:6px 14px">${rest.map(e => `
+          <div class="lrow">
+            <div class="rank">${e.rank}</div>
+            ${FH.avatarHtml(e.avatar_id, e.display_name, 34)}
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600">${FH.esc(e.display_name)}${e.user_id === me.id ? ' <span class="pill gray">you</span>' : ''}</div>
+            </div>
+            <div style="font-weight:700;color:var(--accent)">${e.total_points} pts</div>
+          </div>`).join('')}</div>` : ''}
+        <div class="center" style="margin:10px 0"><button class="btn ghost small" id="show-inprog">View in-progress category leaderboards</button></div>`;
+      document.getElementById('show-inprog').addEventListener('click', () => {
+        document.getElementById('inprogress').hidden = false;
+        document.getElementById('show-inprog').remove();
+        load('overall');
+      });
+      return;
+    }
+    // Concluded with no finishers: say so plainly, then show the boards.
+    finalEl.innerHTML = `<div class="card center">
+      <h2 style="margin:4px 0 2px">Programme concluded</h2>
+      <div class="small muted">This ForgeHouse 50 run ended on ${FH.esc(fin.programme_end_date || '')} — no participant completed all 50 reading days, so there are no final rankings.</div>
+    </div>`;
+  }
+
+  document.getElementById('inprogress').hidden = false;
   load('overall');
 })();
 </script>

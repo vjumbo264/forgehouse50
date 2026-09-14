@@ -23,7 +23,7 @@
 // Bump VERSION on every deploy that changes any shell file: install()
 // precaches under the new cache names and activate() deletes every old
 // cache, so no visitor can be stranded on a stale app shell.
-const VERSION = "fh50-v15"; // quiz_redesign_and_launch_wipe_v1: quiz.html shell content changed
+const VERSION = "fh50-v16"; // programme_launch_and_finale_v1: app.v12.css (finale styles) + admin/signup/leaderboard/index shell changes
 const SHELL_CACHE = `shell-${VERSION}`;
 const API_CACHE = `api-${VERSION}`;
 const CONTENT_CACHE = `versewell-${VERSION}`;
@@ -48,6 +48,7 @@ const SHELL_FILES = [
   "/admin",
   "/app.v10.css",
   "/app.v11.css",
+  "/app.v12.css",
   "/app.v7.js",
   "/manifest.webmanifest",
   "/icons/icon-192.png",

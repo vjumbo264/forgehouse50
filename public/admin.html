@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Admin</title>
-<link rel="stylesheet" href="/app.v11.css">
+<link rel="stylesheet" href="/app.v12.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -20,6 +20,8 @@
   <div id="top"></div>
   <div id="gate"></div>
   <div id="stats"></div>
+  <h2>Programme launch</h2>
+  <div class="card" id="launch"><p class="muted small" style="margin:0">Loading…</p></div>
   <h2>Participants</h2>
   <div id="participants"></div>
   <h2>Manage reading assignment</h2>
@@ -55,6 +57,31 @@
       <div class="stat"><div class="v">${s.total_chapters_completed}</div><div class="l">Chapters read</div></div>
       <div class="stat"><div class="v">${s.users_behind_schedule}</div><div class="l">Behind</div></div>
     </div>`;
+
+  // programme_launch_and_finale_v1 / task-l02: global Start Programme control.
+  // Before the press: the button + an explanation. After: a status panel —
+  // the button is gone and the server treats a repeat press as a no-op, so
+  // the stored start timestamp can never be reset or corrupted.
+  const launch = document.getElementById('launch');
+  const { data: prog } = await FH.api('/api/admin/programme');
+  if (prog && !prog.started) {
+    launch.innerHTML = `<p class="small muted" style="margin-top:0">The programme run has not started. Starting it opens the <strong>10-day join window</strong> from today: new registrations close automatically when the window ends, the programme end date is computed at that moment, and the permanent final rankings snapshot is taken once every participant's schedule has ended. This can only be done once.</p>
+      <button class="btn" id="start-prog">Start Programme</button><div class="error" id="launch-err"></div>`;
+    document.getElementById('start-prog').addEventListener('click', async () => {
+      const btn = document.getElementById('start-prog'); btn.disabled = true;
+      const res = await FH.api('/api/admin/programme', { method: 'POST', body: { action: 'start' } });
+      if (!res.ok) { document.getElementById('launch-err').textContent = res.data?.error || 'Failed to start'; btn.disabled = false; return; }
+      location.reload();
+    });
+  } else if (prog) {
+    launch.innerHTML = `<div class="grid2">
+      <div class="stat"><div class="v" style="font-size:17px">${FH.esc((prog.start_at || '').slice(0, 10))}</div><div class="l">Programme started</div></div>
+      <div class="stat"><div class="v" style="font-size:17px">${FH.esc(prog.join_window_closes_at || '—')}</div><div class="l">Join window closes</div></div>
+      <div class="stat"><div class="v" style="font-size:17px">${prog.registration_open ? 'Open' : 'Closed'}</div><div class="l">Registration</div></div>
+      <div class="stat"><div class="v" style="font-size:17px">${FH.esc(prog.programme_end_date || 'pending')}</div><div class="l">Programme end date</div></div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">Final snapshot: ${prog.final_snapshot_at ? 'taken ' + FH.esc(prog.final_snapshot_at.slice(0, 10)) + ' — permanent' : 'pending (taken automatically once the end date is reached)'}.${prog.end_date_preview && !prog.programme_end_date ? ' Projected end date if computed today: ' + FH.esc(prog.end_date_preview) + '.' : ''} Eligible participants: ${prog.eligible_participants}.</p>`;
+  }
 
   const { data: p } = await FH.api('/api/admin/participants');
   document.getElementById('participants').innerHTML = (p?.participants || []).map(u => `

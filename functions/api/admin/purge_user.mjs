@@ -34,6 +34,10 @@ const CHILD_TABLES = [
   'sessions',
   'otp_codes',
   'leaderboard_snapshots',
+  // programme_launch_and_finale_v1: celebration acknowledgements follow the
+  // user. final_rankings is deliberately NOT purged — a taken snapshot is the
+  // permanent historical record of the run and is never altered afterward.
+  'final_rank_acks',
 ];
 
 export async function onRequestPost({ request, env }) {

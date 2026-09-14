@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Create account</title>
-<link rel="stylesheet" href="/app.v11.css">
+<link rel="stylesheet" href="/app.v12.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f1216">
 <link rel="icon" href="/icons/favicon.ico" sizes="any">
@@ -22,7 +22,7 @@
     <div class="brand" style="font-size:26px">ForgeHouse <span>50</span></div>
     <div class="tagline">Read the New Testament in 50 Reading Days</div>
   </div>
-  <div class="card">
+  <div class="card" id="signup-card">
     <h1 style="margin-top:0">Create your account</h1>
     <p class="small muted">You'll receive a 6-digit verification code by email. It expires in 10 minutes.</p>
     <form id="f">
@@ -42,6 +42,19 @@
 </div>
 <script src="/app.v7.js"></script>
 <script>
+// programme_launch_and_finale_v1 / task-l03: once the 10-day join window has
+// closed, the registration screen shows a clear closed message instead of the
+// form. (Server-side, /api/auth/signup returns 403 with the same message.)
+(async () => {
+  const { data: prog } = await FH.api('/api/programme');
+  if (prog && prog.registration_open === false) {
+    document.getElementById('signup-card').innerHTML = `
+      <h1 style="margin-top:0">Registration closed</h1>
+      <p class="muted">Registration for this ForgeHouse 50 run has closed — the programme is already underway.</p>
+      <p class="small muted center" style="margin:14px 0 0">Already have an account? <a href="/login">Log in</a></p>`;
+  }
+})();
+
 // Preset avatar picker — optional and non-blocking; a default is pre-selected
 // so the OTP verification flow is never complicated by this step.
 let chosenAvatar = FH.AVATARS[0].id;
