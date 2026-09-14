@@ -12,6 +12,7 @@ export const POINT_VALUES = {
   community_shared: 3,
   weekly_target_completed: 10,
   programme_completed: 100,
+  quiz_score: 5, // quiz_redesign_and_launch_wipe_v1: MAX quiz pts per day (Q); awarded proportionally as round((score/total) * 5) via the explicit `points` override in /api/quiz/submit
 };
 
 // Award points exactly once per idempotency key.

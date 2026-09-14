@@ -1,5 +1,7 @@
 // GET /api/admin/stats — programme-wide aggregates. Admin only.
 // Private notes are NEVER exposed here — counts only, and only where needed.
+// quiz_redesign_and_launch_wipe_v1: quiz stats are informational only (avg
+// score % over the single attempt allowed per user/day) — no pass/fail counts.
 // per_user_calendar_and_quiz_v1: "behind schedule" is now PER-USER — each
 // verified user is behind if they haven't completed the latest reading day
 // that their OWN calendar says is due today.
@@ -19,7 +21,9 @@ export async function onRequestGet({ request, env }) {
     env.DB.prepare('SELECT COUNT(DISTINCT user_id) AS c FROM reading_progress WHERE completed = 1').first(),
     env.DB.prepare('SELECT COALESCE(SUM(chapters_read),0) AS c FROM reading_progress WHERE completed = 1').first(),
     env.DB.prepare('SELECT day_number, COUNT(*) AS completions FROM reading_progress WHERE completed = 1 GROUP BY day_number ORDER BY day_number').all(),
-    env.DB.prepare(`SELECT COUNT(*) AS attempts, SUM(passed) AS passes, COUNT(DISTINCT user_id) AS quizzed_users FROM quiz_attempts`).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS attempts, COUNT(DISTINCT user_id) AS quizzed_users,
+                           COALESCE(AVG(CASE WHEN total > 0 THEN 100.0 * score / total END), 0) AS avg_pct
+                    FROM quiz_attempts`).first(),
   ]);
 
   // Per-user "behind schedule": for each verified user compute the latest day
@@ -65,8 +69,8 @@ export async function onRequestGet({ request, env }) {
     average_completion_percent: avgCompletion,
     total_chapters_completed: chapters?.c ?? 0,
     users_behind_schedule: behindCount,       // per-user due-day calculation
-    quiz_attempts_total: quizStats?.attempts ?? 0,
-    quiz_passes_total: quizStats?.passes ?? 0,
+    quiz_attempts_total: quizStats?.attempts ?? 0,          // one attempt per user/day max (idx_quiz_one_attempt)
+    quiz_avg_score_pct: Math.round((quizStats?.avg_pct ?? 0) * 10) / 10,
     users_quizzed: quizStats?.quizzed_users ?? 0,
     today_date: today,
     per_day_completions: perDay.results || [],

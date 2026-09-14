@@ -19,8 +19,12 @@
 import { json, badRequest, unauthorized, forbidden, notFound, readJson } from '../../lib/http.mjs';
 import { getUser } from '../../lib/auth.mjs';
 
+// quiz_redesign_and_launch_wipe_v1 / task-w06: quiz_attempts and
+// user_reading_days added — both are per-user rows that must follow a wipe.
 const CHILD_TABLES = [
   'reading_progress',
+  'quiz_attempts',
+  'user_reading_days',
   'audio_progress',
   'notes',
   'bookmarks',

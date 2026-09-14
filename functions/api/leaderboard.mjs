@@ -37,7 +37,7 @@ const AGG_SQL = `
     COALESCE((SELECT COUNT(*) FROM notes n WHERE n.user_id = pr.id AND n.note_type = 'observation'), 0) AS observations,
     COALESCE((SELECT COUNT(*) FROM notes n2 WHERE n2.user_id = pr.id AND n2.note_type = 'question'), 0) AS questions
   FROM profiles pr
-  WHERE pr.email_verified = 1`;
+  WHERE pr.email_verified = 1 AND pr.role != 'admin'`;
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);

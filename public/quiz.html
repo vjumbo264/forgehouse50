@@ -22,10 +22,10 @@
 </div>
 <script src="/app.v7.js"></script>
 <script>
-// per_user_calendar_and_quiz_v1 / task-q06 — lightweight quiz screen.
-// One scrollable card: all questions at once, tap-to-select, single submit.
-// Server is the authority: questions arrive answerless; grading + all gates
-// (sequence, read-ahead, pass bar) happen in /api/quiz/submit.
+// quiz_redesign_and_launch_wipe_v1 / task-w05 — the quiz is INFORMATIONAL:
+// one attempt per reading day, the result is always shown immediately, and it
+// NEVER blocks completing the reading day. Day completion + its points live
+// at POST /api/read/complete (the pre-quiz-gate "Mark Complete" trigger).
 (async () => {
   const me = await FH.requireAuth();
   if (!me) return;
@@ -43,23 +43,49 @@
     return;
   }
 
-  // Already done, or gated off — show the state and a way forward.
-  if (data.completed) {
+  const INFO_NOTE = `This quiz helps track your understanding — it won't stop you from continuing. One attempt only, and your score earns up to ${data.quiz_points_possible} bonus points, proportional to how many you get right.`;
+
+  // Completion is independent of the quiz — offer it whenever the day is open.
+  function completeButton() {
+    return data.completed
+      ? `<p class="muted small" style="margin-top:10px">Day ${dayN} reading is complete.</p>`
+      : `<button class="btn" id="mark-complete" style="margin-top:12px">Mark Day ${dayN} reading complete</button>`;
+  }
+  function wireComplete() {
+    const mc = document.getElementById('mark-complete');
+    if (!mc) return;
+    mc.onclick = async () => {
+      mc.disabled = true; mc.textContent = 'Marking…';
+      const r = await FH.api('/api/read/complete', { method: 'POST', body: { day_number: dayN } });
+      if (r.ok) {
+        data.completed = true;
+        mc.outerHTML = `<p class="muted small" style="margin-top:10px">Day ${dayN} reading complete${r.data?.points_awarded ? ` · +${r.data.points_awarded} pts` : ''}.</p>`;
+      } else {
+        mc.disabled = false; mc.textContent = r.data?.error || 'Could not mark complete — try again';
+      }
+    };
+  }
+
+  // The single attempt was already used — show the final result, no retake.
+  if (data.attempt) {
     box.innerHTML = `<div class="card center">
-      <span class="pill">Day ${dayN}</span>
-      <h2 style="margin:10px 0 4px">Day complete</h2>
-      <p class="muted small">You've already passed this quiz.</p>
-      <div class="row" style="margin-top:8px">
-        <a class="btn ghost small" style="flex:1" href="/read?day=${dayN}">Review reading</a>
-        <a class="btn small" style="flex:1" href="/progress">Progress</a>
+      <span class="pill">Day ${dayN} · final</span>
+      <h2 style="margin:10px 0 4px">You scored ${data.attempt.score} out of ${data.attempt.total}</h2>
+      <p class="muted small">One attempt per reading day — no retakes.${data.completed ? '' : ' You can still mark today\'s reading complete below — the quiz never blocks it.'}</p>
+      ${completeButton()}
+      <div class="row" style="margin-top:10px">
+        <a class="btn ghost small" style="flex:1" href="/read?day=${dayN}">Back to reading</a>
+        <a class="btn ghost small" style="flex:1" href="/progress">Progress</a>
       </div></div>`;
+    wireComplete();
     return;
   }
+
   if (!data.can_attempt) {
     const msgs = {
-      previous_day_incomplete: `Finish Day ${dayN - 1} first — reading days are completed in order.`,
+      attempt_used: 'You have already taken this quiz — one attempt per reading day.',
+      previous_day_incomplete: `Finish Day ${dayN - 1} first — reading days are taken in order.`,
       read_ahead_limit: 'You can only read one day ahead — come back tomorrow to continue.',
-      already_completed: 'This day is already complete.',
     };
     box.innerHTML = `<div class="card center">
       <span class="pill gray">Day ${dayN}</span>
@@ -69,14 +95,14 @@
     return;
   }
 
-  // Main quiz form
+  // Main quiz form — one scrollable card, tap-to-select, single final submit.
   const chosen = new Array(data.questions.length).fill(null);
 
   function render() {
     const answered = chosen.filter(c => c !== null).length;
     box.innerHTML = `<div class="card">
-      <div class="between small muted"><span class="pill">Day ${data.day_number} Quiz</span><span>Pass: ${data.pass_mark}/${data.total}</span></div>
-      <p class="small muted" style="margin:8px 0 14px">Answer these to mark today's reading complete. You need ${data.pass_mark} of ${data.total} correct — and you can always try again.</p>
+      <div class="between small muted"><span class="pill">Day ${data.day_number} Quiz</span><span>one attempt</span></div>
+      <p class="small muted" style="margin:8px 0 14px">${FH.esc(INFO_NOTE)}</p>
       ${data.questions.map((q, qi) => `
         <div class="quiz-q">
           <div class="quiz-qt">${qi + 1}. ${FH.esc(q.q)}</div>
@@ -84,7 +110,7 @@
             <button type="button" class="quiz-opt ${chosen[qi] === oi ? 'sel' : ''}" data-q="${qi}" data-o="${oi}">${FH.esc(opt)}</button>`).join('')}
         </div>`).join('')}
       <div id="quiz-msg"></div>
-      <button class="btn" id="quiz-submit" ${answered < data.questions.length ? 'disabled' : ''}>Submit answers (${answered}/${data.questions.length})</button>
+      <button class="btn" id="quiz-submit" ${answered < data.questions.length ? 'disabled' : ''}>Submit final answers (${answered}/${data.questions.length})</button>
     </div>`;
 
     box.querySelectorAll('.quiz-opt').forEach(b => b.onclick = () => {
@@ -95,31 +121,26 @@
     const sub = document.getElementById('quiz-submit');
     sub.onclick = async () => {
       sub.disabled = true;
-      sub.textContent = 'Checking…';
+      sub.textContent = 'Submitting…';
       const r = await FH.api('/api/quiz/submit', { method: 'POST', body: { day_number: dayN, answers: chosen } });
-      const msg = document.getElementById('quiz-msg');
-      if (r.ok && r.data?.passed) {
+      if (r.ok && r.data) {
+        // The result is ALWAYS shown immediately, whatever the score.
         box.innerHTML = `<div class="card center">
-          <span class="pill">Passed</span>
-          <h2 style="margin:10px 0 4px">${r.data.score}/${r.data.total} correct</h2>
-          <p class="muted small">Day ${dayN} complete${r.data.points_awarded ? ` · +${r.data.points_awarded} pts` : ''}</p>
-          <div class="row" style="margin-top:8px">
-            <a class="btn ghost small" style="flex:1" href="/read?day=${dayN}">Review reading</a>
-            <a class="btn small" style="flex:1" href="/progress">Progress</a>
+          <span class="pill">Day ${dayN} · final</span>
+          <h2 style="margin:10px 0 4px">You scored ${r.data.score} out of ${r.data.total}</h2>
+          <p class="muted small">+${r.data.quiz_points} quiz points. ${FH.esc(r.data.message || '')}</p>
+          ${completeButton()}
+          <div class="row" style="margin-top:10px">
+            <a class="btn ghost small" style="flex:1" href="/read?day=${dayN}">Back to reading</a>
+            <a class="btn ghost small" style="flex:1" href="/progress">Progress</a>
           </div></div>`;
+        wireComplete();
         return;
       }
-      if (r.ok && r.data && r.data.passed === false) {
-        msg.innerHTML = `<div class="quiz-fail small">${FH.esc(r.data.message)}</div>`;
-        sub.disabled = false;
-        sub.textContent = 'Try again';
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        return;
-      }
-      // Blocked (sequence/read-ahead) or error — surface the server's message.
+      const msg = document.getElementById('quiz-msg');
       msg.innerHTML = `<div class="quiz-fail small">${FH.esc(r.data?.error || 'Something went wrong — please try again.')}</div>`;
       sub.disabled = false;
-      sub.textContent = 'Submit answers';
+      sub.textContent = 'Submit final answers';
     };
   }
   render();

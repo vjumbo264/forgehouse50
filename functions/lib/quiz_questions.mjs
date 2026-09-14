@@ -364,7 +364,10 @@ export const QUIZ_BANK = [
   ]},
 ];
 
-export const PASS_FRACTION = 2 / 3; // documented judgment: >= ceil(2/3 * total)
+// quiz_redesign_and_launch_wipe_v1: PASS_FRACTION / requiredScore / the
+// `passed` flag are now INFORMATIONAL ONLY (a "strong attempt" marker stored
+// on quiz_attempts.passed). They never gate completion or point eligibility.
+export const PASS_FRACTION = 2 / 3; // informational: >= ceil(2/3 * total)
 
 export function questionsForDay(day) {
   const entry = QUIZ_BANK.find(d => d.day === day);
@@ -380,7 +383,8 @@ export function publicQuestionsForDay(day) {
 
 export function requiredScore(total) { return Math.ceil(PASS_FRACTION * total); }
 
-// Grade answers ([indexes]) for a day. Returns { score, total, passed }.
+// Grade answers ([indexes]) for a day. Returns { score, total, passed } —
+// `passed` is informational only and has zero gating effect anywhere.
 export function gradeDay(day, answers) {
   const qs = questionsForDay(day);
   if (!qs) return null;

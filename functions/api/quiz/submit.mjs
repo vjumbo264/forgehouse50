@@ -1,26 +1,34 @@
-// POST /api/quiz/submit — THE single completion gate for a reading day.
-// per_user_calendar_and_quiz_v1 / task-q05 + task-q07 + task-q09.
+// POST /api/quiz/submit — records the user's ONE quiz attempt for a reading
+// day (informational, scoring-only). quiz_redesign_and_launch_wipe_v1.
 //
-// A day counts complete (and earns reading_completed +10 / daily_streak +3 /
-// programme_completed +100 points) ONLY on a PASSING quiz submission:
-//   pass bar = score >= ceil(2/3 * total)   (67%)
+// THE QUIZ IS NEVER A GATE. There is no pass threshold and no retry:
+//   - ONE attempt only, ever, per user per reading day — a second submission
+//     is rejected server-side (409 attempt_used). The DB also enforces this
+//     with UNIQUE INDEX idx_quiz_one_attempt on quiz_attempts(user_id, day).
+//   - ANY score (including 0/total) is a final, valid attempt. The result is
+//     returned immediately, always, regardless of score.
+//   - Quiz points are PROPORTIONAL: (score/total) * QUIZ_POINTS_PER_DAY,
+//     recorded as a points row with action 'quiz_score' (idempotency key
+//     quiz_score:{user}:{day}). A user who never attempts simply has no
+//     quiz_score row for that day => 0 quiz points — no special-casing.
+//   - Reading-day completion + non-quiz points (reading_completed +10,
+//     daily_streak +3, programme_completed +100) are handled by
+//     POST /api/read/complete, exactly as they were before quiz-gating was
+//     introduced. Submitting this quiz neither completes nor blocks the day.
 //
-// Server-side gates, re-checked HERE (not merely at display) so they cannot
-// be bypassed by calling the API directly:
-//   sequential   — day N-1 must be quiz-passed complete first (N > 1)
-//   read-ahead   — N <= elapsed_days(today) + 1 (max ONE day ahead of the
-//                  user's own schedule). Two-days-ahead => 409.
-//
-// Every attempt (pass or fail) is recorded in quiz_attempts; retries are
-// unlimited — a failed attempt never locks the user out of the day.
-import { json, badRequest, readJson, uuid, nowIso, conflict } from '../../lib/http.mjs';
+// Ordering guard (kept): a quiz attempt is only accepted for a day the user
+// could legitimately complete right now — day N-1 complete and at most one
+// day ahead of their own schedule (same rule as read/complete).
+import { json, badRequest, readJson, uuid, conflict } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
 import { awardPoints } from '../../lib/points.mjs';
-import { ensureUserCalendar, elapsedDays, utcToday, userDayMap, TOTAL_DAYS } from '../../lib/calendar.mjs';
-import { gradeDay, requiredScore, questionsForDay } from '../../lib/quiz_questions.mjs';
+import { ensureUserCalendar, elapsedDays, utcToday, TOTAL_DAYS } from '../../lib/calendar.mjs';
+import { gradeDay, questionsForDay } from '../../lib/quiz_questions.mjs';
+
+export const QUIZ_POINTS_PER_DAY = 5; // Q in (score/total) × Q — documented judgment
 
 const BLOCK_MESSAGES = {
-  previous_day_incomplete: 'Finish the previous reading day first — days must be completed in order.',
+  previous_day_incomplete: 'Finish the previous reading day first — days are taken in order.',
   read_ahead_limit: 'You can only read one day ahead — come back tomorrow to continue.',
 };
 
@@ -38,15 +46,17 @@ export async function onRequestPost({ request, env }) {
   const bank = questionsForDay(n);
   if (!bank) return badRequest('No quiz for that day');
 
-  // ── Gate 0: already complete ────────────────────────────────────────────
-  const existing = await env.DB.prepare(
-    'SELECT completed FROM reading_progress WHERE user_id = ? AND day_number = ?'
+  // ── One attempt only, ever — server-side rejection of a second try ──────
+  const existingAttempt = await env.DB.prepare(
+    'SELECT score, total FROM quiz_attempts WHERE user_id = ? AND day_number = ?'
   ).bind(user.id, n).first();
-  if (existing?.completed) {
-    return json({ ok: true, already_completed: true, day_number: n, points_awarded: 0 });
+  if (existingAttempt) {
+    return conflict(
+      `You already took the Day ${n} quiz (you scored ${existingAttempt.score}/${existingAttempt.total}). Only one attempt is allowed — no retakes.`
+    );
   }
 
-  // ── Gates 1-2: sequence + read-ahead (enforced at submission) ───────────
+  // ── Ordering guard: same reachability rule as read/complete ─────────────
   const { rows } = await ensureUserCalendar(env.DB, user.id);
   const elapsed = elapsedDays(rows, utcToday());
 
@@ -62,62 +72,33 @@ export async function onRequestPost({ request, env }) {
     return conflict(BLOCK_MESSAGES.read_ahead_limit);
   }
 
-  // ── Grade + record the attempt (pass OR fail) ───────────────────────────
+  // ── Grade (server-side) + record the single final attempt ───────────────
   const graded = gradeDay(n, answers);
   if (!graded) return badRequest('Could not grade that quiz');
 
+  // 'passed' is kept as an INFORMATIONAL flag only (>= 67% correct) — it has
+  // zero effect on completion or point eligibility anywhere in the app.
   await env.DB.prepare(
     'INSERT INTO quiz_attempts (id, user_id, day_number, score, total, passed) VALUES (?, ?, ?, ?, ?, ?)'
   ).bind(uuid(), user.id, n, graded.score, graded.total, graded.passed ? 1 : 0).run();
 
-  if (!graded.passed) {
-    // Failed: day NOT complete, no points — but the user may retry freely.
-    return json({
-      ok: true,
-      passed: false,
-      day_number: n,
-      score: graded.score,
-      total: graded.total,
-      pass_mark: requiredScore(graded.total),
-      message: `You scored ${graded.score}/${graded.total} — you need ${requiredScore(graded.total)} to pass. Re-read the passage and try again.`,
-    });
-  }
-
-  // ── Passed: complete the day + award points (idempotent) ────────────────
-  const chapterRow = await env.DB.prepare(
-    'SELECT COALESCE(SUM(chapter_count),0) AS chapters FROM reading_assignments WHERE day_number = ?'
-  ).bind(n).first();
-  const chapters = chapterRow?.chapters ?? 0;
-
-  await env.DB.prepare(
-    `INSERT INTO reading_progress (id, user_id, day_number, completed, completed_at, chapters_read)
-     VALUES (?, ?, ?, 1, ?, ?)
-     ON CONFLICT(user_id, day_number) DO UPDATE SET
-       completed = 1,
-       completed_at = COALESCE(reading_progress.completed_at, excluded.completed_at),
-       chapters_read = MAX(reading_progress.chapters_read, excluded.chapters_read),
-       updated_at = ?`
-  ).bind(uuid(), user.id, n, nowIso(), chapters, nowIso()).run();
-
-  const reading = await awardPoints(env.DB, user.id, 'reading_completed', `reading_completed:${user.id}:${n}`, { dayNumber: n });
-  const streak = await awardPoints(env.DB, user.id, 'daily_streak', `daily_streak:${user.id}:${n}`, { dayNumber: n });
-
-  const done = await env.DB.prepare(
-    'SELECT COUNT(*) AS c FROM reading_progress WHERE user_id = ? AND completed = 1'
-  ).bind(user.id).first();
-  let programme = { awarded: false, points: 0 };
-  if ((done?.c ?? 0) >= TOTAL_DAYS) {
-    programme = await awardPoints(env.DB, user.id, 'programme_completed', `programme_completed:${user.id}`);
-  }
+  // ── Proportional quiz points: (score/total) × Q, idempotent ─────────────
+  const quizValue = Math.round((graded.score / graded.total) * QUIZ_POINTS_PER_DAY);
+  const quiz = await awardPoints(
+    env.DB, user.id, 'quiz_score', `quiz_score:${user.id}:${n}`,
+    { dayNumber: n, points: quizValue, reason: `quiz ${graded.score}/${graded.total}` }
+  );
 
   return json({
     ok: true,
-    passed: true,
     day_number: n,
     score: graded.score,
     total: graded.total,
-    pass_mark: requiredScore(graded.total),
-    points_awarded: reading.points + streak.points + programme.points,
+    passed: !!graded.passed,            // informational only — never a gate
+    final: true,                        // no retake exists for this day
+    quiz_points: quiz.points,           // proportional quiz points earned
+    quiz_points_possible: QUIZ_POINTS_PER_DAY,
+    message: `You scored ${graded.score} out of ${graded.total} (+${quiz.points} quiz pts). This was your one attempt for Day ${n} — the quiz never blocks your reading.`,
   });
 }
 

@@ -168,7 +168,8 @@ CREATE TABLE IF NOT EXISTS points (
                 'community_shared',         -- +3 (future; accepted but unused until community ships)
                 'weekly_target_completed',  -- +10
                 'programme_completed',      -- +100
-                'admin_adjustment'          -- +/- n, requires reason
+                'admin_adjustment',         -- +/- n, requires reason
+                'quiz_score'                -- +0..5 proportional (score/total)x5; quiz_redesign_and_launch_wipe_v1
               )),
   points      INTEGER NOT NULL,
   day_number  INTEGER,                          -- context for idempotency
@@ -193,8 +194,11 @@ CREATE TABLE IF NOT EXISTS user_badges (
   PRIMARY KEY (user_id, badge_id)
 );
 
--- Quiz attempts (per_user_calendar_and_quiz_v1): EVERY attempt recorded.
--- A reading day counts complete ONLY via a passing attempt (>= 67% correct).
+-- Quiz attempts (quiz_redesign_and_launch_wipe_v1): at most ONE attempt per
+-- user per reading day, EVER (enforced server-side at /api/quiz/submit AND by
+-- the unique index below). The quiz is informational/scoring-only: it NEVER
+-- gates day completion. `passed` is a repurposed informational flag (>= 67%
+-- correct) with zero effect on completion status or point eligibility.
 CREATE TABLE IF NOT EXISTS quiz_attempts (
   id          TEXT PRIMARY KEY,
   user_id     TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -205,6 +209,8 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
   created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_quiz_user_day ON quiz_attempts(user_id, day_number, created_at);
+-- quiz_redesign_and_launch_wipe_v1: hard DB-level one-attempt guarantee
+CREATE UNIQUE INDEX IF NOT EXISTS idx_quiz_one_attempt ON quiz_attempts(user_id, day_number);
 
 CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
   id           TEXT PRIMARY KEY,
