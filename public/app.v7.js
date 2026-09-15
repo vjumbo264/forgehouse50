@@ -1,15 +1,31 @@
 /* ForgeHouse 50 — shared frontend helpers (v4) */
 const FH = (() => {
   async function api(path, opts = {}) {
-    const res = await fetch(path, {
-      credentials: 'same-origin',
-      headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
-      ...opts,
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
-    });
-    let data = null;
-    try { data = await res.json(); } catch { /* non-json */ }
-    return { ok: res.ok, status: res.status, data };
+    // leaderboard_scripture_icon_fix_v1 / ISSUE 2: bounded request timeout so a
+    // genuinely hung fetch fails fast and callers can surface a clear error
+    // instead of leaving a screen on an infinite loading spinner. 25s is ample
+    // for the largest multi-chapter passage responses (~1.5s live median).
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const res = await fetch(path, {
+        credentials: 'same-origin',
+        headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
+        ...opts,
+        signal: opts.signal || ctrl.signal,
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      let data = null;
+      try { data = await res.json(); } catch { /* non-json */ }
+      return { ok: res.ok, status: res.status, data };
+    } catch (e) {
+      if (e && e.name === 'AbortError') {
+        return { ok: false, status: 0, data: { error: 'The request timed out. Please check your connection and try again.' } };
+      }
+      return { ok: false, status: 0, data: { error: 'Network error. Please check your connection and try again.' } };
+    } finally {
+      clearTimeout(t);
+    }
   }
 
   function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
