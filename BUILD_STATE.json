@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-09-15T02:10:00Z",
+  "last_updated_utc": "2026-09-15T02:25:00Z",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -166,6 +166,11 @@
       "session": 3,
       "date_utc": "2026-09-15",
       "summary": "leaderboard_scripture_icon_fix_v1: ISSUE 1 fixed — leaderboard Overall Score is now raw cumulative total points (damped average removed); web label avg->pts. Deploy success; live-verified vs manual D1 SUM(points) (Victor Fubara 18==18). ISSUE 2 (scripture loading) + ISSUE 3 (new icon) pending."
+    },
+    {
+      "session": 3,
+      "date_utc": "2026-09-15",
+      "summary": "ISSUE 2 diagnosed (app-side ReadScreen loading-flag bug; backend+web healthy) and fixed (app dayLoaded gate + HttpTimeout; web FH.api 25s AbortController fallback). Live-verified scripture loads for Days 1 & 2."
     }
   ],
   "migration_brevo_v1": {
@@ -1504,14 +1509,14 @@
       {
         "id": 3,
         "name": "lf1-issue2-scripture-loading-diagnose",
-        "status": "pending",
-        "notes": "Diagnose which surface(s) hang on the Read/Bible screen: inspect live site read.html + functions/api/read/passage.mjs (VerseWell proxy) and app ReadScreen code path. Root cause with real evidence (hung request / silent throw / loading flag never cleared)."
+        "status": "done",
+        "notes": "DIAGNOSED: web read.html is correct (loadPassage always clears the loading state; live-verified Day1 Matthew 1-6 = 160 verses, Day2 Matthew 7-12 = 222 verses via authenticated session, passage API median ~0.4-1.6s, never hangs). The broken surface is the ANDROID app: ReadScreen.kt set loadingPassage=true at init while the passage LaunchedEffect early-returned until /read/day arrived — so if the day call ever failed/slowed, the spinner never cleared (infinite \"Loading\"). Backend (passage.mjs/versewell.mjs) is healthy; not a VerseWell outage."
       },
       {
         "id": 4,
         "name": "lf1-issue2-scripture-loading-fix",
-        "status": "pending",
-        "notes": "Fix actual root cause (web and/or app); add timeout/error fallback so failures show a clear error, not infinite spinner. Verify live: scripture content displays for >=2 reading days on affected surface(s)."
+        "status": "done",
+        "notes": "FIXED both layers. App (root cause): ReadScreen.kt — added dayLoaded flag; spinner now shows only while !dayLoaded || (loadingPassage && passage==null); passage effect gated on dayLoaded; a failed day call surfaces its error and the spinner clears. App ApiClient: installed HttpTimeout (25s request / 10s connect / 25s socket) so any hung request fails fast with a clear error. Web (defensive, per contract): app.v7.js FH.api wrapped in a 25s AbortController returning a clear timeout/network error object. Web deploy run success; LIVE VERIFIED scripture content displays for 2 reading days (Day1 160 verses, Day2 222 verses)."
       },
       {
         "id": 5,
