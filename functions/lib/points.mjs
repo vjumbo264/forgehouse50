@@ -142,28 +142,17 @@ export async function leaderboard(db, category, limit = 50) {
   return (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, display_name: r.display_name || 'Member', surname: r.surname || '', avatar_url: r.avatar_url, avatar_id: r.avatar_id ?? null, value: r.value }));
 }
 
-// ── per_user_calendar_and_quiz_v1 / task-q08: damped-average Overall Score ──
-//
-// adjusted_score = (raw_average * elapsed_days) / (elapsed_days + K)
-//   raw_average  = total_points / elapsed_days
-//   elapsed_days = the reading-day number the user's OWN calendar places them
-//                  on today (max user_reading_days.day_number with date <= today)
-//   K = 7 (chosen damping constant): on a 50-day programme a user at day 3 is
-//   trusted at 3/(3+7)=30% of their raw average, day 14 at 67%, day 35 at 83%,
-//   day 50 at 88% — so sustained consistency ALWAYS outranks an equal (or
-//   slightly higher) short-run average, while newcomers still rank meaningfully
-//   by week 2. Documented in BUILD_STATE.json per the operator's brief.
-//
-// Eligibility gate: elapsed_days >= 3 required to appear on ANY leaderboard
-// category (before day 3 there is not enough data for a fair average, and
-// ranking them at the bottom from 1-2 days of data serves nobody).
-export const LEADERBOARD_K = 7;
-// combined_fixes_v1 / Issue 11: leaderboards are IMMEDIATE — the day-3
-// eligibility lock is removed; every verified participant ranks from day 0/1.
+// ── Eligibility: leaderboards are IMMEDIATE (combined_fixes_v1 Issue 11) ──
+// Every verified participant ranks from day 0/1; no minimum-elapsed-days gate.
 export const LEADERBOARD_MIN_ELAPSED_DAYS = 0;
 
-export function dampedScore(totalPoints, elapsed) {
-  if (!elapsed || elapsed <= 0) return 0;
-  const rawAvg = totalPoints / elapsed;
-  return Math.round((rawAvg * elapsed) / (elapsed + LEADERBOARD_K) * 100) / 100; // 2dp aggregate
-}
+// leaderboard_scripture_icon_fix_v1 / ISSUE 1 (2026-09-15): the damped
+// per-day-average Overall Score (adjusted_score = (raw_avg*elapsed)/(elapsed+K),
+// K=7, formerly task-q08) has been REMOVED as the primary Overall Score and is
+// no longer used anywhere. The operator confirmed the primary leaderboard must
+// be RAW CUMULATIVE TOTAL POINTS. The damping formula was only ever intended
+// as a narrow fairness aid for mid-programme averaged comparison, never the
+// default ranking number shown to users; keeping a second similar-looking
+// number added more confusion than value, so it was removed rather than kept
+// as a secondary view. dampedScore is intentionally deleted so no code path
+// can re-introduce it as the Overall Score.

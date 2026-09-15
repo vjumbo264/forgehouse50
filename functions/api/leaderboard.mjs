@@ -1,20 +1,26 @@
 // GET /api/leaderboard?category=overall|consistency|chapters|reading_time|observations|questions
 // Aggregate counts/scores ONLY — never note content, never emails.
 //
-// per_user_calendar_and_quiz_v1 / task-q08:
-//   - "overall" now ranks by the DAMPED per-day average:
-//       adjusted_score = (raw_average * elapsed_days) / (elapsed_days + K), K=7
-//     so late starters rank fairly but sustained consistency always outranks
-//     an equal short-run average.
-//   - ELIGIBILITY GATE: a user appears on NO leaderboard until their own
-//     calendar reaches reading day 3 (elapsed_days >= 3); from day 3 onward
-//     they appear on EVERY category immediately.
+// leaderboard_scripture_icon_fix_v1 / ISSUE 1 (2026-09-15):
+//   - "overall" ranks by RAW CUMULATIVE TOTAL POINTS (sum of every point
+//     source: reading completion, audio, quiz proportional score, streaks,
+//     observations, questions, sharing, weekly targets, programme
+//     completion). NO per-day average, NO damping — per the operator's
+//     explicit, repeated instruction. This supersedes the earlier
+//     task-q08 damped-average Overall Score, which the operator has
+//     confirmed was a regression against the intended scope (the damping
+//     formula was only ever meant as a narrow fairness aid for mid-programme
+//     averaged comparison, never the primary Overall Score shown to users;
+//     it has now been removed from the leaderboard entirely).
+//   - ELIGIBILITY: leaderboards are IMMEDIATE (combined_fixes_v1 Issue 11) —
+//     every verified participant ranks from day 0/1; no day-3 gate.
 //   - consistency / chapters / reading_time / observations / questions are
-//     UNCHANGED plain cumulative rankings (scope decision documented in
-//     BUILD_STATE.json — only Overall Score uses the damped average).
+//     UNCHANGED plain cumulative rankings.
+//   - The one-time final end-of-programme snapshot (lib/programme.mjs
+//     takeFinalSnapshot) already used raw totals and is untouched.
 import { json, badRequest } from '../lib/http.mjs';
 import { requireUser } from '../lib/auth.mjs';
-import { streaks, dampedScore, LEADERBOARD_MIN_ELAPSED_DAYS } from '../lib/points.mjs';
+import { streaks, LEADERBOARD_MIN_ELAPSED_DAYS } from '../lib/points.mjs';
 import { utcToday } from '../lib/calendar.mjs';
 
 const CATEGORIES = ['overall', 'consistency', 'chapters', 'reading_time', 'observations', 'questions'];
@@ -51,13 +57,15 @@ export async function onRequestGet({ request, env }) {
   const { results: all } = await env.DB.prepare(AGG_SQL).bind(today).all();
   const rows = all || [];
 
-  // Eligibility gate: elapsed_days >= 3 on the user's OWN calendar.
+  // Eligibility: immediate (LEADERBOARD_MIN_ELAPSED_DAYS = 0) — every
+  // verified participant appears from day 0/1 on their own calendar.
   const eligible = rows.filter(r => (r.elapsed_days ?? 0) >= LEADERBOARD_MIN_ELAPSED_DAYS);
 
   let entries;
   if (category === 'overall') {
+    // Raw cumulative total points — the primary, default Overall Score.
     entries = eligible
-      .map(r => ({ ...r, value: dampedScore(r.total_points, r.elapsed_days) }))
+      .map(r => ({ ...r, value: r.total_points }))
       .sort((a, b) => (b.value - a.value) || (a.created_at < b.created_at ? -1 : 1));
   } else if (category === 'consistency') {
     // Unchanged separate axis: days completed as the base value + streaks.
@@ -92,6 +100,6 @@ export async function onRequestGet({ request, env }) {
     entries: out,
     eligible_count: eligible.length,
     gate: { min_elapsed_days: LEADERBOARD_MIN_ELAPSED_DAYS },
-    scoring: category === 'overall' ? { formula: '(raw_average * elapsed_days) / (elapsed_days + K)', k: 7 } : undefined,
+    scoring: category === 'overall' ? { formula: 'raw cumulative total points (sum of all point sources)', k: null } : undefined,
   });
 }

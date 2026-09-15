@@ -98,9 +98,11 @@ export async function computeProgrammeEndDate(db, cfg) {
 }
 
 // Take the ONE final, permanent snapshot (Part C). Only users who ACTUALLY
-// completed reading day 50 are ranked, by RAW total accumulated points
-// (not the damped in-progress adjusted_score — damping exists only to keep
-// in-progress rankings fair across different elapsed days). Ties are broken
+// completed reading day 50 are ranked, by RAW total accumulated points.
+// (Note: as of leaderboard_scripture_icon_fix_v1 / ISSUE 1 the in-progress
+// leaderboard ALSO uses raw total points — the former damped adjusted_score
+// was removed entirely — so final and in-progress scoring now agree.)
+// Ties are broken
 // by who reached day 50 EARLIEST (reading_progress.completed_at of day 50),
 // then display_name for full determinism. Guarded by final_snapshot_at +
 // run_id: computed exactly once, never recalculated or altered afterward.
