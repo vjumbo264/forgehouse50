@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": true,
-  "last_updated_utc": "2026-09-14T20:42:11Z",
+  "last_updated_utc": "2026-09-15T00:40:00Z",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1441,5 +1441,41 @@
       "undo_note": "There is deliberately NO self-service undo button: undoing a real start would invalidate join windows and snapshots. A mistaken start (like this one) is corrected by a direct D1 reset, documented here."
     },
     "verification": "Local code edits applied and committed; live D1 reset verified by direct query (see live_d1_reset.verified). The guardrail UI/server behaviour takes effect on the next Pages deploy triggered by this push."
+  },
+  "combined_fixes_v1": {
+    "status": "site_side_committed_pending_deploy_verify",
+    "seeded_utc": "2026-09-15T00:40:00Z",
+    "tasks": [
+      {
+        "id": "w1",
+        "name": "issue1-surname-backend",
+        "status": "done",
+        "notes": "migrations/surname_v1.sql (ALTER profiles ADD surname NOT NULL DEFAULT ''); schema.sql updated; signup requires non-empty name+surname (400 otherwise); re-signup UPDATE + INSERT store surname. Post-launch-wipe check: programme_config.started=false so participant table is empty; DEFAULT '' keeps any admin/test rows valid \u2014 documented judgment, no forced set-on-next-login needed."
+      },
+      {
+        "id": "w2",
+        "name": "issue1-surname-display",
+        "status": "done",
+        "notes": "signup.html: required surname input beside given name. profile.html + admin.html: full 'Given Surname'. leaderboard.mjs: 'Given S.' on tight rows. final snapshot (programme.mjs): full 'Given Surname'. me.mjs returns surname."
+      },
+      {
+        "id": "w3",
+        "name": "issue7-wat-timezone",
+        "status": "done",
+        "notes": "calendar.mjs: utcToday() now funnels to watToday() (UTC+1, no DST) \u2014 covers calendar generation, quiz day boundary, read-ahead cap, leaderboard elapsed_days, join window, programme-end. verify.mjs Day-1 anchor switched from raw UTC to watToday(). Timestamps (OTP/session/created_at) intentionally remain UTC instants \u2014 only day boundaries moved to WAT."
+      },
+      {
+        "id": "w4",
+        "name": "issue11-points-7x",
+        "status": "done",
+        "notes": "POINT_VALUES all \u00d77 (reading 70, audio 35, streak 21, observation/question 14, community 21, weekly 70, programme 700, quiz max 35); QUIZ_POINTS_PER_DAY 5\u219235."
+      },
+      {
+        "id": "w5",
+        "name": "issue11-leaderboard-immediate",
+        "status": "done",
+        "notes": "LEADERBOARD_MIN_ELAPSED_DAYS 3\u21920: every verified participant appears on all categories immediately; damped overall unchanged (elapsed 0 \u2192 score 0 until day 1)."
+      }
+    ]
   }
 }

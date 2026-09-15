@@ -3,16 +3,18 @@
 // duplicate submissions are silently absorbed, so retries/double-taps
 // cannot farm points.
 
+// combined_fixes_v1 / Issue 11: EVERY point allocation multiplied by 7
+// (operator: "multiply the points by 7 so that it will be more encouraging").
 export const POINT_VALUES = {
-  reading_completed: 10,
-  audio_completed: 5,
-  daily_streak: 3,
-  observation_saved: 2,
-  question_saved: 2,
-  community_shared: 3,
-  weekly_target_completed: 10,
-  programme_completed: 100,
-  quiz_score: 5, // quiz_redesign_and_launch_wipe_v1: MAX quiz pts per day (Q); awarded proportionally as round((score/total) * 5) via the explicit `points` override in /api/quiz/submit
+  reading_completed: 70,
+  audio_completed: 35,
+  daily_streak: 21,
+  observation_saved: 14,
+  question_saved: 14,
+  community_shared: 21,
+  weekly_target_completed: 70,
+  programme_completed: 700,
+  quiz_score: 35, // MAX quiz pts per day (Q); awarded proportionally as round((score/total) * 35) via the explicit `points` override in /api/quiz/submit
 };
 
 // Award points exactly once per idempotency key.
@@ -133,11 +135,11 @@ export async function leaderboard(db, category, limit = 50) {
   const expr = cols[category];
   if (!expr) return null;
   const { results } = await db.prepare(
-    `SELECT pr.id AS user_id, pr.name AS display_name, pr.avatar_url, pr.avatar_id, ${expr} AS value
+    `SELECT pr.id AS user_id, pr.name AS display_name, pr.surname AS surname, pr.avatar_url, pr.avatar_id, ${expr} AS value
      FROM profiles pr WHERE pr.email_verified = 1
      ORDER BY value DESC, pr.created_at ASC LIMIT ?`
   ).bind(limit).all();
-  return (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, display_name: r.display_name || 'Member', avatar_url: r.avatar_url, avatar_id: r.avatar_id ?? null, value: r.value }));
+  return (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, display_name: r.display_name || 'Member', surname: r.surname || '', avatar_url: r.avatar_url, avatar_id: r.avatar_id ?? null, value: r.value }));
 }
 
 // ── per_user_calendar_and_quiz_v1 / task-q08: damped-average Overall Score ──
@@ -156,7 +158,9 @@ export async function leaderboard(db, category, limit = 50) {
 // category (before day 3 there is not enough data for a fair average, and
 // ranking them at the bottom from 1-2 days of data serves nobody).
 export const LEADERBOARD_K = 7;
-export const LEADERBOARD_MIN_ELAPSED_DAYS = 3;
+// combined_fixes_v1 / Issue 11: leaderboards are IMMEDIATE — the day-3
+// eligibility lock is removed; every verified participant ranks from day 0/1.
+export const LEADERBOARD_MIN_ELAPSED_DAYS = 0;
 
 export function dampedScore(totalPoints, elapsed) {
   if (!elapsed || elapsed <= 0) return 0;

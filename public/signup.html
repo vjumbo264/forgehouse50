@@ -26,8 +26,10 @@
     <h1 style="margin-top:0">Create your account</h1>
     <p class="small muted">You'll receive a 6-digit verification code by email. It expires in 10 minutes.</p>
     <form id="f">
-      <label>Name</label>
-      <input type="text" id="name" autocomplete="name" placeholder="Your name">
+      <label>Given name</label>
+      <input type="text" id="name" required autocomplete="given-name" placeholder="Your given name">
+      <label>Surname</label>
+      <input type="text" id="surname" required autocomplete="family-name" placeholder="Your surname (last name)">
       <label>Email</label>
       <input type="email" id="email" required autocomplete="email" placeholder="you@example.com">
       <label>Password</label>
@@ -74,7 +76,7 @@ document.getElementById('f').addEventListener('submit', async (e) => {
   const btn = e.target.querySelector('button'); btn.disabled = true;
   const email = document.getElementById('email').value;
   const { ok, data } = await FH.api('/api/auth/signup', { method: 'POST', body: {
-    name: document.getElementById('name').value, email, password: document.getElementById('password').value,
+    name: document.getElementById('name').value, surname: document.getElementById('surname').value, email, password: document.getElementById('password').value,
     avatar_id: chosenAvatar } });
   btn.disabled = false;
   if (ok) { location.href = '/verify?email=' + encodeURIComponent(email); return; }

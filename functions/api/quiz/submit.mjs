@@ -25,7 +25,7 @@ import { awardPoints } from '../../lib/points.mjs';
 import { ensureUserCalendar, elapsedDays, utcToday, TOTAL_DAYS } from '../../lib/calendar.mjs';
 import { gradeDay, questionsForDay } from '../../lib/quiz_questions.mjs';
 
-export const QUIZ_POINTS_PER_DAY = 5; // Q in (score/total) × Q — documented judgment
+export const QUIZ_POINTS_PER_DAY = 35; // combined_fixes_v1 / Issue 11: 5 × 7 — every allocation ×7
 
 const BLOCK_MESSAGES = {
   previous_day_incomplete: 'Finish the previous reading day first — days are taken in order.',

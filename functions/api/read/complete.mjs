@@ -3,7 +3,7 @@
 //
 // The quiz is NO LONGER a gate (it never was before
 // per_user_calendar_and_quiz_v1 introduced the gate): completion and its
-// points (reading_completed +10, daily_streak +3, programme_completed +100)
+// points (reading_completed +70, daily_streak +21, programme_completed +700 (combined_fixes_v1: all ×7))
 // do NOT depend on the quiz in any way — a user may complete the day with a
 // 0/5 quiz score, or with no quiz attempt at all. The quiz is purely
 // informational/scoring (POST /api/quiz/submit, proportional quiz_score pts).

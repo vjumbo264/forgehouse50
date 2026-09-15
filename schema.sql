@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email           TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password_hash   TEXT NOT NULL,                 -- PBKDF2-SHA256 via Web Crypto
   name            TEXT NOT NULL DEFAULT '',
+  surname         TEXT NOT NULL DEFAULT '',             -- combined_fixes_v1 Issue 1: required at registration
   avatar_url      TEXT,
   avatar_id       TEXT,                          -- preset avatar id (app.js AVATARS); NULL = initial fallback
   role            TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member','admin')),

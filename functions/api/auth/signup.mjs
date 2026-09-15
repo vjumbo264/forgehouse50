@@ -21,6 +21,8 @@ export async function onRequestPost({ request, env }) {
   const email = String(body.email || '').trim().toLowerCase();
   const password = String(body.password || '');
   const name = String(body.name || '').trim().slice(0, 80);
+  // combined_fixes_v1 / Issue 1: surname is REQUIRED for new registrations.
+  const surname = String(body.surname || '').trim().slice(0, 80);
   // Preset avatar picked during signup. Never blocks the flow: a missing or
   // invalid choice falls back to a sensible default, and OTP verification is
   // entirely unaffected by it.
@@ -28,6 +30,8 @@ export async function onRequestPost({ request, env }) {
 
   if (!EMAIL_RE.test(email)) return badRequest('A valid email address is required');
   if (password.length < 8) return badRequest('Password must be at least 8 characters');
+  if (!name) return badRequest('Your given name is required');
+  if (!surname) return badRequest('Your surname (last name) is required');
 
   const existing = await env.DB.prepare('SELECT id, email_verified FROM profiles WHERE email = ?').bind(email).first();
   if (existing && existing.email_verified) return conflict('An account with this email already exists');
@@ -37,12 +41,12 @@ export async function onRequestPost({ request, env }) {
   if (existing) {
     // Re-signup before verification: refresh credentials + chosen avatar.
     userId = existing.id;
-    await env.DB.prepare("UPDATE profiles SET password_hash = ?, name = ?, avatar_id = ?, updated_at = ? WHERE id = ?")
-      .bind(passwordHash, name, avatarId, nowIso(), userId).run();
+    await env.DB.prepare("UPDATE profiles SET password_hash = ?, name = ?, surname = ?, avatar_id = ?, updated_at = ? WHERE id = ?")
+      .bind(passwordHash, name, surname, avatarId, nowIso(), userId).run();
   } else {
     userId = uuid();
-    await env.DB.prepare('INSERT INTO profiles (id, email, password_hash, name, avatar_id) VALUES (?, ?, ?, ?, ?)')
-      .bind(userId, email, passwordHash, name, avatarId).run();
+    await env.DB.prepare('INSERT INTO profiles (id, email, password_hash, name, surname, avatar_id) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(userId, email, passwordHash, name, surname, avatarId).run();
   }
 
   // Invalidate previous OTPs, then create a fresh one.

@@ -107,7 +107,7 @@ export async function computeProgrammeEndDate(db, cfg) {
 export async function takeFinalSnapshot(db, cfg) {
   const runId = cfg.start_at.slice(0, 10);
   const { results: finishers } = await db.prepare(
-    `SELECT pr.id AS user_id, pr.name AS display_name, pr.avatar_id,
+    `SELECT pr.id AS user_id, (pr.name || CASE WHEN pr.surname != '' THEN ' ' || pr.surname ELSE '' END) AS display_name, pr.avatar_id,
             COALESCE((SELECT SUM(p.points) FROM points p WHERE p.user_id = pr.id), 0) AS total_points,
             (SELECT rp.completed_at FROM reading_progress rp
               WHERE rp.user_id = pr.id AND rp.day_number = 50 AND rp.completed = 1) AS finished_at

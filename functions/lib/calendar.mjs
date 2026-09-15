@@ -116,7 +116,14 @@ export function classifyDate(dateStr, planByDate) {
 // (everyone's Day N covers the same chapters); user_reading_days maps
 // (user, day_number) -> that user's calendar date.
 
-export function utcToday() { return new Date().toISOString().slice(0, 10); }
+// combined_fixes_v1 / Issue 7: WAT (UTC+1, Africa/Lagos — no DST) is the
+// authoritative timezone for every programme day boundary, on every surface,
+// for every user regardless of device locale. utcToday() is kept as the
+// single funnel (calendar generation, quiz day, read-ahead cap, leaderboard
+// elapsed_days, join window, programme end) and now returns the WAT date.
+export const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1, no DST
+export function watToday() { return new Date(Date.now() + WAT_OFFSET_MS).toISOString().slice(0, 10); }
+export function utcToday() { return watToday(); }
 
 export function weekdayOf(isoDate) {
   return new Date(isoDate + 'T00:00:00Z').getUTCDay();

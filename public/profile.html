@@ -36,7 +36,7 @@
   document.getElementById('identity').innerHTML = `
     <div class="card row">
       ${FH.avatarHtml(me.avatar_id, me.name || me.email, 56)}
-      <div><h1 style="margin:0">${FH.esc(me.name || 'Member')}</h1>
+      <div><h1 style="margin:0">${FH.esc(((me.name || '') + (me.surname ? ' ' + me.surname : '')).trim() || 'Member')}</h1>
       <div class="small muted">${FH.esc(me.email)}${me.role === 'admin' ? ' · <span class="pill">admin</span>' : ''}</div></div>
     </div>`;
 

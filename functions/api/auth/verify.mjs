@@ -2,6 +2,7 @@
 import { json, badRequest, forbidden, readJson, setSessionCookie } from '../../lib/http.mjs';
 import { createSession, OTP_MAX_ATTEMPTS, nowIso } from '../../lib/auth.mjs';
 import { getProgrammeConfig, addDays, REGISTRATION_CLOSED_MESSAGE } from '../../lib/programme.mjs';
+import { watToday } from '../../lib/calendar.mjs';
 
 export async function onRequestPost({ request, env }) {
   const body = await readJson(request);
@@ -22,7 +23,7 @@ export async function onRequestPost({ request, env }) {
   // schedule can end later than day50Date(lastJoinDay), so the end date
   // computed at window close stays valid for everyone, forever.
   const cfg = await getProgrammeConfig(env.DB);
-  let anchorDate = new Date().toISOString().slice(0, 10);
+  let anchorDate = watToday(); // combined_fixes_v1 / Issue 7: WAT day boundary
   if (!user.programme_start_date && cfg.started && cfg.join_window_closes_at
       && anchorDate >= cfg.join_window_closes_at) {
     const createdDate = String(user.created_at || '').slice(0, 10);

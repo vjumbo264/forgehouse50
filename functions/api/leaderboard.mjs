@@ -26,6 +26,7 @@ const AGG_SQL = `
   SELECT
     pr.id AS user_id,
     pr.name AS display_name,
+    pr.surname AS surname,
     pr.avatar_url,
     pr.avatar_id,
     pr.created_at,
@@ -78,7 +79,7 @@ export async function onRequestGet({ request, env }) {
   const out = entries.slice(0, 50).map((r, i) => ({
     rank: i + 1,
     user_id: r.user_id,
-    display_name: r.display_name || 'Member',
+    display_name: `${r.display_name || 'Member'}${r.surname ? ' ' + r.surname.trim()[0].toUpperCase() + '.' : ''}`, // Issue 1: tight rows show 'Given S.'
     avatar_url: r.avatar_url,
     avatar_id: r.avatar_id ?? null,
     value: r.value,
