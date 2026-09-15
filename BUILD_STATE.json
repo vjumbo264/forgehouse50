@@ -1,8 +1,8 @@
 {
   "project": "ForgeHouse 50 — Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
-  "build_complete": false,
-  "last_updated_utc": "2026-09-15T02:25:00Z",
+  "build_complete": true,
+  "last_updated_utc": "2026-09-15T02:40:00Z",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -171,6 +171,11 @@
       "session": 3,
       "date_utc": "2026-09-15",
       "summary": "ISSUE 2 diagnosed (app-side ReadScreen loading-flag bug; backend+web healthy) and fixed (app dayLoaded gate + HttpTimeout; web FH.api 25s AbortController fallback). Live-verified scripture loads for Days 1 & 2."
+    },
+    {
+      "session": 3,
+      "date_utc": "2026-09-15",
+      "summary": "leaderboard_scripture_icon_fix_v1 COMPLETE on the web/backend scope: (1) leaderboard Overall Score = raw cumulative total points, live-verified vs manual D1 sums; (2) scripture loading diagnosed (app-side root cause) + web defensive 25s timeout added, live-verified content loads for Days 1&2; (3) PWA icons regenerated from forgehouse50-icon-v3.png, live-verified byte-identical. App-side tasks tracked in vjumbo264/forgebuild."
     }
   ],
   "migration_brevo_v1": {
@@ -1489,7 +1494,7 @@
     ]
   },
   "leaderboard_scripture_icon_fix_v1": {
-    "status": "in_progress",
+    "status": "complete",
     "seeded_utc": "2026-09-15T02:05:00Z",
     "scope_note": "Web/backend scope of the operator's 2026-09-15 EXTEND/UPDATE (3 issues). App-side scope tracked in vjumbo264/forgebuild apps/forgehouse50/BUILD_STATE.json. Site + app share this backend.",
     "attached_asset": "forgehouse50-icon-v3.png (1024x1024 RGBA, clean transparent corners) — new master icon source; regenerates PWA icons (task 3).",
@@ -1521,9 +1526,10 @@
       {
         "id": 5,
         "name": "lf1-issue3-icon-web-pwa",
-        "status": "pending",
-        "notes": "Commit forgehouse50-icon-v3.png to public/branding/ as new master source; regenerate PWA icon set (192/512 standard + maskable, favicon, apple-touch-icon) from it; verify live manifest icons render."
+        "status": "done",
+        "notes": "Committed forgehouse50-icon-v3.png to public/branding/ as new master source. Regenerated PWA set via scripts/regen_icons_v3.py: icon-192/512 (transparent corners), icon-maskable-192/512 + apple-touch-icon (full-bleed flattened on badge edge blue #0148E3, no corner artifacts), favicon-16/32/ico. Corner-verified pixel-level. LIVE VERIFIED: all 5 icons fetched from https://forgehouse50.pages.dev/icons/ are byte-identical (sha256 match) to the repo copies; manifest icons serve the new glossy v3 artwork."
       }
-    ]
+    ],
+    "completed_utc": "2026-09-15T02:40:00Z"
   }
 }
