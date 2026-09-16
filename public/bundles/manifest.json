@@ -1,0 +1,101 @@
+{
+  "generated": "2026-09-16T16:47:24.350Z",
+  "bundles": [
+    {
+      "id": "versewell-amp",
+      "code": "AMP",
+      "name": "Amplified Bible",
+      "url": "/bundles/amp.json.gz",
+      "bytes": 537411,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-cev",
+      "code": "CEV",
+      "name": "Contemporary English Version (US Version)",
+      "url": "/bundles/cev.json.gz",
+      "bytes": 365777,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-gw",
+      "code": "GW",
+      "name": "GOD’S WORD Translation",
+      "url": "/bundles/gw.json.gz",
+      "bytes": 345380,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-kjv",
+      "code": "KJV",
+      "name": "King James Version",
+      "url": "/bundles/kjv.json.gz",
+      "bytes": 323202,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-msg",
+      "code": "MSG",
+      "name": "The Message",
+      "url": "/bundles/msg.json.gz",
+      "bytes": 392602,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-niv",
+      "code": "NIV",
+      "name": "New International Version",
+      "url": "/bundles/niv.json.gz",
+      "bytes": 354023,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-nkjv",
+      "code": "NKJV",
+      "name": "New King James Version",
+      "url": "/bundles/nkjv.json.gz",
+      "bytes": 349598,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-nlt",
+      "code": "NLT",
+      "name": "New Living Translation",
+      "url": "/bundles/nlt.json.gz",
+      "bytes": 388479,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-nlv",
+      "code": "NLV",
+      "name": "New Life Version",
+      "url": "/bundles/nlv.json.gz",
+      "bytes": 326011,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-tlb",
+      "code": "TLB",
+      "name": "Living Bible",
+      "url": "/bundles/tlb.json.gz",
+      "bytes": 413529,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-tpt",
+      "code": "TPT",
+      "name": "The Passion Translation",
+      "url": "/bundles/tpt.json.gz",
+      "bytes": 781552,
+      "chapters": 260
+    },
+    {
+      "id": "versewell-voice",
+      "code": "VOICE",
+      "name": "The Voice",
+      "url": "/bundles/voice.json.gz",
+      "bytes": 522355,
+      "chapters": 260
+    }
+  ]
+}
