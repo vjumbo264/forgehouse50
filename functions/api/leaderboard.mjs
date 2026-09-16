@@ -68,14 +68,17 @@ export async function onRequestGet({ request, env }) {
       .map(r => ({ ...r, value: r.total_points }))
       .sort((a, b) => (b.value - a.value) || (a.created_at < b.created_at ? -1 : 1));
   } else if (category === 'consistency') {
-    // Unchanged separate axis: days completed as the base value + streaks.
+    // leaderboard_audio_removal_offline_bible_v1 / ISSUE 1: the DISPLAYED +
+    // RANKED value for Consistency is the user's current STREAK, not their
+    // points total (and not the days_completed count this used to carry).
     entries = eligible.map(r => ({ ...r, value: r.days_completed }));
     for (const e of entries) {
       const s = await streaks(env.DB, e.user_id);
       e.streak_current = s.current;
       e.streak_longest = s.longest;
+      e.value = s.current; // the category's own metric, not a points figure
     }
-    entries.sort((a, b) => (b.streak_current - a.streak_current) || (b.value - a.value));
+    entries.sort((a, b) => (b.value - a.value) || (b.streak_longest - a.streak_longest));
   } else {
     // Plain cumulative ranking, unchanged semantics.
     const col = { chapters: 'chapters', reading_time: 'reading_time', observations: 'observations', questions: 'questions' }[category];
