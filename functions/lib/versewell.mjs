@@ -7,9 +7,7 @@
 // Design rules:
 //   * Every fetch verifies Content-Type before trusting a 200 — VerseWell's
 //     Pages SPA fallback returns 200 text/html for unknown paths.
-//   * Short-TTL in-memory cache per isolate (Map). No KV/D1. Audio checks
-//     use a shorter TTL because audio is a live, growing dataset (Edge TTS
-//     job renders chapters over ~24h+).
+//   * Short-TTL in-memory cache per isolate (Map). No KV/D1. Audio narration removed upstream (ISSUE 3): no audio is read or served.
 //   * Intros are handled defensively: if intro text appears concatenated
 //     into verse text (the historical upstream bug), the intro is dropped.
 //   * Anything that fails returns null so callers can surface a clear
@@ -27,7 +25,6 @@ export function configureVersewell(env) {
   }
 }
 const TEXT_TTL_MS = 5 * 60 * 1000;   // 5 min — chapter text/translations
-const AUDIO_TTL_MS = 60 * 1000;      // 60s — audio availability grows live
 
 const cache = new Map();
 
@@ -59,19 +56,6 @@ async function fetchJson(url, ttl) {
   }
 }
 
-async function headExists(url, ttl) {
-  const ck = 'head:' + url;
-  const cached = cacheGet(ck);
-  if (cached !== undefined) return cached;
-  let ok = false;
-  try {
-    const res = await fetch(url, { method: 'HEAD', cf: { cacheTtl: 60, cacheEverything: true } });
-    const ct = (res.headers.get('content-type') || '').toLowerCase();
-    ok = res.ok && (ct.startsWith('audio/') || ct === 'application/octet-stream');
-  } catch { ok = false; }
-  cacheSet(ck, ok, ttl);
-  return ok;
-}
 
 // Normalize an FH50 book name ("Matthew", "1 Corinthians") to the
 // VerseWell static slug ("matthew", "1-corinthians") using the per-version
@@ -125,7 +109,6 @@ export const versewellProvider = {
 
     const chapters = [];
     const allIntros = [];
-    let audioUrl = null;
     for (let ch = chapterStart; ch <= chapterEnd; ch++) {
       const data = await fetchJson(`${BASE}/${versionLower}/${bookEntry.slug}/${ch}.json`, TEXT_TTL_MS);
       if (!data || !Array.isArray(data.verses) || data.verses.length === 0) return null;
@@ -134,7 +117,6 @@ export const versewellProvider = {
       if (introsOk) {
         for (const i of intros) allIntros.push({ chapter: ch, start_verse: i.start_verse, end_verse: i.end_verse, text: i.text });
       }
-      if (!audioUrl && typeof data.audio_url === 'string' && data.audio_url) audioUrl = data.audio_url;
       for (const v of data.verses) {
         chapters.push({
           chapter: ch,
@@ -153,22 +135,12 @@ export const versewellProvider = {
       reference,
       verses: chapters,
       intros: allIntros,
-      audio_path: audioUrl,
       attribution: `Scripture text: ${vwName}, via VerseWell (versewell.pages.dev).`,
       translation: `versewell-${versionLower}`,
       source: 'versewell',
     };
   },
 
-  // Audio URL for a chapter if (and only if) the file actually exists
-  // right now — request-time HEAD, short TTL, never a hardcoded list.
-  async getAudioUrl(code, book, chapter) {
-    const versionLower = (code || '').toLowerCase();
-    const bookEntry = await resolveBook(versionLower, book);
-    if (!bookEntry) return null;
-    const url = `${BASE}/${versionLower}/${bookEntry.slug}/${chapter}.m4a`;
-    return (await headExists(url, AUDIO_TTL_MS)) ? url : null;
-  },
 };
 
 export function isVersewellId(id) {
