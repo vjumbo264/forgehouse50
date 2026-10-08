@@ -94,7 +94,11 @@ export async function onRequestPost({ request, env }) {
   ).bind(uuid(), user.id, n, nowIso(), chapters, nowIso()).run();
 
   const reading = await awardPoints(env.DB, user.id, 'reading_completed', `reading_completed:${user.id}:${n}`, { dayNumber: n });
-  const streak = await awardPoints(env.DB, user.id, 'daily_streak', `daily_streak:${user.id}:${n}`, { dayNumber: n });
+  // ISSUE 4: Catch-up / backlog days (n < elapsed) must not award daily_streak points or increment streak
+  const isCatchup = n < elapsed;
+  const streak = isCatchup
+    ? { awarded: false, points: 0 }
+    : await awardPoints(env.DB, user.id, 'daily_streak', `daily_streak:${user.id}:${n}`, { dayNumber: n });
 
   const done = await env.DB.prepare(
     'SELECT COUNT(*) AS c FROM reading_progress WHERE user_id = ? AND completed = 1'

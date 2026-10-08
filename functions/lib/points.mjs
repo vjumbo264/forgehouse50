@@ -69,14 +69,8 @@ export async function streaks(db, userId) {
   }
 
   // "current streak" = run ending at the highest completed day
-  let cur = 0;
-  for (let i = days.length - 1; i >= 0; i--) {
-    if (i === days.length - 1 || days[i] === days[i + 1] - 1) cur++;
-    else break;
-  }
-
-  if (days.length === 0 || cur === 0) {
-    return { current: 0, longest };
+  if (days.length === 0) {
+    return { current: 0, longest: 0 };
   }
 
   // Evaluate activity status against the user's WAT calendar schedule
@@ -85,39 +79,36 @@ export async function streaks(db, userId) {
   const elapsed = elapsedDays(calendarRows, today);
   const highestCompleted = days[days.length - 1];
 
-  // Latest completion timestamp in WAT:
-  let latestCompletedAt = null;
-  for (const r of progressRows || []) {
-    const ts = r.completed_at || r.updated_at;
-    if (ts && (!latestCompletedAt || ts > latestCompletedAt)) {
-      latestCompletedAt = ts;
-    }
-  }
-  const lastActiveDate = watDateOf(latestCompletedAt);
-
-  // Find the most recent reading day on the user's schedule strictly before today:
-  let prevReadingDate = null;
-  for (const cr of calendarRows || []) {
-    if (cr.date < today && (!prevReadingDate || cr.date > prevReadingDate)) {
-      prevReadingDate = cr.date;
-    }
+  // ISSUE 4: Catch-up / backlog days (highestCompleted < elapsed) must NEVER increase streak.
+  // Streak specifically measures consecutive genuine activity on actual current calendar days.
+  // If the user has not completed up to today's scheduled reading day, they are in
+  // catch-up backlog recovery mode and current streak is 0.
+  if (highestCompleted < elapsed) {
+    return { current: 0, longest };
   }
 
-  let isStreakAlive = false;
-  if (elapsed <= 1 && highestCompleted >= elapsed) {
-    // User is on or ahead of Day 1 schedule
-    isStreakAlive = true;
-  } else if (highestCompleted >= elapsed) {
-    // User has completed up to or beyond today's scheduled reading day
-    isStreakAlive = true;
-  } else if (lastActiveDate) {
-    // Catch-up / same-day grace: user completed reading today or on the previous scheduled reading day
-    if (lastActiveDate >= today || (prevReadingDate && lastActiveDate >= prevReadingDate)) {
-      isStreakAlive = true;
+  // When caught up or on schedule (highestCompleted >= elapsed):
+  // Current streak counts consecutive on-time completed days ending at highestCompleted.
+  // A day was completed on-time if its completion WAT date <= its scheduled date
+  // (or if completed on today's date for current/read-ahead days).
+  const userDayMap = new Map((calendarRows || []).map(r => [r.day_number, r.date]));
+  let cur = 0;
+  for (let i = progressRows.length - 1; i >= 0; i--) {
+    const r = progressRows[i];
+    if (i < progressRows.length - 1 && r.day_number !== progressRows[i + 1].day_number - 1) {
+      break;
+    }
+    const sched = userDayMap.get(r.day_number);
+    const compDate = watDateOf(r.completed_at || r.updated_at);
+    const isOnTime = compDate && (compDate <= sched || (r.day_number <= elapsed && compDate <= today));
+    if (isOnTime) {
+      cur++;
+    } else {
+      break; // Broken by a backlog/catch-up recovery day
     }
   }
 
-  return { current: isStreakAlive ? cur : 0, longest };
+  return { current: cur, longest };
 }
 
 // ── Aggregates used by stats / leaderboard / badges ────────────────────────
