@@ -100,7 +100,9 @@ export async function streaks(db, userId) {
     }
     const sched = userDayMap.get(r.day_number);
     const compDate = watDateOf(r.completed_at || r.updated_at);
-    const isOnTime = compDate && (compDate <= sched || (r.day_number <= elapsed && compDate <= today));
+    // A day is on-time if completed on or before its scheduled calendar date (including read-ahead).
+    // Catch-up backlog days completed late (compDate > sched) break the streak.
+    const isOnTime = compDate && sched && compDate <= sched;
     if (isOnTime) {
       cur++;
     } else {
