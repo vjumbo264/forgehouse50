@@ -59,6 +59,24 @@ export async function onRequestPost({ request, env }) {
     return conflict(BLOCK_MESSAGES.read_ahead_limit);
   }
 
+  // ── Verification: all assigned chapters viewed gate (streak_reader_support_fix_v1 / Issue 5) ──
+  const chapterRows = await env.DB.prepare(
+    'SELECT book, chapter_start, chapter_end FROM reading_assignments WHERE day_number = ? ORDER BY rowid'
+  ).bind(n).all();
+  const assignedChapters = (chapterRows?.results || []).flatMap(a => {
+    const list = [];
+    for (let c = a.chapter_start; c <= a.chapter_end; c++) list.push(`${a.book}:${c}`);
+    return list;
+  });
+
+  const viewed = Array.isArray(body?.viewed_chapters) ? body.viewed_chapters : [];
+  const viewedSet = new Set(viewed);
+  const missing = assignedChapters.filter(ch => !viewedSet.has(ch));
+
+  if (assignedChapters.length > 0 && missing.length > 0) {
+    return conflict(`All chapters for Day ${n} must be viewed before completing reading. (${viewed.length}/${assignedChapters.length} viewed)`);
+  }
+
   // ── Complete the day + award non-quiz points (idempotent) ───────────────
   const chapterRow = await env.DB.prepare(
     'SELECT COALESCE(SUM(chapter_count),0) AS chapters FROM reading_assignments WHERE day_number = ?'
