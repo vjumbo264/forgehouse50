@@ -1,3 +1,5 @@
+import { ensureUserCalendar, elapsedDays, watToday, watDateOf } from './calendar.mjs';
+
 // Points & badges engine. Idempotency is enforced by the
 // UNIQUE(user_id, idempotency_key) constraint in the points table:
 // duplicate submissions are silently absorbed, so retries/double-taps
@@ -38,26 +40,84 @@ export async function totalPoints(db, userId) {
 }
 
 // ── Streaks ────────────────────────────────────────────────────────────────
-// A streak counts consecutive COMPLETED reading days in day_number order
-// (calendar gaps like Tue/Fri do not break streaks — they are not reading days).
+// A streak counts consecutive COMPLETED reading days in day_number order.
+// Server-authoritative rules (streak_reader_support_fix_v1):
+// 1. Current streak reflects genuinely active consecutive reading.
+// 2. A user's schedule is defined in user_reading_days in West Africa Time (WAT).
+// 3. Inactivity reset: If a user has a lapse where a calendar reading day passes
+//    without completing reading, the current streak resets to 0.
+//    Specifically, the streak is alive iff:
+//    - The user completed the reading scheduled for today or beyond (highestCompleted >= elapsedDays), OR
+//    - The user was active (completed reading) today or on the most recent scheduled reading day
+//      (watCompletedDate >= today || watCompletedDate >= prevReadingDate), which keeps
+//      the streak alive for users reading today, users on non-reading days (Tue/Fri),
+//      and users actively working through catch-up backlog.
+// 4. If inactive (neither caught up nor active within the current/previous reading day),
+//    current streak resets to 0 immediately.
+// 5. Longest streak records the user's all-time maximum consecutive run and is preserved.
 export async function streaks(db, userId) {
-  const { results } = await db.prepare(
-    'SELECT day_number FROM reading_progress WHERE user_id = ? AND completed = 1 ORDER BY day_number'
+  const { results: progressRows } = await db.prepare(
+    'SELECT day_number, completed_at, updated_at FROM reading_progress WHERE user_id = ? AND completed = 1 ORDER BY day_number'
   ).bind(userId).all();
-  const days = (results || []).map(r => r.day_number);
-  let longest = 0, current = 0, prev = 0;
+  const days = (progressRows || []).map(r => r.day_number);
+
+  let longest = 0, currentRun = 0, prev = 0;
   for (const d of days) {
-    current = (d === prev + 1) ? current + 1 : 1;
-    if (current > longest) longest = current;
+    currentRun = (d === prev + 1) ? currentRun + 1 : 1;
+    if (currentRun > longest) longest = currentRun;
     prev = d;
   }
+
   // "current streak" = run ending at the highest completed day
   let cur = 0;
   for (let i = days.length - 1; i >= 0; i--) {
     if (i === days.length - 1 || days[i] === days[i + 1] - 1) cur++;
     else break;
   }
-  return { current: cur, longest };
+
+  if (days.length === 0 || cur === 0) {
+    return { current: 0, longest };
+  }
+
+  // Evaluate activity status against the user's WAT calendar schedule
+  const today = watToday();
+  const { rows: calendarRows } = await ensureUserCalendar(db, userId);
+  const elapsed = elapsedDays(calendarRows, today);
+  const highestCompleted = days[days.length - 1];
+
+  // Latest completion timestamp in WAT:
+  let latestCompletedAt = null;
+  for (const r of progressRows || []) {
+    const ts = r.completed_at || r.updated_at;
+    if (ts && (!latestCompletedAt || ts > latestCompletedAt)) {
+      latestCompletedAt = ts;
+    }
+  }
+  const lastActiveDate = watDateOf(latestCompletedAt);
+
+  // Find the most recent reading day on the user's schedule strictly before today:
+  let prevReadingDate = null;
+  for (const cr of calendarRows || []) {
+    if (cr.date < today && (!prevReadingDate || cr.date > prevReadingDate)) {
+      prevReadingDate = cr.date;
+    }
+  }
+
+  let isStreakAlive = false;
+  if (elapsed <= 1 && highestCompleted >= elapsed) {
+    // User is on or ahead of Day 1 schedule
+    isStreakAlive = true;
+  } else if (highestCompleted >= elapsed) {
+    // User has completed up to or beyond today's scheduled reading day
+    isStreakAlive = true;
+  } else if (lastActiveDate) {
+    // Catch-up / same-day grace: user completed reading today or on the previous scheduled reading day
+    if (lastActiveDate >= today || (prevReadingDate && lastActiveDate >= prevReadingDate)) {
+      isStreakAlive = true;
+    }
+  }
+
+  return { current: isStreakAlive ? cur : 0, longest };
 }
 
 // ── Aggregates used by stats / leaderboard / badges ────────────────────────

@@ -125,6 +125,13 @@ export const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1, no DST
 export function watToday() { return new Date(Date.now() + WAT_OFFSET_MS).toISOString().slice(0, 10); }
 export function utcToday() { return watToday(); }
 
+export function watDateOf(isoOrTimestamp) {
+  if (!isoOrTimestamp) return null;
+  const t = typeof isoOrTimestamp === 'number' ? isoOrTimestamp : new Date(isoOrTimestamp).getTime();
+  if (isNaN(t)) return null;
+  return new Date(t + WAT_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 export function weekdayOf(isoDate) {
   return new Date(isoDate + 'T00:00:00Z').getUTCDay();
 }
