@@ -1567,7 +1567,8 @@
       {
         "id": "task-s01",
         "title": "Part A discovery; write ARCHITECTURE.md; record Android app slug, retired-feature list, preview URL",
-        "status": "todo"
+        "status": "done",
+        "notes": "Part A discovery complete. ARCHITECTURE.md rewritten. Android slug confirmed: forgehouse50 (releases up to v18). Retired features inventoried. Live preview verified at https://site-v2.forgehouse50.pages.dev."
       },
       {
         "id": "task-s02",
