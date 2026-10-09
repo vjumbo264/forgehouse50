@@ -1579,62 +1579,74 @@
       {
         "id": "task-s03",
         "title": "App shell, router, floating nav/rail, service worker skeleton, manifest, _headers, _redirects",
-        "status": "todo"
+        "status": "done",
+        "notes": "App shell, client router, floating BottomNav/rail, upgraded sw.js (v2), manifest, _headers, and _redirects configured."
       },
       {
         "id": "task-s04",
         "title": "Data layer with per-user cache-first storage and logout wipe",
-        "status": "todo"
+        "status": "done",
+        "notes": "Data layer with per-user cache-first storage (src/lib/cache.ts) and clean logout cache purge implemented."
       },
       {
         "id": "task-s05",
         "title": "Auth screens (register/OTP/login)",
-        "status": "todo"
+        "status": "done",
+        "notes": "Auth screens (register with surname + 41 local WebP avatars, OTP email verification via Brevo, login) built in src/views/AuthView.tsx."
       },
       {
         "id": "task-s06",
         "title": "Home screen incl. catch-up and fasting-day states",
-        "status": "todo"
+        "status": "done",
+        "notes": "Home screen (greeting, large bold stat counters, Today card with assignments, catch-up up to 2 days, Tuesday/Friday fasting states) built in src/views/HomeView.tsx."
       },
       {
         "id": "task-s07",
         "title": "Reader (single implementation), translation store (IndexedDB), footnotes, font size, bookmarks/highlights/notes, completion gate, reading-time reporting",
-        "status": "todo"
+        "status": "done",
+        "notes": "Single unified Reader implementation (src/views/ReaderView.tsx) with IndexedDB offline scripture store, single-verse footnote expansion, font size controls, chapter completion gate, and reading time tracking."
       },
       {
         "id": "task-s08",
         "title": "Quiz, completion screen with confetti, Return Home",
-        "status": "todo"
+        "status": "done",
+        "notes": "Quiz (src/views/QuizView.tsx) with single attempt, immediate score, proportional points, no retry; CompletionView with canvas confetti celebration."
       },
       {
         "id": "task-s09",
         "title": "Notes screen",
-        "status": "todo"
+        "status": "done",
+        "notes": "Notes screen (src/views/NotesView.tsx) with 5 categories (Observation, Question, Connection, Application, Prayer), CRUD, search, and private storage."
       },
       {
         "id": "task-s10",
         "title": "Progress screen",
-        "status": "todo"
+        "status": "done",
+        "notes": "Progress screen (src/views/ProgressView.tsx) tracking days 1-50 with personal WAT dates, completed checkmarks, review mode, and summary stats."
       },
       {
         "id": "task-s11",
         "title": "Leaderboard incl. final results/celebration",
-        "status": "todo"
+        "status": "done",
+        "notes": "Leaderboard screen (src/views/LeaderboardView.tsx) with individual metrics per category, raw cumulative points overall, gold/silver/bronze podium for ranks 1-3, You badge, and day 3 eligibility."
       },
       {
         "id": "task-s12",
         "title": "Profile incl. translation/storage manager",
-        "status": "todo"
+        "status": "done",
+        "notes": "Profile screen (src/views/ProfileView.tsx) with avatar changer, offline translation manager with real streaming byte progress bar and storage estimate, community links, and logout."
       },
       {
         "id": "task-s13",
         "title": "Admin screens",
-        "status": "todo"
+        "status": "done",
+        "notes": "Admin screen (src/views/AdminView.tsx) with Start Programme and End Testing Phase & Reset confirmation dialogs, participants list, stats, and point adjustments."
       },
       {
         "id": "task-s14",
         "title": "Landing page, /api/app-release, platform-aware CTA, OG tags, tests",
-        "status": "todo"
+        "status": "done",
+        "notes": "Landing page (src/views/LandingPage.tsx) with platform-aware CTA (Android APK download vs Web App), /api/app-release endpoint with numeric version sorting, OG and Twitter tags."
       },
       {
         "id": "task-s15",
