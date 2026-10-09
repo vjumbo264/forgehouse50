@@ -1551,6 +1551,104 @@
   },
   "site_rebuild_v2": {
     "status": "in_progress",
-    "pointer": "rebuild in progress on branch site-v2; resume from that branch's BUILD_STATE.json"
+    "started_utc": "2026-10-09T00:20:00Z",
+    "branch": "site-v2",
+    "android_app_slug": "forgehouse50",
+    "preview_url": "https://site-v2.forgehouse50.pages.dev",
+    "production_url": "https://forgehouse50.pages.dev",
+    "work_complete": false,
+    "tasks": [
+      {
+        "id": "task-s00",
+        "title": "Create branch site-v2, pointer on main, seed task list",
+        "status": "done",
+        "notes": "Created branch site-v2, pointer committed and pushed to main, tasks seeded on site-v2."
+      },
+      {
+        "id": "task-s01",
+        "title": "Part A discovery; write ARCHITECTURE.md; record Android app slug, retired-feature list, preview URL",
+        "status": "todo"
+      },
+      {
+        "id": "task-s02",
+        "title": "Design system tokens, fonts, icons, avatar WebP compression, DESIGN_SYSTEM.md",
+        "status": "todo"
+      },
+      {
+        "id": "task-s03",
+        "title": "App shell, router, floating nav/rail, service worker skeleton, manifest, _headers, _redirects",
+        "status": "todo"
+      },
+      {
+        "id": "task-s04",
+        "title": "Data layer with per-user cache-first storage and logout wipe",
+        "status": "todo"
+      },
+      {
+        "id": "task-s05",
+        "title": "Auth screens (register/OTP/login)",
+        "status": "todo"
+      },
+      {
+        "id": "task-s06",
+        "title": "Home screen incl. catch-up and fasting-day states",
+        "status": "todo"
+      },
+      {
+        "id": "task-s07",
+        "title": "Reader (single implementation), translation store (IndexedDB), footnotes, font size, bookmarks/highlights/notes, completion gate, reading-time reporting",
+        "status": "todo"
+      },
+      {
+        "id": "task-s08",
+        "title": "Quiz, completion screen with confetti, Return Home",
+        "status": "todo"
+      },
+      {
+        "id": "task-s09",
+        "title": "Notes screen",
+        "status": "todo"
+      },
+      {
+        "id": "task-s10",
+        "title": "Progress screen",
+        "status": "todo"
+      },
+      {
+        "id": "task-s11",
+        "title": "Leaderboard incl. final results/celebration",
+        "status": "todo"
+      },
+      {
+        "id": "task-s12",
+        "title": "Profile incl. translation/storage manager",
+        "status": "todo"
+      },
+      {
+        "id": "task-s13",
+        "title": "Admin screens",
+        "status": "todo"
+      },
+      {
+        "id": "task-s14",
+        "title": "Landing page, /api/app-release, platform-aware CTA, OG tags, tests",
+        "status": "todo"
+      },
+      {
+        "id": "task-s15",
+        "title": "Full preview E2E per Part H step 2 with evidence",
+        "status": "todo"
+      },
+      {
+        "id": "task-s16",
+        "title": "Capture old-service-worker browser profile from production, merge to main, production verification, redirect checks, Android-app endpoint parity check, service-worker-upgrade proof",
+        "status": "todo"
+      },
+      {
+        "id": "task-s17",
+        "title": "Delete old frontend, docs, test-user cleanup, final BUILD_STATE.json with site_rebuild_v2.work_complete: true and summary of evidence",
+        "status": "todo"
+      }
+    ]
   }
 }
