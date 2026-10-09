@@ -1,92 +1,79 @@
-# ForgeHouse 50 — Design System v4
+# ForgeHouse 50 — Design System
 
-A deliberately small design system. The goal is a calm, legible,
-premium-through-restraint interface appropriate for a Bible-reading app:
-quiet neutral surfaces, generous whitespace, typographic hierarchy doing
-most of the visual work, and **one restrained muted-blue accent** used
-sparingly.
+## 1. Principles & Intent
+The visual identity of ForgeHouse 50 mirrors the official Android application built with Material 3 Expressive and Plus Jakarta Sans.
+- **Zero-Pill Static Discipline**: Informational metadata (dates, chapters, statuses) is presented as clean, unboxed text with typographic separators (`·`), reserving bordered and filled containers exclusively for functional controls (buttons, tabs, action chips).
+- **Legibility Guarantee**: Body text weight is never thin or hairline. Base weight is 400 minimum, secondary and small text is 500, interactive labels are 600, headlines are 700.
+- **System Dark/Light Theme**: Theme automatically adapts via CSS `@media (prefers-color-scheme: dark)` without artificial toggles.
+- **Zero Emojis**: Every indicator, category, and action utilizes semantic SVG icons.
 
-This replaces the entire previous (v2, expressive) direction, which was
-reverted. Keep it simple — do not add tokens without a real need.
+---
 
-## Theming
+## 2. Typography
+- **Primary Typeface**: Plus Jakarta Sans (Google Fonts + fallback `system-ui, -apple-system, sans-serif`)
+- **Weights**:
+  - `font-normal` (400) — Base prose, scripture verse text
+  - `font-medium` (500) — Body descriptions, footnotes, secondary labels
+  - `font-semibold` (600) — Buttons, navigation tabs, section headers, badges
+  - `font-bold` (700) — Numbers, metric counters, headlines
+- **Scale**:
+  - Display: `32px` / `2rem` (Bold)
+  - Headline: `24px` / `1.5rem` (Bold)
+  - Title: `18px` / `1.125rem` (SemiBold)
+  - Body: `15px`–`16px` / `1rem` (Regular / Medium, line-height 1.6)
+  - Label / Small: `13px` / `0.8125rem` (Medium / SemiBold)
+  - Micro: `11px` / `0.6875rem` (SemiBold)
 
-- Light/dark is **automatic** via `prefers-color-scheme`. There is no
-  manual toggle and no stored preference; `FH.initTheme()` only removes
-  legacy stored keys/attributes and keeps the `theme-color` meta in sync.
-- Both palettes are defined in `app.v4.css` (`:root` and
-  `@media (prefers-color-scheme: dark)`). Never hardcode a theme.
+---
 
-## Color tokens
+## 3. Color Tokens
+Derived from the brand identity and the Android native color tokens:
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--bg` | `#fafaf8` | `#171614` | page background (warm off-white / warm near-black) |
-| `--surface` | `#ffffff` | `#201f1c` | cards, nav, inputs |
-| `--surface-2` | `#f2f2ef` | `#2a2925` | recessed/flat surfaces, segmented-control track |
-| `--border` / `--border-strong` | `#e6e6e1` / `#d4d4cd` | `#353330` / `#48453f` | hairlines / interactive borders |
-| `--text` | `#1f1e1c` | `#ebe8e1` | primary text |
-| `--text-dim` / `--text-mute` / `--text-faint` | — | — | secondary → tertiary text |
-| `--accent` | `#3a5f8a` | `#7f9fc4` | the single muted-blue accent: primary buttons, active states, key indicators |
-| `--accent-text` | `#2d4e74` | `#9db8d6` | accent used as text/line color (AA on its background) |
-| `--accent-soft` / `--accent-soft-2` | 9% / 17% tint | 13% / 24% tint | subtle accent washes (pills, active segment fill) |
-| `--on-accent` | `#ffffff` | `#101a26` | text on the filled accent |
-| `--ok` / `--danger` | — | — | success / destructive only |
+### Light Mode (`prefers-color-scheme: light`)
+- **Canvas / Background**: `#F9F9F6`
+- **Surface**: `#FFFFFF`
+- **Surface Variant**: `#E7ECE7`
+- **Text Primary**: `#191C1A`
+- **Text Secondary / Muted**: `#414942`
+- **Border / Outline**: `#C1C9C0`
+- **Brand Primary**: `#2E6B4F` (Forest Green)
+- **Brand Primary Container**: `#D3EEDF`
+- **On Primary**: `#FFFFFF`
+- **Brand Accent Blue**: `#0148E3` (Royal Blue)
+- **Accent Blue Container**: `#E6EFFF`
 
-Rules: the accent is for primary actions and key state only — never wash
-it across large surfaces. Everything else is neutral.
+### Dark Mode (`prefers-color-scheme: dark`)
+- **Canvas / Background**: `#111412`
+- **Surface**: `#191C1A`
+- **Surface Variant**: `#232724`
+- **Text Primary**: `#E1E3DF`
+- **Text Secondary / Muted**: `#9CA39E`
+- **Border / Outline**: `#363C38`
+- **Brand Primary**: `#8CD8AC` (Mint Emerald)
+- **Brand Primary Container**: `#145235`
+- **On Primary**: `#003820`
+- **Brand Accent Blue**: `#70A1FF`
+- **Accent Blue Container**: `#0C2B68`
 
-## Type
+### Leaderboard Podium Tones
+- **Gold (Rank 1)**: `#8A6D1F` (Light Container: `#F6ECD2`, Dark Container: `#3A3016`)
+- **Silver (Rank 2)**: `#5F6B76` (Light Container: `#E8ECEF`, Dark Container: `#2C3238`)
+- **Bronze (Rank 3)**: `#8A5A33` (Light Container: `#F1E2D3`, Dark Container: `#382718`)
 
-- UI: system stack (`--font-ui`). Reading text: Georgia serif (`--font-read`).
-- Scale: h1 24 / h2 18 / h3 15 / body 16–17 / small 13 / label 12–13.
-- Weights: 400 body, 600–650 headings/buttons. Hierarchy carries the design.
+---
 
-## Spacing, radius, shadow
+## 4. Geometry & Elevation
+- **Card Radius**: `16px` (`rounded-2xl`)
+- **Container / Sheet Radius**: `24px` (`rounded-3xl`)
+- **Pill Controls / Buttons**: `9999px` (`rounded-full`)
+- **Elevation**:
+  - Cards: `box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)` with hairline border `1px solid var(--border)`
+  - Elevated Popovers / Sheets: `box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)`
 
-- Spacing rhythm: 6 / 10 / 12 / 14 / 18 / 20 px; wrap padding 20/16.
-- Radius: `--radius` 12 (cards), `--radius-sm` 8 (buttons, inputs), pills 99.
-- Shadow: one quiet `--shadow` (1px, ~5–25% opacity) on elevated cards and
-  primary buttons only. No colored or layered shadows.
+---
 
-## Motion
-
-- Fast, simple transitions only: 0.12s ease on hover/active state changes
-  (border, color, opacity, background); 0.4s on progress bars.
-- No bouncy easing, no celebratory or attention-seeking animation.
-- `prefers-reduced-motion: reduce` collapses all transitions/animations
-  app-wide (implemented globally in `app.v4.css`).
-
-## Icons
-
-- **No emojis anywhere in the UI.** Icons come from the single inline SVG
-  set in `FH.ICONS` (`app.v4.js`): 24×24 viewBox, 2px stroke, rounded
-  joins, `currentColor`. Add new icons there, in the same style.
-- **Every icon is sized by CSS, never by the SVG's intrinsic 300×150
-  default.** The rule set covers nav (`21px`), `.iconbtn` (`15px`),
-  `.btn`/`.btn.ghost` (`16px`), `.check` (`17px`) and the audio player
-  (`20px` play, `16px` skips). Inject icons only into elements those rules
-  cover; if a new context is added, add a sizing rule for it.
-
-## Components (contract)
-
-- `.btn` filled accent = the one primary action per view;
-  `.btn.ghost` bordered surface = secondary actions (clear hover state:
-  border + text take the accent). `.btn.small` for inline/compact actions.
-- `.iconbtn` small bordered button for icon/utility actions; always has a
-  visible border and a hover state so it reads as tappable.
-- Notes save/edit buttons must always read as obviously clickable: filled
-  or clearly bordered shape plus hover/active/focus states — never bare
-  text, never oversized banner styling.
-- `.card` / `.card.flat`, `.pill`, `.badge`, `.stat`, `.tabs`, `.dayrow`,
-  `.lrow` as defined in `app.v4.css` — reuse before inventing.
-- Reading page: `.reader-pane` is a fixed-max-height internally scrolling
-  chapter pane; Prev/Next chapter controls live outside it and are always
-  visible.
-- **Audio player**: Play/Pause is the single filled circular primary
-  action (`#audio-play`, 46px); ±5s skips are quiet circular `.iconbtn`s;
-  downloads are secondary `.btn.ghost.small` text+icon buttons. The
-  chapter picker (`#audio-chapters`) is a calm segmented control: the
-  active segment gets a subtle `--accent-soft-2` fill and accent text —
-  never a high-contrast outline. The seek slider's filled track before the
-  thumb is the accent, driven by the `--fill` custom property.
+## 5. Mobile Ergonomics
+- **Touch Target**: Interactive elements maintain at least `44px x 44px` hitbox.
+- **Thumb Zone**: Primary actions positioned within bottom 40% of viewport.
+- **Bottom Navigation**: Floating pill navigation bar on mobile with icon + label (`Home`, `Read`, `Notes`, `Progress`, `Leaderboard`).
+- **Sticky Cap**: Combined fixed headers and navbars do not exceed 15% of vertical viewport height.

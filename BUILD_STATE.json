@@ -1573,7 +1573,8 @@
       {
         "id": "task-s02",
         "title": "Design system tokens, fonts, icons, avatar WebP compression, DESIGN_SYSTEM.md",
-        "status": "todo"
+        "status": "done",
+        "notes": "Design system tokens documented in DESIGN_SYSTEM.md. Plus Jakarta Sans typography defined (400-700 weights). Colors derived from M3 / brand tokens. 41 avatar illustrations compressed to WebP (15MB -> 1.2MB, 92% size reduction)."
       },
       {
         "id": "task-s03",
