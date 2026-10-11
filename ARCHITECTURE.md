@@ -183,3 +183,24 @@ unavailable state rather than placeholder text.
   canon) returns the same 503 unavailable state for that passage only.
 - The optional `VERSEWELL_BASE` Pages env var overrides the mirror base URL
   (kept as a general override; originally used to test the old fallback).
+
+## Admin Authentication & User Lifecycle Architecture (admin_delete_and_login_v1)
+
+### Dedicated Admin Credential Model
+- **Credentials (`admin_credentials`)**: Admin authentication uses a dedicated username (format: `fh50-admin-xxxxxx`) and strong password hashed with PBKDF2-SHA256 (100,000 iterations, 16-byte random salt).
+- **Separation of Concerns**: Admin credentials exist independently of `profiles`. Admin accounts never participate in reading days, streaks, quizzes, or leaderboards.
+- **Retirement of Email Admin**: No email OTP flow can ever grant administrative privileges. All participant profiles hold `role = 'member'`.
+- **Sessions (`admin_sessions`)**: Fixed 12-hour expiration. On password change or rotation via `tools/rotate-admin.mjs`, prior sessions are immediately invalidated.
+- **Brute-Force Protection (`admin_login_attempts`)**: 5 failed attempts within 15 minutes locks out authentication from the username and source IP for 15 minutes (HTTP 429 Retry-After).
+
+### Complete Cascading Deletion
+- **Atomic Deletion (`functions/lib/delete_user.mjs`)**: Deletes all 14 user child tables in a single atomic `env.DB.batch()` call:
+  - `reading_progress`, `quiz_attempts`, `user_reading_days`, `audio_progress`
+  - `notes`, `bookmarks`, `highlights`, `user_badges`, `points`
+  - `sessions`, `otp_codes`, `leaderboard_snapshots`, `final_rank_acks`, `final_rankings`
+  - `profiles`
+- **Safety Guards**:
+  1. Admins cannot delete their own account or other admin accounts.
+  2. Exact confirmation matching the target user's display name or ID is required.
+  3. Every deletion logs an entry to `admin_audit` (`id`, `admin_id`, `action`, `target_user_id`, `target_display_name`, `created_at`).
+  4. Post-deletion cascade script (`scripts/check_cascade_orphans.mjs`) validates 0 orphan rows.
