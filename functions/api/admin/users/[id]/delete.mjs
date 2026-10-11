@@ -12,8 +12,11 @@ export async function onRequestPost({ request, env, params }) {
   if (!userId) return badRequest('User ID is required');
 
   const body = (await readJson(request)) || {};
-  const confirm = String(body.confirm || body.confirm_name || body.confirm_email || '').trim();
-  if (!confirm) return badRequest('Confirmation required');
+  // Accept confirm: true, or backward-compatible string confirmation
+  const confirm = body.confirm === true ? true : (body.confirm ?? body.confirm_name ?? body.confirm_email ?? '');
+  if (confirm !== true && !String(confirm).trim()) {
+    return badRequest('Confirmation required (e.g. { confirm: true })');
+  }
 
   const target = await env.DB.prepare('SELECT id, name, surname, email, role FROM profiles WHERE id = ?').bind(userId).first();
   if (!target) return notFound('User not found');

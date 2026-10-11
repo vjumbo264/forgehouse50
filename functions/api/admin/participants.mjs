@@ -19,5 +19,16 @@ export async function onRequestGet({ request, env }) {
      ORDER BY points DESC LIMIT 500`
   ).all();
 
-  return json({ participants: results || [] });
+  const participants = (results || []).map(p => {
+    const fullName = [p.name, p.surname].filter(Boolean).join(' ').trim() || p.name || 'Member';
+    const shortTag = (p.id || '').slice(-4);
+    return {
+      ...p,
+      full_name: fullName,
+      short_tag: shortTag,
+      status: p.role || 'member',
+    };
+  });
+
+  return json({ participants });
 }
