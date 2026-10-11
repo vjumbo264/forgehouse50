@@ -1,22 +1,25 @@
 // Authentication & session helpers — Workers-native, Web Crypto only.
-//
 // Password hashing: PBKDF2-SHA256, 100,000 iterations, 16-byte salt.
 // Chosen because it is implemented natively by the Workers runtime via
-// crypto.subtle (no native modules, no wasm build step) and is a
-// well-understood KDF. Stored format: pbkdf2$100000$salt_hex$hash_hex.
+// crypto.subtle (no native modules, no wasm build step).
 
 import { randomHex, uuid, nowIso, getSessionToken } from './http.mjs';
 
-const PBKDF2_ITERATIONS = 100000;
+export const PBKDF2_ITERATIONS = 100000;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, rolling
+export const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours fixed
 export const OTP_TTL_MS = 10 * 60 * 1000;         // 10 minutes
 export const OTP_MAX_ATTEMPTS = 5;
+
+export const ADMIN_LOCKOUT_MAX_ATTEMPTS = 5;
+export const ADMIN_LOCKOUT_WINDOW_MINUTES = 15;
 
 function hexToBytes(hex) {
   const out = new Uint8Array(hex.length / 2);
   for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
   return out;
 }
+
 function bytesToHex(bytes) {
   return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -61,10 +64,46 @@ export async function createSession(db, userId, userAgent = '') {
   return { token, expires };
 }
 
-// Resolve the session cookie to a user. Returns null when unauthenticated.
+export async function createAdminSession(db, adminId, userAgent = '') {
+  const token = randomHex(32);
+  const expires = new Date(Date.now() + ADMIN_SESSION_TTL_MS).toISOString();
+  await db.prepare(
+    'INSERT INTO admin_sessions (id, admin_id, expires_at, user_agent) VALUES (?, ?, ?, ?)'
+  ).bind(token, adminId, expires, userAgent).run();
+  return { token, expires };
+}
+
+// Resolve the session cookie to a user or admin. Returns null when unauthenticated.
 export async function getUser(request, env) {
   const token = getSessionToken(request);
   if (!token) return null;
+
+  // 1. Check dedicated admin_sessions first (Part B)
+  const adminRow = await env.DB.prepare(`
+    SELECT s.id AS session_id, s.expires_at, a.id AS admin_id, a.username
+    FROM admin_sessions s JOIN admin_credentials a ON a.id = s.admin_id
+    WHERE s.id = ?`).bind(token).first();
+
+  if (adminRow) {
+    if (new Date(adminRow.expires_at).getTime() < Date.now()) {
+      await env.DB.prepare('DELETE FROM admin_sessions WHERE id = ?').bind(token).run();
+      return null;
+    }
+    // rolling refresh of last_seen
+    await env.DB.prepare("UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?").bind(nowIso(), token).run();
+    return {
+      session_id: adminRow.session_id,
+      id: adminRow.admin_id,
+      username: adminRow.username,
+      name: adminRow.username,
+      email: `${adminRow.username}@admin.local`,
+      role: 'admin',
+      is_admin: true,
+      is_admin_credential: true,
+    };
+  }
+
+  // 2. Check participant sessions
   const row = await env.DB.prepare(`
     SELECT s.id AS session_id, s.expires_at, p.id, p.email, p.name, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at
     FROM sessions s JOIN profiles p ON p.id = s.user_id
@@ -76,7 +115,15 @@ export async function getUser(request, env) {
   }
   // rolling refresh of last_seen
   await env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(nowIso(), token).run();
-  return row;
+
+  // Part B Rule 4: Retire email-based admin. No email OTP login can ever grant admin rights.
+  // Profile accounts are strictly participants.
+  return {
+    ...row,
+    role: 'member',
+    is_admin: false,
+    is_admin_credential: false,
+  };
 }
 
 export async function requireUser(request, env) {
@@ -86,11 +133,48 @@ export async function requireUser(request, env) {
 }
 
 export function requireAdmin(user) {
-  return user && user.role === 'admin';
+  return !!(user && user.role === 'admin' && user.is_admin_credential === true);
 }
 
 export async function destroySession(db, token) {
-  if (token) await db.prepare('DELETE FROM sessions WHERE id = ?').bind(token).run();
+  if (token) {
+    await db.batch([
+      db.prepare('DELETE FROM sessions WHERE id = ?').bind(token),
+      db.prepare('DELETE FROM admin_sessions WHERE id = ?').bind(token),
+    ]);
+  }
+}
+
+export async function checkAdminLockout(db, username, ip) {
+  const windowTime = new Date(Date.now() - ADMIN_LOCKOUT_WINDOW_MINUTES * 60 * 1000).toISOString();
+  const row = await db.prepare(`
+    SELECT COUNT(*) AS failed_count, MAX(attempted_at) AS last_attempt
+    FROM admin_login_attempts
+    WHERE (identifier = ? OR identifier = ?)
+      AND success = 0
+      AND attempted_at >= ?
+  `).bind(username.toLowerCase(), ip, windowTime).first();
+
+  const failedCount = row?.failed_count ?? 0;
+  if (failedCount >= ADMIN_LOCKOUT_MAX_ATTEMPTS) {
+    const lastAttemptMs = row?.last_attempt ? new Date(row.last_attempt).getTime() : Date.now();
+    const remainingMs = Math.max(0, (lastAttemptMs + ADMIN_LOCKOUT_WINDOW_MINUTES * 60 * 1000) - Date.now());
+    const remainingMinutes = Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+    const remainingSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+    return { locked: true, remainingMinutes, remainingSeconds };
+  }
+  return { locked: false, failedCount };
+}
+
+export async function recordAdminAttempt(db, username, ip, success) {
+  const now = nowIso();
+  const stmts = [
+    db.prepare('INSERT INTO admin_login_attempts (id, identifier, attempted_at, success) VALUES (?, ?, ?, ?)')
+      .bind(uuid(), username.toLowerCase(), now, success ? 1 : 0),
+    db.prepare('INSERT INTO admin_login_attempts (id, identifier, attempted_at, success) VALUES (?, ?, ?, ?)')
+      .bind(uuid(), ip, now, success ? 1 : 0),
+  ];
+  await db.batch(stmts);
 }
 
 export { uuid, nowIso };
