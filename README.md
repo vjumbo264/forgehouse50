@@ -139,6 +139,12 @@ UPDATE profiles SET role = 'admin' WHERE email = 'person@example.com';
 (**GitHub repo → Settings → Secrets and variables → Actions**) and used by
 `.github/workflows/deploy.yml` to deploy on every push to `main`.
 
+
+### Admin User Management & Endpoints (batch_fixes_oct12_v1)
+- **Participants**: `GET /api/admin/participants` returns full names (`full_name`), short disambiguation tags (`short_tag`), activity status (`status`), and complete progress metrics.
+- **Single Delete**: `POST /api/admin/users/:id/delete` accepts `{ confirm: true }` (or legacy `confirm_name`) with 14-table atomic cascade.
+- **Batch Delete**: `POST /api/admin/users/delete` accepts `{ user_ids: [...], confirm_word: "DELETE" }` (1-50 users), cascades each deleted user, and returns per-id summary (`deleted`, `skipped`, `failed`).
+
 ## Repository layout
 
 ```

@@ -204,3 +204,29 @@ unavailable state rather than placeholder text.
   2. Exact confirmation matching the target user's display name or ID is required.
   3. Every deletion logs an entry to `admin_audit` (`id`, `admin_id`, `action`, `target_user_id`, `target_display_name`, `created_at`).
   4. Post-deletion cascade script (`scripts/check_cascade_orphans.mjs`) validates 0 orphan rows.
+
+
+### Batch Deletion & Simplified Confirmation Contract (batch_fixes_oct12_v1)
+
+- **Single Delete (`POST /api/admin/users/:id/delete`)**:
+  - Accepts `{ confirm: true }` directly without requiring typing the user display name.
+  - Backward-compatible: also accepts `{ confirm_name: "<display_name_or_id>" }`.
+  - Atomic cascade across all 14 child tables + `profiles`.
+  - Audited in `admin_audit` with `action: "delete_user"`.
+  - Protected against self-delete and admin account deletion.
+
+- **Batch Delete (`POST /api/admin/users/delete`)**:
+  - Request body: `{ user_ids: string[], confirm_word: "DELETE" }` (1 to 50 user IDs per call).
+  - Skips invalid IDs, self-admin IDs, or non-existent users without failing the entire batch.
+  - Returns HTTP 200 `{ ok: true, deleted: string[], skipped: string[], failed: string[] }`.
+  - Audited per-deleted user in `admin_audit` with `action: "batch_delete_user"`.
+
+- **Participant List Schema (`GET /api/admin/participants`)**:
+  - Returns enhanced fields per user:
+    - `id`: full user UUID
+    - `name`: given name
+    - `surname`: surname (nullable)
+    - `full_name`: trimmed `name + " " + surname` (or `name` if surname missing)
+    - `short_tag`: `#<id.slice(-4)>` for disambiguating participants with duplicate first names
+    - `status`: `"active"` (has completed days/points/notes) or `"inactive"` (zero activity)
+    - `points`, `days_completed`, `notes_count`, `email`, `role`, `created_at`
