@@ -7,10 +7,31 @@ import { refreshProgrammeState } from '../../lib/programme.mjs';
 export async function onRequestGet({ request, env }) {
   const user = await getUser(request, env);
   if (!user) return unauthorized();
-  // programme_launch_and_finale_v1: every authenticated page load pings /me,
-  // so this is one of the lifecycle triggers (end-date compute at window
-  // close, final snapshot at end date). Cheap: one config read when idle.
+
   const programme = await refreshProgrammeState(env.DB);
+
+  if (user.is_admin_credential) {
+    return json({
+      id: user.id,
+      email: user.email,
+      name: user.username,
+      username: user.username,
+      surname: '',
+      avatar_url: null,
+      avatar_id: null,
+      role: 'admin',
+      email_verified: true,
+      created_at: new Date().toISOString(),
+      stats: { total_points: 0, days_completed: 0, chapters_read: 0, reading_seconds: 0, current_streak: 0, longest_streak: 0, notes_total: 0 },
+      badges: [],
+      programme: {
+        started: programme.started,
+        concluded: !!programme.final_snapshot_at,
+        programme_end_date: programme.programme_end_date,
+      },
+    });
+  }
+
   const [stats, badges] = await Promise.all([userAggregates(env.DB, user.id), userBadges(env.DB, user.id)]);
   return json({
     id: user.id, email: user.email, name: user.name, surname: user.surname || '', avatar_url: user.avatar_url,
