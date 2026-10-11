@@ -40,6 +40,11 @@
 </div>
 <script src="/app.v7.js"></script>
 <script>
+const params = new URLSearchParams(location.search);
+if (params.get('username')) {
+  document.getElementById('username').value = params.get('username');
+}
+
 document.getElementById('show-pwd').addEventListener('change', (e) => {
   document.getElementById('password').type = e.target.checked ? 'text' : 'password';
 });
