@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ForgeHouse 50 — Admin</title>
 <link rel="stylesheet" href="/app.v12.css">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -14,16 +15,135 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ForgeHouse 50">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<style>
+.badge-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+.badge-admin {
+  background: rgba(59,130,246,0.2);
+  color: #60a5fa;
+}
+.participant-card {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #161b22;
+  border: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease;
+}
+.participant-card.selected {
+  border-color: #3b82f6;
+  background: rgba(59,130,246,0.08);
+}
+.batch-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #1e2633;
+  border: 1px solid #3b82f6;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  margin-top: 16px;
+}
+</style>
 </head>
 <body>
 <div class="wrap">
   <div id="top"></div>
   <div id="gate"></div>
   <div id="stats"></div>
+
   <h2>Programme launch</h2>
   <div class="card" id="launch"><p class="muted small" style="margin:0">Loading…</p></div>
-  <h2>Participants</h2>
+
+  <div class="between" style="align-items:baseline;margin-top:28px">
+    <h2 style="margin:0">Participants <span id="part-count" class="small muted" style="font-weight:normal"></span></h2>
+    <div>
+      <button class="btn ghost small" id="toggle-select-mode">Select mode</button>
+    </div>
+  </div>
+
+  <div style="margin:12px 0;display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="part-search" placeholder="Search by name, tag or email…" style="flex:1">
+      <select id="part-sort" style="width:140px">
+        <option value="points">Points (high-low)</option>
+        <option value="newest">Newest</option>
+        <option value="name">Name A–Z</option>
+        <option value="days">Days completed</option>
+      </select>
+    </div>
+    <div id="select-controls" style="display:none;display:none;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:6px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn ghost small" id="btn-select-all">Select all</button>
+        <button class="btn ghost small" id="btn-select-inactive">Select inactive (0 pts/days)</button>
+      </div>
+      <span class="small muted" id="selected-summary">0 selected</span>
+    </div>
+  </div>
+
   <div id="participants"></div>
+
+  <div id="batch-action-bar" class="batch-bar" style="display:none">
+    <div><strong id="batch-bar-count">0 selected</strong></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost small" id="btn-batch-cancel">Cancel</button>
+      <button class="btn small" style="background:#dc2626;color:#fff" id="btn-batch-delete">Delete selected</button>
+    </div>
+  </div>
+
+  <!-- Single delete modal -->
+  <div id="modal-single-del" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:16px">
+    <div class="card" style="max-width:400px;width:100%;margin:auto">
+      <h3 style="margin-top:0">Delete participant?</h3>
+      <p class="small muted" id="single-del-text" style="line-height:1.4"></p>
+      <div class="error" id="single-del-err"></div>
+      <div class="row" style="gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="btn ghost" id="single-del-cancel">Cancel</button>
+        <button class="btn" style="background:#dc2626;color:#fff" id="single-del-confirm">Delete permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch delete modal -->
+  <div id="modal-batch-del" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:16px">
+    <div class="card" style="max-width:440px;width:100%;margin:auto">
+      <h3 style="margin-top:0" id="batch-del-title">Delete participants?</h3>
+      <p class="small muted" id="batch-del-summary" style="line-height:1.4"></p>
+      <p class="small" style="margin-bottom:6px">Type <strong>DELETE</strong> to confirm:</p>
+      <input type="text" id="batch-del-input" placeholder="DELETE" style="width:100%;box-sizing:border-box" autocomplete="off">
+      <div class="error" id="batch-del-err"></div>
+      <div class="row" style="gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="btn ghost" id="batch-del-cancel">Cancel</button>
+        <button class="btn" style="background:#dc2626;color:#fff" id="batch-del-confirm" disabled>Delete permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <h2>Change admin password</h2>
+  <div class="card" id="pwd-card">
+    <p class="small muted" style="margin-top:0">Changing the password invalidates all other active admin sessions. Minimum 12 characters, mixing letters and numbers or symbols.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:360px">
+      <input type="password" id="pwd-curr" placeholder="Current password">
+      <input type="password" id="pwd-new" placeholder="New password (min 12 chars)">
+      <input type="password" id="pwd-conf" placeholder="Confirm new password">
+      <div class="error" id="pwd-err"></div>
+      <div class="small" id="pwd-succ" style="color:#22c55e"></div>
+      <button class="btn" id="pwd-save" style="margin-top:4px">Update password</button>
+    </div>
+  </div>
+
   <h2>Manage reading assignment</h2>
   <div class="card">
     <div class="row" style="flex-wrap:wrap;gap:8px">
@@ -36,6 +156,7 @@
     <button class="btn" id="as-save" style="margin-top:10px">Replace day assignment</button>
   </div>
 </div>
+
 <script src="/app.v7.js"></script>
 <script>
 (async () => {
@@ -47,9 +168,10 @@
     return;
   }
 
+  // Load stats
   const { data: s } = await FH.api('/api/admin/stats');
-  if (s) document.getElementById('stats').innerHTML = `
-    <div class="grid2">
+  if (s) {
+    document.getElementById('stats').innerHTML = `<h2>Stats</h2><div class="grid2">
       <div class="stat"><div class="v">${s.total_participants}</div><div class="l">Participants</div></div>
       <div class="stat"><div class="v">${s.active_participants}</div><div class="l">Active</div></div>
       <div class="stat"><div class="v">${s.completed_today}</div><div class="l">Read today</div></div>
@@ -57,25 +179,17 @@
       <div class="stat"><div class="v">${s.total_chapters_completed}</div><div class="l">Chapters read</div></div>
       <div class="stat"><div class="v">${s.users_behind_schedule}</div><div class="l">Behind</div></div>
     </div>`;
+  }
 
-  // programme_launch_and_finale_v1 / task-l02: global Start Programme control.
-  // Before the press: the button + an explanation. After: a status panel —
-  // the button is gone and the server treats a repeat press as a no-op, so
-  // the stored start timestamp can never be reset or corrupted.
+  // Programme launch
   const launch = document.getElementById('launch');
   const { data: prog } = await FH.api('/api/admin/programme');
   if (prog && !prog.started) {
-    launch.innerHTML = `<p class="small muted" style="margin-top:0">The programme run has not started. Starting it opens the <strong>10-day join window</strong> from today: new registrations close automatically when the window ends, the programme end date is computed at that moment, and the permanent final rankings snapshot is taken once every participant's schedule has ended. This can only be done once.</p>
+    launch.innerHTML = `<p class="small muted" style="margin-top:0">The programme run has not started. Starting it opens the <strong>10-day join window</strong> from today.</p>
       <button class="btn" id="start-prog">Start Programme</button><div class="error" id="launch-err"></div>`;
-    // admin_reset_and_start_guardrail_v1: two-step, type-to-confirm guard so
-    // the one-shot Start button can never be pressed by accident. Step 1
-    // reveals a confirmation panel; the final button stays disabled until
-    // the operator types START exactly. The server independently requires
-    // confirm:'START' (functions/api/admin/programme.mjs), so a stray click,
-    // double-click, or scripted POST without the confirmation is a no-op.
     document.getElementById('start-prog').addEventListener('click', () => {
-      launch.innerHTML = `<p class="small" style="margin-top:0"><strong>Confirm programme start.</strong> This is permanent and starts the 10-day join window from today. Type <strong>START</strong> to confirm.</p>
-        <div class="row" style="gap:8px;flex-wrap:wrap"><input id="start-confirm" type="text" placeholder="Type START" autocomplete="off" style="width:130px">
+      launch.innerHTML = `<p class="small" style="margin-top:0"><strong>Confirm programme start.</strong> Type <strong>START</strong> to confirm.</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap"><input id="start-confirm" type="text" placeholder="Type START" style="width:130px">
         <button class="btn" id="start-prog-final" disabled>Confirm start</button>
         <button class="btn ghost" id="start-prog-cancel">Cancel</button></div>
         <div class="error" id="launch-err"></div>`;
@@ -96,81 +210,298 @@
       <div class="stat"><div class="v" style="font-size:17px">${FH.esc(prog.join_window_closes_at || '—')}</div><div class="l">Join window closes</div></div>
       <div class="stat"><div class="v" style="font-size:17px">${prog.registration_open ? 'Open' : 'Closed'}</div><div class="l">Registration</div></div>
       <div class="stat"><div class="v" style="font-size:17px">${FH.esc(prog.programme_end_date || 'pending')}</div><div class="l">Programme end date</div></div>
-    </div>
-    <p class="small muted" style="margin:10px 0 0">Final snapshot: ${prog.final_snapshot_at ? 'taken ' + FH.esc(prog.final_snapshot_at.slice(0, 10)) + ' — permanent' : 'pending (taken automatically once the end date is reached)'}.${prog.end_date_preview && !prog.programme_end_date ? ' Projected end date if computed today: ' + FH.esc(prog.end_date_preview) + '.' : ''} Eligible participants: ${prog.eligible_participants}.</p>`;
+    </div>`;
   }
 
-  const { data: p } = await FH.api('/api/admin/participants');
-  document.getElementById('participants').innerHTML = (p?.participants || []).map(u => `
-    <div class="card flat" style="padding:12px 14px">
-      <div class="between">
-        <div class="row" style="gap:10px;align-items:center">${FH.avatarHtml(u.avatar_id, u.name, 34)}<div><strong>${FH.esc(u.name || 'Member')}</strong> <span class="small muted">${FH.esc(u.email)}</span></div></div>
-        <span class="pill">${u.points} pts</span>
-      </div>
-      <div class="small muted" style="margin-top:4px">${u.days_completed}/50 days · ${u.chapters} ch · ${FH.fmtTime(u.reading_seconds)} · ${u.notes_count} notes</div>
-      <details style="margin-top:8px">
-        <summary class="small muted">Admin actions</summary>
-        <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">
-          <input type="number" placeholder="+/- pts" id="pts-${u.id}" style="width:80px">
-          <input type="text" placeholder="Reason (required)" id="rsn-${u.id}" style="flex:1;min-width:120px">
-          <button class="btn ghost small" data-act="points" data-uid="${u.id}">Apply points</button>
-        </div>
-        <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
-          <input type="number" min="1" max="50" placeholder="Day" id="day-${u.id}" style="width:70px">
-          <button class="btn ghost small" data-act="complete" data-uid="${u.id}">Mark complete</button>
-          <button class="btn ghost small" data-act="uncomplete" data-uid="${u.id}">Mark incomplete</button>
-        </div>
-        <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
-          <select id="bdg-${u.id}" style="flex:1;min-width:150px">
-            <option value="streak-7">7-Day Streak</option><option value="streak-14">14-Day Streak</option>
-            <option value="streak-25">25-Day Streak</option><option value="finisher-50">50-Day Finisher</option>
-            <option value="chapters-100">100 Chapters</option><option value="chapters-200">200 Chapters</option>
-            <option value="chapters-260">260 Chapters</option><option value="audio-50">50 Audio Sessions</option>
-            <option value="observations-25">25 Observations</option><option value="questions-25">25 Questions</option>
-          </select>
-          <button class="btn ghost small" data-act="badge-grant" data-uid="${u.id}">Grant</button>
-          <button class="btn ghost small" data-act="badge-revoke" data-uid="${u.id}">Revoke</button>
-        </div>
-        <div class="error" id="err-${u.id}"></div>
-      </details>
-    </div>`).join('') || '<div class="card muted small center">No participants yet.</div>';
+  // Load participants
+  let allParticipants = [];
+  let selectionMode = false;
+  let selectedIds = new Set();
+  let pendingSingleTarget = null;
 
-  document.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', async () => {
-    const uid = btn.dataset.uid, act = btn.dataset.act;
-    const err = document.getElementById('err-' + uid); err.textContent = '';
-    btn.disabled = true;
-    let res;
-    if (act === 'points') {
-      res = await FH.api('/api/admin/adjust', { method: 'POST', body: { action: 'points', user_id: uid,
-        points: parseInt(document.getElementById('pts-' + uid).value || '0', 10),
-        reason: document.getElementById('rsn-' + uid).value } });
-    } else if (act === 'complete' || act === 'uncomplete') {
-      res = await FH.api('/api/admin/adjust', { method: 'POST', body: { action: 'completion', user_id: uid,
-        day_number: parseInt(document.getElementById('day-' + uid).value || '0', 10), completed: act === 'complete' } });
-    } else {
-      res = await FH.api('/api/admin/manage', { method: 'POST', body: { action: 'badge', user_id: uid,
-        badge_id: document.getElementById('bdg-' + uid).value, grant: act === 'badge-grant' } });
+  async function loadParticipants() {
+    const { data } = await FH.api('/api/admin/participants');
+    allParticipants = (data?.participants || []).map(p => ({
+      ...p,
+      full_name: p.full_name || [p.name, p.surname].filter(Boolean).join(' ').trim() || p.name || 'Member',
+      short_tag: p.short_tag || (p.id || '').slice(-4),
+    }));
+    document.getElementById('part-count').textContent = `(${allParticipants.length})`;
+    renderParticipants();
+  }
+
+  function renderParticipants() {
+    const q = document.getElementById('part-search').value.trim().toLowerCase();
+    const sort = document.getElementById('part-sort').value;
+
+    let filtered = allParticipants.filter(p => {
+      if (!q) return true;
+      return p.full_name.toLowerCase().includes(q) ||
+             (p.email || '').toLowerCase().includes(q) ||
+             p.short_tag.toLowerCase().includes(q);
+    });
+
+    if (sort === 'points') filtered.sort((a,b) => b.points - a.points);
+    else if (sort === 'newest') filtered.sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    else if (sort === 'name') filtered.sort((a,b) => a.full_name.localeCompare(b.full_name));
+    else if (sort === 'days') filtered.sort((a,b) => b.days_completed - a.days_completed);
+
+    const container = document.getElementById('participants');
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="card muted small center">No participants match your query.</div>';
+      return;
     }
-    btn.disabled = false;
-    if (!res.ok) { err.textContent = res.data?.error || 'Action failed'; return; }
-    location.reload();
-  }));
 
+    container.innerHTML = filtered.map(u => {
+      const isSelected = selectedIds.has(u.id);
+      const isProtected = u.role === 'admin';
+      return `
+        <div class="participant-card ${isSelected ? 'selected' : ''}" id="pcard-${u.id}">
+          <div class="between">
+            <div class="row" style="gap:10px;align-items:center">
+              ${selectionMode ? `
+                <input type="checkbox" class="part-chk" data-uid="${u.id}" ${isSelected ? 'checked' : ''} ${isProtected ? 'disabled' : ''} style="width:18px;height:18px;cursor:pointer">
+              ` : ''}
+              ${FH.avatarHtml(u.avatar_id, u.full_name, 38)}
+              <div>
+                <div style="font-weight:700;font-size:15px">
+                  ${FH.esc(u.full_name)}
+                  <span class="badge-tag">#${FH.esc(u.short_tag)}</span>
+                  ${isProtected ? '<span class="badge-tag badge-admin">Admin</span>' : ''}
+                </div>
+                <div class="small muted" style="margin-top:2px">${FH.esc(u.email || '')}</div>
+              </div>
+            </div>
+            <span class="pill">${u.points} pts</span>
+          </div>
+          <div class="small muted" style="margin-top:8px">${u.days_completed}/50 days · ${u.chapters} ch · ${u.notes_count} notes</div>
+          ${!selectionMode ? `
+            <details style="margin-top:10px">
+              <summary class="small muted">Admin actions</summary>
+              <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">
+                <input type="number" placeholder="+/- pts" id="pts-${u.id}" style="width:80px">
+                <input type="text" placeholder="Reason (required)" id="rsn-${u.id}" style="flex:1;min-width:120px">
+                <button class="btn ghost small" data-act="points" data-uid="${u.id}">Apply points</button>
+              </div>
+              <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px">
+                <input type="number" min="1" max="50" placeholder="Day" id="day-${u.id}" style="width:70px">
+                <button class="btn ghost small" data-act="complete" data-uid="${u.id}">Mark complete</button>
+                <button class="btn ghost small" data-act="uncomplete" data-uid="${u.id}">Mark incomplete</button>
+              </div>
+              <div class="error" id="err-${u.id}"></div>
+              ${!isProtected ? `
+                <div style="margin-top:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">
+                  <button class="btn small" style="background:#dc2626;color:#fff" data-del-single="${u.id}" data-uname="${FH.esc(u.full_name)}">Delete participant</button>
+                </div>
+              ` : ''}
+            </details>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    // Attach actions
+    container.querySelectorAll('.part-chk').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const uid = chk.dataset.uid;
+        if (chk.checked) selectedIds.add(uid);
+        else selectedIds.delete(uid);
+        updateSelectionState();
+      });
+    });
+
+    container.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid = btn.dataset.uid, act = btn.dataset.act;
+        const err = document.getElementById('err-' + uid); err.textContent = '';
+        btn.disabled = true;
+        let res;
+        if (act === 'points') {
+          res = await FH.api('/api/admin/adjust', { method: 'POST', body: {
+            action: 'points', user_id: uid,
+            points: parseInt(document.getElementById('pts-' + uid).value || '0', 10),
+            reason: document.getElementById('rsn-' + uid).value
+          }});
+        } else {
+          res = await FH.api('/api/admin/adjust', { method: 'POST', body: {
+            action: 'completion', user_id: uid,
+            day_number: parseInt(document.getElementById('day-' + uid).value || '0', 10),
+            completed: act === 'complete'
+          }});
+        }
+        btn.disabled = false;
+        if (!res.ok) { err.textContent = res.data?.error || 'Action failed'; return; }
+        await loadParticipants();
+      });
+    });
+
+    container.querySelectorAll('[data-del-single]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uid = btn.dataset.delSingle;
+        const uname = btn.dataset.uname;
+        pendingSingleTarget = { id: uid, name: uname };
+        document.getElementById('single-del-text').textContent =
+          `Permanently delete ${uname}? This wipes their progress, points, notes and badges. This cannot be undone.`;
+        document.getElementById('single-del-err').textContent = '';
+        document.getElementById('modal-single-del').style.display = 'flex';
+      });
+    });
+  }
+
+  function updateSelectionState() {
+    const count = selectedIds.size;
+    document.getElementById('selected-summary').textContent = `${count} selected`;
+    document.getElementById('batch-bar-count').textContent = `${count} participant${count !== 1 ? 's' : ''} selected`;
+    const bar = document.getElementById('batch-action-bar');
+    bar.style.display = (selectionMode && count > 0) ? 'flex' : 'none';
+    allParticipants.forEach(p => {
+      const card = document.getElementById('pcard-' + p.id);
+      if (card) {
+        if (selectedIds.has(p.id)) card.classList.add('selected');
+        else card.classList.remove('selected');
+      }
+    });
+  }
+
+  document.getElementById('part-search').addEventListener('input', renderParticipants);
+  document.getElementById('part-sort').addEventListener('change', renderParticipants);
+
+  document.getElementById('toggle-select-mode').addEventListener('click', () => {
+    selectionMode = !selectionMode;
+    document.getElementById('toggle-select-mode').textContent = selectionMode ? 'Exit select' : 'Select mode';
+    document.getElementById('select-controls').style.display = selectionMode ? 'flex' : 'none';
+    if (!selectionMode) selectedIds.clear();
+    updateSelectionState();
+    renderParticipants();
+  });
+
+  document.getElementById('btn-select-all').addEventListener('click', () => {
+    const nonAdmins = allParticipants.filter(p => p.role !== 'admin');
+    if (selectedIds.size >= nonAdmins.length) selectedIds.clear();
+    else nonAdmins.forEach(p => selectedIds.add(p.id));
+    updateSelectionState();
+    renderParticipants();
+  });
+
+  document.getElementById('btn-select-inactive').addEventListener('click', () => {
+    selectedIds.clear();
+    allParticipants.filter(p => p.role !== 'admin' && p.points === 0 && p.days_completed === 0 && p.notes_count === 0)
+      .forEach(p => selectedIds.add(p.id));
+    updateSelectionState();
+    renderParticipants();
+  });
+
+  document.getElementById('btn-batch-cancel').addEventListener('click', () => {
+    selectedIds.clear();
+    updateSelectionState();
+  });
+
+  // Single delete execution
+  document.getElementById('single-del-cancel').addEventListener('click', () => {
+    document.getElementById('modal-single-del').style.display = 'none';
+    pendingSingleTarget = null;
+  });
+
+  document.getElementById('single-del-confirm').addEventListener('click', async () => {
+    if (!pendingSingleTarget) return;
+    const btn = document.getElementById('single-del-confirm'); btn.disabled = true;
+    const errEl = document.getElementById('single-del-err'); errEl.textContent = '';
+    const res = await FH.api(`/api/admin/users/${pendingSingleTarget.id}/delete`, {
+      method: 'POST',
+      body: { confirm: true }
+    });
+    btn.disabled = false;
+    if (!res.ok) {
+      errEl.textContent = res.data?.error || 'Deletion failed';
+      return;
+    }
+    document.getElementById('modal-single-del').style.display = 'none';
+    pendingSingleTarget = null;
+    await loadParticipants();
+  });
+
+  // Batch delete modal & execution
+  document.getElementById('btn-batch-delete').addEventListener('click', () => {
+    const list = allParticipants.filter(p => selectedIds.has(p.id));
+    const names = list.slice(0, 4).map(p => p.full_name);
+    const rest = list.length - names.length;
+    const summary = names.join(', ') + (rest > 0 ? ` and ${rest} more` : '');
+    document.getElementById('batch-del-title').textContent = `Delete ${list.length} participants?`;
+    document.getElementById('batch-del-summary').textContent = `This permanently deletes ${summary} along with all progress, points and badges. This cannot be undone.`;
+    document.getElementById('batch-del-input').value = '';
+    document.getElementById('batch-del-confirm').disabled = true;
+    document.getElementById('batch-del-err').textContent = '';
+    document.getElementById('modal-batch-del').style.display = 'flex';
+  });
+
+  document.getElementById('batch-del-input').addEventListener('input', (e) => {
+    document.getElementById('batch-del-confirm').disabled = e.target.value.trim().toUpperCase() !== 'DELETE';
+  });
+
+  document.getElementById('batch-del-cancel').addEventListener('click', () => {
+    document.getElementById('modal-batch-del').style.display = 'none';
+  });
+
+  document.getElementById('batch-del-confirm').addEventListener('click', async () => {
+    const btn = document.getElementById('batch-del-confirm'); btn.disabled = true;
+    const errEl = document.getElementById('batch-del-err'); errEl.textContent = '';
+    const res = await FH.api('/api/admin/users/delete', {
+      method: 'POST',
+      body: { ids: Array.from(selectedIds), confirm_word: 'DELETE' }
+    });
+    btn.disabled = false;
+    if (!res.ok) {
+      errEl.textContent = res.data?.error || 'Batch deletion failed';
+      return;
+    }
+    document.getElementById('modal-batch-del').style.display = 'none';
+    selectedIds.clear();
+    selectionMode = false;
+    document.getElementById('toggle-select-mode').textContent = 'Select mode';
+    document.getElementById('select-controls').style.display = 'none';
+    updateSelectionState();
+    await loadParticipants();
+  });
+
+  // Password update
+  document.getElementById('pwd-save').addEventListener('click', async () => {
+    const curr = document.getElementById('pwd-curr').value;
+    const n = document.getElementById('pwd-new').value;
+    const c = document.getElementById('pwd-conf').value;
+    const err = document.getElementById('pwd-err');
+    const succ = document.getElementById('pwd-succ');
+    err.textContent = ''; succ.textContent = '';
+    if (n.length < 12) { err.textContent = 'New password must be at least 12 characters'; return; }
+    if (n !== c) { err.textContent = 'Passwords do not match'; return; }
+    const btn = document.getElementById('pwd-save'); btn.disabled = true;
+    const res = await FH.api('/api/admin/change_password', { method: 'POST', body: { current_password: curr, new_password: n } });
+    btn.disabled = false;
+    if (!res.ok) { err.textContent = res.data?.error || 'Password update failed'; return; }
+    succ.textContent = 'Password updated successfully. Other sessions invalidated.';
+    document.getElementById('pwd-curr').value = '';
+    document.getElementById('pwd-new').value = '';
+    document.getElementById('pwd-conf').value = '';
+  });
+
+  // Assignment replace
   document.getElementById('as-save').addEventListener('click', async () => {
     const err = document.getElementById('as-err'); err.textContent = '';
     const btn = document.getElementById('as-save'); btn.disabled = true;
-    const res = await FH.api('/api/admin/manage', { method: 'POST', body: { action: 'assignment',
+    const res = await FH.api('/api/admin/manage', { method: 'POST', body: {
+      action: 'assignment',
       day_number: parseInt(document.getElementById('as-day').value || '0', 10),
       book: document.getElementById('as-book').value,
       chapter_start: parseInt(document.getElementById('as-cs').value || '0', 10),
-      chapter_end: parseInt(document.getElementById('as-ce').value || '0', 10) } });
+      chapter_end: parseInt(document.getElementById('as-ce').value || '0', 10)
+    }});
     btn.disabled = false;
     if (!res.ok) { err.textContent = res.data?.error || 'Save failed'; return; }
-    err.textContent = ''; document.getElementById('as-save').textContent = 'Saved';
-    setTimeout(() => { document.getElementById('as-save').textContent = 'Replace day assignment'; }, 2000);
+    btn.textContent = 'Saved';
+    setTimeout(() => { btn.textContent = 'Replace day assignment'; }, 2000);
   });
+
+  await loadParticipants();
 })();
 </script>
 </body>
-<script>FH.nav('profile')</script>
 </html>

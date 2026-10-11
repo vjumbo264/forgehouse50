@@ -1,7 +1,6 @@
 // Shared atomic user deletion routine.
 // Enforces complete cascading deletion across all user-referencing tables,
 // logs to admin_audit, and guarantees zero orphan rows.
-
 import { uuid, nowIso } from './http.mjs';
 
 export const USER_CHILD_TABLES = [
@@ -26,7 +25,7 @@ export const USER_CHILD_TABLES = [
  * @param {object} db D1 database instance
  * @param {string} adminId ID of the admin performing deletion
  * @param {object} target Target user object { id, name, surname, email, role }
- * @param {string} confirm Confirmation string passed by caller
+ * @param {string|boolean} confirm Confirmation passed by caller (true, "DELETE", or matching name/id/email)
  */
 export async function deleteUserRecord(db, adminId, target, confirm) {
   if (!target || !target.id) {
@@ -41,22 +40,24 @@ export async function deleteUserRecord(db, adminId, target, confirm) {
     throw new Error('Admin accounts cannot be deleted');
   }
 
-  // Rule 3: Require confirmation matching target name, id, or email
+  // Rule 3: Confirmation contract
+  // Supports { confirm: true }, case-insensitive "DELETE", or matching target name, id, email, full_name
+  const isExplicitTrue = confirm === true || confirm === 1;
   const confNorm = String(confirm || '').trim().toLowerCase();
   const nameNorm = String(target.name || '').trim().toLowerCase();
   const idNorm = String(target.id || '').trim().toLowerCase();
   const emailNorm = String(target.email || '').trim().toLowerCase();
   const fullNameNorm = [target.name, target.surname].filter(Boolean).join(' ').trim().toLowerCase();
 
-  const matches = confNorm && (
+  const matches = isExplicitTrue || confNorm === 'true' || confNorm === 'delete' || (confNorm && (
     confNorm === nameNorm ||
     confNorm === idNorm ||
     confNorm === emailNorm ||
     confNorm === fullNameNorm
-  );
+  ));
 
   if (!matches) {
-    throw new Error('Confirmation does not match the target user name or ID');
+    throw new Error('Confirmation required (confirm: true, word DELETE, or user name)');
   }
 
   // Prepare atomic batch of statements: all child tables, profile, and admin_audit
@@ -67,9 +68,9 @@ export async function deleteUserRecord(db, adminId, target, confirm) {
   // Delete profile row
   stmts.push(db.prepare('DELETE FROM profiles WHERE id = ?').bind(target.id));
 
-  // Record in admin_audit table (Rule 7: id, admin_id, action, target_user_id, target_display_name, created_at)
+  // Record in admin_audit table (id, admin_id, action, target_user_id, target_display_name, created_at)
   const auditId = uuid();
-  const displayName = [target.name, target.surname].filter(Boolean).join(' ') || target.email || target.id;
+  const displayName = [target.name, target.surname].filter(Boolean).join(' ').trim() || target.email || target.id;
   stmts.push(
     db.prepare(
       'INSERT INTO admin_audit (id, admin_id, action, target_user_id, target_display_name, created_at) VALUES (?, ?, ?, ?, ?, ?)'
