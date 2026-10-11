@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ForgeHouse 50 — Admin sign in</title>
+<link rel="stylesheet" href="/app.v12.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0f1216">
+<link rel="icon" href="/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<style>body{padding-bottom:0}</style>
+</head>
+<body>
+<div class="wrap" style="max-width:440px;padding-top:48px">
+  <div class="center" style="margin-bottom:22px">
+    <div class="brand" style="font-size:26px">ForgeHouse <span>50</span></div>
+    <div class="tagline">Administrator Access</div>
+  </div>
+  <div class="card">
+    <h1 style="margin-top:0">Admin sign in</h1>
+    <p class="small muted" style="margin-top:-6px;margin-bottom:16px">Enter your generated admin username and password.</p>
+    <form id="f">
+      <label>Admin username</label>
+      <input type="text" id="username" required autocomplete="username" placeholder="fh50-admin-xxxxxx" spellcheck="false" autocapitalize="none">
+      <label>Password</label>
+      <div style="position:relative">
+        <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••••••••••">
+      </div>
+      <div style="margin:8px 0 16px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="show-pwd" style="width:auto;margin:0">
+        <label for="show-pwd" class="small muted" style="margin:0;cursor:pointer">Show password</label>
+      </div>
+      <div class="error" id="err" style="margin-bottom:12px"></div>
+      <button class="btn" type="submit" id="submit-btn">Sign in as admin</button>
+    </form>
+    <p class="small muted center" style="margin:16px 0 0"><a href="/login">Back to participant login</a></p>
+  </div>
+</div>
+<script src="/app.v7.js"></script>
+<script>
+document.getElementById('show-pwd').addEventListener('change', (e) => {
+  document.getElementById('password').type = e.target.checked ? 'text' : 'password';
+});
+
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const err = document.getElementById('err'); err.textContent = '';
+  const btn = document.getElementById('submit-btn'); btn.disabled = true;
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  const { ok, data } = await FH.api('/api/admin/login', {
+    method: 'POST',
+    body: { username, password }
+  });
+  btn.disabled = false;
+  if (ok) {
+    location.href = '/admin.html';
+    return;
+  }
+  err.textContent = data?.error || 'Sign in failed';
+});
+</script>
+</body>
+</html>

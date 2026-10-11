@@ -24,6 +24,19 @@
   <div class="card" id="launch"><p class="muted small" style="margin:0">Loading…</p></div>
   <h2>Participants</h2>
   <div id="participants"></div>
+  <h2>Change admin password</h2>
+  <div class="card" id="pwd-card">
+    <p class="small muted" style="margin-top:0">Changing the password invalidates all other active admin sessions. Minimum 12 characters, mixing letters and numbers or symbols.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:360px">
+      <input type="password" id="pwd-curr" placeholder="Current password">
+      <input type="password" id="pwd-new" placeholder="New password (min 12 chars)">
+      <input type="password" id="pwd-conf" placeholder="Confirm new password">
+      <div class="error" id="pwd-err"></div>
+      <div class="small" id="pwd-succ" style="color:#22c55e"></div>
+      <button class="btn" id="pwd-save" style="margin-top:4px">Update password</button>
+    </div>
+  </div>
+
   <h2>Manage reading assignment</h2>
   <div class="card">
     <div class="row" style="flex-wrap:wrap;gap:8px">
@@ -132,6 +145,20 @@
           <button class="btn ghost small" data-act="badge-revoke" data-uid="${u.id}">Revoke</button>
         </div>
         <div class="error" id="err-${u.id}"></div>
+        ${u.role !== 'admin' ? `
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">
+          <button class="btn small" style="background:#dc2626;color:#fff" data-del-init="${u.id}" data-uname="${FH.esc(u.name)}">Delete participant</button>
+          <div id="del-box-${u.id}" style="display:none;margin-top:8px;padding:8px;background:rgba(220,38,38,0.1);border-radius:6px">
+            <p class="small" style="margin:0 0 6px;color:#fca5a5">Permanently delete <strong>${FH.esc(u.name)}</strong>? This wipes progress, points, notes and badges. Type <strong>${FH.esc(u.name)}</strong> to confirm:</p>
+            <div class="row" style="gap:6px">
+              <input type="text" id="del-inp-${u.id}" placeholder="Type name" style="flex:1">
+              <button class="btn small" style="background:#dc2626;color:#fff" id="del-conf-${u.id}" disabled data-uid="${u.id}">Delete permanently</button>
+              <button class="btn ghost small" id="del-cancel-${u.id}">Cancel</button>
+            </div>
+            <div class="error" id="del-err-${u.id}"></div>
+          </div>
+        </div>
+        ` : ''}
       </details>
     </div>`).join('') || '<div class="card muted small center">No participants yet.</div>';
 
@@ -168,6 +195,78 @@
     if (!res.ok) { err.textContent = res.data?.error || 'Save failed'; return; }
     err.textContent = ''; document.getElementById('as-save').textContent = 'Saved';
     setTimeout(() => { document.getElementById('as-save').textContent = 'Replace day assignment'; }, 2000);
+  });
+
+  // Handle participant deletion
+  document.querySelectorAll('[data-del-init]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const uid = btn.dataset.delInit;
+      const uname = btn.dataset.uname;
+      const box = document.getElementById('del-box-' + uid);
+      box.style.display = 'block';
+      btn.style.display = 'none';
+
+      const inp = document.getElementById('del-inp-' + uid);
+      const confBtn = document.getElementById('del-conf-' + uid);
+      const cancelBtn = document.getElementById('del-cancel-' + uid);
+      const errEl = document.getElementById('del-err-' + uid);
+
+      inp.addEventListener('input', () => {
+        confBtn.disabled = inp.value.trim().toLowerCase() !== uname.trim().toLowerCase();
+      });
+
+      cancelBtn.addEventListener('click', () => {
+        box.style.display = 'none';
+        btn.style.display = 'inline-block';
+        inp.value = '';
+        confBtn.disabled = true;
+        errEl.textContent = '';
+      });
+
+      confBtn.addEventListener('click', async () => {
+        confBtn.disabled = true;
+        errEl.textContent = '';
+        const res = await FH.api('/api/admin/users/' + encodeURIComponent(uid) + '/delete', {
+          method: 'POST',
+          body: { confirm: inp.value.trim() }
+        });
+        if (!res.ok) {
+          errEl.textContent = res.data?.error || 'Deletion failed';
+          confBtn.disabled = false;
+          return;
+        }
+        location.reload();
+      });
+    });
+  });
+
+  // Handle password change
+  document.getElementById('pwd-save').addEventListener('click', async () => {
+    const curr = document.getElementById('pwd-curr').value;
+    const n = document.getElementById('pwd-new').value;
+    const c = document.getElementById('pwd-conf').value;
+    const errEl = document.getElementById('pwd-err'); errEl.textContent = '';
+    const succEl = document.getElementById('pwd-succ'); succEl.textContent = '';
+    const btn = document.getElementById('pwd-save');
+
+    if (!curr || !n || !c) { errEl.textContent = 'All fields are required'; return; }
+    if (n !== c) { errEl.textContent = 'New passwords do not match'; return; }
+    if (n.length < 12) { errEl.textContent = 'New password must be at least 12 characters long'; return; }
+
+    btn.disabled = true;
+    const res = await FH.api('/api/admin/change_password', {
+      method: 'POST',
+      body: { current_password: curr, new_password: n }
+    });
+    btn.disabled = false;
+    if (!res.ok) {
+      errEl.textContent = res.data?.error || 'Password update failed';
+      return;
+    }
+    succEl.textContent = 'Password successfully updated! Other sessions invalidated.';
+    document.getElementById('pwd-curr').value = '';
+    document.getElementById('pwd-new').value = '';
+    document.getElementById('pwd-conf').value = '';
   });
 })();
 </script>
