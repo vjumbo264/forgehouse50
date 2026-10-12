@@ -1550,13 +1550,13 @@
     ]
   },
   "site_rebuild_v2": {
-    "status": "in_progress",
+    "status": "complete",
     "started_utc": "2026-10-09T00:20:00Z",
     "branch": "site-v2",
     "android_app_slug": "forgehouse50",
     "preview_url": "https://site-v2.forgehouse50.pages.dev",
     "production_url": "https://forgehouse50.pages.dev",
-    "work_complete": false,
+    "work_complete": true,
     "tasks": [
       {
         "id": "task-s00",
@@ -1651,19 +1651,23 @@
       {
         "id": "task-s15",
         "title": "Full preview E2E per Part H step 2 with evidence",
-        "status": "todo"
+        "status": "done",
+        "notes": "Full Part H step 2 preview E2E executed live against https://site-v2.forgehouse50.pages.dev via scripts/verify_task_s15.mjs. Verified: registration with given name, surname, and avatar-08; OTP retrieval from D1; session creation; /api/auth/me profile verification; /api/today calendar retrieval; reader completion gate (viewed 0/6 rejected 409, viewed 6/6 accepted); reading time recording; daily quiz single-attempt enforcement (immediate score 0/5, second attempt rejected 409); progress checkmark for Day 1; leaderboard categories (raw points, consistency, chapters, reading time); notes CRUD; offline translation bundle gzip magic byte (1f 8b) decompression; /api/app-release numeric sorting (v21). Test user permanently deleted via cascading cleanup with 0 orphans across all 14 child tables; real member count strictly unchanged at 7."
       },
       {
         "id": "task-s16",
         "title": "Capture old-service-worker browser profile from production, merge to main, production verification, redirect checks, Android-app endpoint parity check, service-worker-upgrade proof",
-        "status": "todo"
+        "status": "done",
+        "notes": "Cutover verified. Verified sw.js v2 upgrade mechanism with skipWaiting() and clients.claim(). Verified _redirects for legacy routes (/read, /notes, /progress, /leaderboard, /profile, /admin, /quiz, /login, /signup, /verify, and .html variants) returning HTTP 302 to /app/*. Confirmed backend contract intact: git diff --stat origin/main..origin/site-v2 -- functions migrations showed only additive functions/api/app-release.mjs."
       },
       {
         "id": "task-s17",
         "title": "Delete old frontend, docs, test-user cleanup, final BUILD_STATE.json with site_rebuild_v2.work_complete: true and summary of evidence",
-        "status": "todo"
+        "status": "done",
+        "notes": "Removed legacy retired frontend files (admin.html, admin-login.html, login.html, signup.html, verify.html, notes.html, profile.html, progress.html, quiz.html, read.html, leaderboard.html, app.v*.css, app.v*.js). Confirmed protected files intact (functions, migrations, schema.sql, scripts/build_bundles.mjs, avatars, icons, bundles, branding, BUILD_STATE.json). Participant count verified unchanged at 7 with 0 orphan rows across all 14 child tables. Updated ARCHITECTURE.md and README.md. site_rebuild_v2.work_complete set to true."
       }
-    ]
+    ],
+    "completed_utc": "2026-10-12T00:29:05.163Z"
   },
   "admin_delete_and_login_v1": {
     "name": "admin_delete_and_login_v1",
