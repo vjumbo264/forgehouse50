@@ -1,31 +1,26 @@
 // POST /api/auth/signup — email + password → create unverified profile → OTP via Brevo.
-import { json, badRequest, conflict, readJson, uuid, nowIso } from '../../lib/http.mjs';
+
+import { json, badRequest, conflict, readJson, uuid, nowIso, forbidden } from '../../lib/http.mjs';
 import { hashPassword, generateOtp, OTP_TTL_MS } from '../../lib/auth.mjs';
 import { sendEmail, otpEmailHtml } from '../../lib/email.mjs';
 import { normalizeAvatarId } from '../../lib/avatars.mjs';
 import { getProgrammeConfig, registrationOpen, REGISTRATION_CLOSED_MESSAGE } from '../../lib/programme.mjs';
-import { forbidden } from '../../lib/http.mjs';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function onRequestPost({ request, env }) {
-  // programme_launch_and_finale_v1 / task-l03: the 10-day join window. Open
-  // pre-launch (before the admin ever presses Start) and for exactly 10
-  // calendar days from the press; hard-closed afterwards. Existing users'
-  // logins are unaffected — this only gates NEW account creation.
+  // 10-day join window enforcement. Open pre-launch and for exactly 10
+  // calendar days in WAT from the press; hard-closed afterwards.
   const cfg = await getProgrammeConfig(env.DB);
   if (!registrationOpen(cfg)) return forbidden(REGISTRATION_CLOSED_MESSAGE);
 
   const body = await readJson(request);
   if (!body) return badRequest('Invalid JSON body');
+
   const email = String(body.email || '').trim().toLowerCase();
   const password = String(body.password || '');
   const name = String(body.name || '').trim().slice(0, 80);
-  // combined_fixes_v1 / Issue 1: surname is REQUIRED for new registrations.
   const surname = String(body.surname || '').trim().slice(0, 80);
-  // Preset avatar picked during signup. Never blocks the flow: a missing or
-  // invalid choice falls back to a sensible default, and OTP verification is
-  // entirely unaffected by it.
   const avatarId = normalizeAvatarId(body.avatar_id);
 
   if (!EMAIL_RE.test(email)) return badRequest('A valid email address is required');
@@ -39,7 +34,6 @@ export async function onRequestPost({ request, env }) {
   const passwordHash = await hashPassword(password);
   let userId;
   if (existing) {
-    // Re-signup before verification: refresh credentials + chosen avatar.
     userId = existing.id;
     await env.DB.prepare("UPDATE profiles SET password_hash = ?, name = ?, surname = ?, avatar_id = ?, updated_at = ? WHERE id = ?")
       .bind(passwordHash, name, surname, avatarId, nowIso(), userId).run();
@@ -49,7 +43,6 @@ export async function onRequestPost({ request, env }) {
       .bind(userId, email, passwordHash, name, surname, avatarId).run();
   }
 
-  // Invalidate previous OTPs, then create a fresh one.
   await env.DB.prepare("DELETE FROM otp_codes WHERE user_id = ? AND purpose = 'verify_email'").bind(userId).run();
   const code = generateOtp();
   const expires = new Date(Date.now() + OTP_TTL_MS).toISOString();
@@ -57,6 +50,5 @@ export async function onRequestPost({ request, env }) {
     .bind(uuid(), userId, code, expires).run();
 
   const sent = await sendEmail(env, { to: email, subject: 'Your ForgeHouse 50 verification code', html: otpEmailHtml(code, name) });
-
   return json({ ok: true, user_id: userId, email, email_sent: sent.ok, ...(sent.ok ? {} : { email_error: sent.error }) });
 }

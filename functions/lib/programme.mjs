@@ -1,34 +1,48 @@
-// programme_launch_and_finale_v1 — GLOBAL programme-run launch control.
+// programme_launch_and_finale_v1 + ops_batch_oct14_v1 — GLOBAL programme-run launch control.
 //
 // One programme run has exactly one global lifecycle, anchored by the admin's
 // "Start Programme" press (functions/api/admin/programme.mjs):
 //
 //   1. start_at               — the one global timestamp the run began.
-//   2. join_window_closes_at  — ISO date, EXCLUSIVE. Registration is open for
-//                               exactly JOIN_WINDOW_DAYS calendar days from the
-//                               start date (start day .. start+9 inclusive);
-//                               closed once today >= this date.
+//   2. join_window_closes_at  — ISO date, EXCLUSIVE in WAT (e.g. '2026-10-22').
+//                               Registration is open for exactly JOIN_WINDOW_DAYS
+//                               calendar days in WAT counted from the start date,
+//                               with the start day as Day 1.
+//                               Started Mon 2026-10-12, it covers Mon 12 to
+//                               Wed 2026-10-21 inclusive, closing at 23:59:59 WAT on 2026-10-21.
 //   3. programme_end_date     — computed ONCE, the first time any request
-//                               observes today >= join_window_closes_at, and
-//                               stored. Deterministic at that moment because
-//                               every eligible participant's own day-50 date
-//                               is then knowable (verify.mjs clamps any
-//                               post-close verification's Day-1 anchor to the
-//                               last join day, so NO participant's schedule
-//                               can end later than day50Date(lastJoinDay)).
-//   4. final_snapshot_at      — set when the one-time final ranking snapshot
-//                               is taken (the first request observed on/after
-//                               programme_end_date). Never recomputed.
-//
-// All state lives in the programme_config key/value table. Rankings live in
-// final_rankings (permanent, immutable once written).
+//                               observes today >= join_window_closes_at, and stored.
+//                               Deterministic at that moment: floor is
+//                               day50Date(lastJoinDay) (for 2026-10-21, Day 50 is 2026-12-28).
+//   4. final_snapshot_at      — set when the one-time final ranking snapshot is taken
+//                               (the first request on/after programme_end_date).
 
-import { generateReadingDayDates, utcToday, TOTAL_DAYS } from './calendar.mjs';
+import { generateReadingDayDates, utcToday, watDateOf, TOTAL_DAYS } from './calendar.mjs';
 
 export const JOIN_WINDOW_DAYS = 10;
+export const REGISTRATION_CLOSED_MESSAGE = 'Joining has closed';
 
-export const REGISTRATION_CLOSED_MESSAGE =
-  'Registration for this ForgeHouse 50 run has closed — the programme is already underway';
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export function formatDateLong(isoDate) {
+  if (!isoDate) return '';
+  const d = new Date(isoDate + 'T00:00:00Z');
+  const dayName = DAYS_SHORT[d.getUTCDay()];
+  const day = d.getUTCDate();
+  const month = MONTHS_SHORT[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+  return `${dayName} ${day} ${month} ${year}`;
+}
+
+export function formatDateMedium(isoDate) {
+  if (!isoDate) return '';
+  const d = new Date(isoDate + 'T00:00:00Z');
+  const day = d.getUTCDate();
+  const month = MONTHS_SHORT[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+  return `${day} ${month} ${year}`;
+}
 
 export function addDays(isoDate, n) {
   const d = new Date(isoDate + 'T00:00:00Z');
@@ -43,7 +57,7 @@ export async function getProgrammeConfig(db) {
   return {
     started: !!map.start_at,
     start_at: map.start_at || null,
-    join_window_closes_at: map.join_window_closes_at || null, // ISO date, EXCLUSIVE
+    join_window_closes_at: map.join_window_closes_at || null, // ISO date, EXCLUSIVE in WAT
     programme_end_date: map.programme_end_date || null,
     final_snapshot_at: map.final_snapshot_at || null,
   };
@@ -56,13 +70,94 @@ export async function setConfig(db, key, value) {
   ).bind(key, value, new Date().toISOString()).run();
 }
 
-// Registration is open before the admin ever presses Start (documented
-// pre-launch default: the operator/early testers can still register; the
-// 10-day clock only starts at the button press), and for exactly
-// JOIN_WINDOW_DAYS calendar days afterwards.
-export function registrationOpen(cfg, today = utcToday()) {
+// Registration is open before the admin ever presses Start (pre-launch default),
+// and for exactly JOIN_WINDOW_DAYS calendar days in WAT afterwards.
+// Accepts an optional injectable clock / timestamp / ISO date for testing.
+export function registrationOpen(cfg, nowOrDate = Date.now()) {
   if (!cfg.started) return true;
-  return today < cfg.join_window_closes_at;
+  if (!cfg.join_window_closes_at) return true;
+  let dateStr;
+  if (typeof nowOrDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(nowOrDate)) {
+    dateStr = nowOrDate;
+  } else {
+    dateStr = watDateOf(nowOrDate);
+  }
+  return dateStr < cfg.join_window_closes_at;
+}
+
+export function getJoinWindowDetails(cfg, nowOrDate = Date.now()) {
+  if (!cfg.started) {
+    return {
+      started: false,
+      start_at: null,
+      start_date: null,
+      start_formatted: null,
+      join_window_days: JOIN_WINDOW_DAYS,
+      join_window_closes_at: null,
+      join_window_last_day: null,
+      join_window_last_day_formatted: null,
+      join_window_closes_label: null,
+      days_remaining: JOIN_WINDOW_DAYS,
+      registration_open: true,
+      status_summary: 'Programme not yet started',
+      signup_label: 'Join ForgeHouse 50',
+    };
+  }
+
+  const startWatDate = watDateOf(cfg.start_at);
+  const exclusiveClose = cfg.join_window_closes_at || addDays(startWatDate, JOIN_WINDOW_DAYS);
+  const lastJoinDay = addDays(exclusiveClose, -1);
+
+  let currentWatDate;
+  if (typeof nowOrDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(nowOrDate)) {
+    currentWatDate = nowOrDate;
+  } else {
+    currentWatDate = watDateOf(nowOrDate);
+  }
+
+  const isOpen = currentWatDate < exclusiveClose;
+
+  let daysRemaining = 0;
+  if (currentWatDate < startWatDate) {
+    daysRemaining = JOIN_WINDOW_DAYS;
+  } else if (isOpen) {
+    const diffMs = new Date(lastJoinDay + 'T00:00:00Z') - new Date(currentWatDate + 'T00:00:00Z');
+    daysRemaining = Math.floor(diffMs / 86400000) + 1;
+  } else {
+    daysRemaining = 0;
+  }
+
+  const startFmt = formatDateLong(startWatDate);
+  const lastDayFmt = formatDateLong(lastJoinDay);
+  const signupCloseFmt = formatDateMedium(lastJoinDay);
+
+  let statusSummary;
+  let signupLabel;
+
+  if (isOpen) {
+    const dayWord = daysRemaining === 1 ? '1 day left' : `${daysRemaining} days left`;
+    statusSummary = `Started ${startFmt} · Joining closes ${lastDayFmt} · ${dayWord}`;
+    signupLabel = `Joining closes on ${signupCloseFmt}`;
+  } else {
+    statusSummary = `Started ${startFmt} · Joining closed ${lastDayFmt}`;
+    signupLabel = 'Joining has closed';
+  }
+
+  return {
+    started: true,
+    start_at: cfg.start_at,
+    start_date: startWatDate,
+    start_formatted: startFmt,
+    join_window_days: JOIN_WINDOW_DAYS,
+    join_window_closes_at: exclusiveClose,
+    join_window_last_day: lastJoinDay,
+    join_window_last_day_formatted: lastDayFmt,
+    join_window_closes_label: signupCloseFmt,
+    days_remaining: daysRemaining,
+    registration_open: isOpen,
+    status_summary: statusSummary,
+    signup_label: signupLabel,
+  };
 }
 
 // The calendar date of reading day 50 for a personal schedule whose Day 1 is
@@ -71,18 +166,14 @@ export function day50Date(startDate) {
   return generateReadingDayDates(startDate, TOTAL_DAYS)[TOTAL_DAYS - 1].date;
 }
 
-// The true end condition (Part B): the run is fully over at
-//   max(every eligible user's own calculated day-50 date)
-// where eligible = every verified non-admin profile (registration is closed
-// by the time this runs, so the participant set is fixed). Users whose
-// per-user calendar is already materialised contribute their stored day-50
-// date; everyone else contributes the date generated from their own
-// programme_start_date. The floor — day50Date(last join day) — covers any
-// in-window registrant who never engaged (their schedule is clamped to the
-// last join day by verify.mjs), so the result is exact, not a ~60-day guess.
+// The true end condition: the run is fully over when the latest possible joiner
+// finishes reading day 50. Floor is day50Date(lastJoinDay).
 export async function computeProgrammeEndDate(db, cfg) {
-  const lastJoinDay = addDays(cfg.join_window_closes_at, -1);
-  let end = day50Date(lastJoinDay); // floor: latest possible joiner's day 50
+  const startWatDate = watDateOf(cfg.start_at);
+  const exclusiveClose = cfg.join_window_closes_at || addDays(startWatDate, JOIN_WINDOW_DAYS);
+  const lastJoinDay = addDays(exclusiveClose, -1);
+  let end = day50Date(lastJoinDay);
+
   const { results: users } = await db.prepare(
     "SELECT id, programme_start_date FROM profiles WHERE email_verified = 1 AND role != 'admin'"
   ).all();
@@ -97,15 +188,6 @@ export async function computeProgrammeEndDate(db, cfg) {
   return end;
 }
 
-// Take the ONE final, permanent snapshot (Part C). Only users who ACTUALLY
-// completed reading day 50 are ranked, by RAW total accumulated points.
-// (Note: as of leaderboard_scripture_icon_fix_v1 / ISSUE 1 the in-progress
-// leaderboard ALSO uses raw total points — the former damped adjusted_score
-// was removed entirely — so final and in-progress scoring now agree.)
-// Ties are broken
-// by who reached day 50 EARLIEST (reading_progress.completed_at of day 50),
-// then display_name for full determinism. Guarded by final_snapshot_at +
-// run_id: computed exactly once, never recalculated or altered afterward.
 export async function takeFinalSnapshot(db, cfg) {
   const runId = cfg.start_at.slice(0, 10);
   const { results: finishers } = await db.prepare(
@@ -131,19 +213,16 @@ export async function takeFinalSnapshot(db, cfg) {
     `INSERT INTO final_rankings (run_id, rank, user_id, display_name, avatar_id, total_points, finished_at, snapshot_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(runId, i + 1, f.user_id, f.display_name || 'Member', f.avatar_id ?? null, f.total_points, f.finished_at, now));
+
   stmts.push(db.prepare(
     `INSERT INTO programme_config (key, value, updated_at) VALUES ('final_snapshot_at', ?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
   ).bind(now, now));
+
   await db.batch(stmts);
   return { ...cfg, final_snapshot_at: now };
 }
 
-// Advance the global lifecycle as far as the real calendar allows. Called
-// from the public programme endpoint, /api/auth/me (every page load), and
-// /api/final_results — so the end date is computed the first time anything
-// runs after the join window closes, and the snapshot is taken the first
-// time anything runs on/after the end date. No polling, no cron.
 export async function refreshProgrammeState(db) {
   let cfg = await getProgrammeConfig(db);
   const today = utcToday();

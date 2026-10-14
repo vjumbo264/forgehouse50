@@ -167,3 +167,23 @@ integration, richer analytics.
 ---
 
 Soli Deo Gloria.
+
+
+## Programme Window, End-Date Integrity & Reset Guard (ops_batch_oct14_v1)
+
+### 1. Join Window Rule
+- The join window is strictly **10 calendar days in WAT (Africa/Lagos, UTC+1)** counted from the programme start date, with start day as Day 1.
+- Started Monday 2026-10-12, the window covers Monday 12 to **Wednesday 2026-10-21 inclusive**, closing at **23:59:59 WAT on 2026-10-21**.
+- The date calculations are dynamically derived from the stored `start_at` timestamp in `programme_config`, never hard-coded.
+- On Wednesday 2026-10-14, exactly **8 days remain** including today.
+- Registration endpoints (`/api/auth/signup`, `/api/auth/verify`) reject attempts after the window closes with HTTP 403 and the clear message `"Joining has closed"`.
+
+### 2. Programme End Date Derivation
+- Overall programme end date is dynamically derived from the latest possible joiner (Day 1 on 2026-10-21).
+- Using the standard calendar function (50 reading days, skipping Tuesdays and Fridays), Day 50 for an Oct 21 joiner lands on **2026-12-28**.
+- The final ranking snapshot and top-3 celebration cannot trigger until on or after `2026-12-28`.
+
+### 3. Reset Guard
+- Once the programme has started (`programme_config.start_at` exists), **End Testing Phase & Reset** (`POST /api/admin/end_testing`) is permanently blocked server-side, returning **HTTP 409 Conflict** with `"The programme has started; reset is disabled"`.
+- The admin dashboard button is disabled with that reason.
+- **Start Programme** (`POST /api/admin/programme`) is fully idempotent: subsequent taps return `{ ok: true, already_started: true }` and preserve the existing stored timestamp.
