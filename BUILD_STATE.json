@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-14T07:24:21.986235+00:00",
+  "last_updated_utc": "2026-10-14T09:42:10.826636+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1878,9 +1878,9 @@
       {
         "id": "w4",
         "title": "Item 4 \u2014 update prompt + changelog (the only paired item), release workflow changes, release",
-        "status": "pending",
+        "status": "done",
         "gate": "w3",
-        "notes": ""
+        "notes": "DONE (w4): In-app update prompt and changelog paired implementation complete. Workflow: extended .github/workflows/release.yml to generate and attach release.json ({versionName, versionCode, sha256, sizeBytes, changelog}) containing the latest entry from changelog.json, added CI check that fails if changelog contains 'admin' or 'delete user', and added release metadata to release notes. Changelog: backfilled apps/forgehouse50/changelog.json and assets/changelog.json with past and current releases leaving out all admin references. Android: UpdateLogic pure helper with unit tests for version comparison, 30-min throttling, 2-hr in-use 'Later' reappearance schedule, 24-hr daily notification schedule, SHA-256 and size checksum verification, and display-time admin filter safeguard. UpdateChecker expanded with progress download, SHA-256 checksum verification, FileProvider APK install, unknown app sources permission flow, offline messaging, and 12-hr WorkManager periodic check. ChangelogScreen added to routes and wired to 'What's new' row in Profile screen."
       },
       {
         "id": "w5",
