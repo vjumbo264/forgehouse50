@@ -17,7 +17,7 @@ const FALLBACK_RELEASE = {
   changelog: [
     'Password reset with 6-digit email verification code',
     'In-app update checks and new version notifications',
-    'What's new changelog viewer in Profile',
+    "What's new changelog viewer in Profile",
   ],
 };
 
