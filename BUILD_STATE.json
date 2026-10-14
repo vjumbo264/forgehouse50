@@ -1550,8 +1550,124 @@
     ]
   },
   "site_rebuild_v2": {
-    "status": "in_progress",
-    "pointer": "rebuild in progress on branch site-v2; resume from that branch's BUILD_STATE.json"
+    "status": "complete",
+    "started_utc": "2026-10-09T00:20:00Z",
+    "branch": "site-v2",
+    "android_app_slug": "forgehouse50",
+    "preview_url": "https://site-v2.forgehouse50.pages.dev",
+    "production_url": "https://forgehouse50.pages.dev",
+    "work_complete": true,
+    "tasks": [
+      {
+        "id": "task-s00",
+        "title": "Create branch site-v2, pointer on main, seed task list",
+        "status": "done",
+        "notes": "Created branch site-v2, pointer committed and pushed to main, tasks seeded on site-v2."
+      },
+      {
+        "id": "task-s01",
+        "title": "Part A discovery; write ARCHITECTURE.md; record Android app slug, retired-feature list, preview URL",
+        "status": "done",
+        "notes": "Part A discovery complete. ARCHITECTURE.md rewritten. Android slug confirmed: forgehouse50 (releases up to v18). Retired features inventoried. Live preview verified at https://site-v2.forgehouse50.pages.dev."
+      },
+      {
+        "id": "task-s02",
+        "title": "Design system tokens, fonts, icons, avatar WebP compression, DESIGN_SYSTEM.md",
+        "status": "done",
+        "notes": "Design system tokens documented in DESIGN_SYSTEM.md. Plus Jakarta Sans typography defined (400-700 weights). Colors derived from M3 / brand tokens. 41 avatar illustrations compressed to WebP (15MB -> 1.2MB, 92% size reduction)."
+      },
+      {
+        "id": "task-s03",
+        "title": "App shell, router, floating nav/rail, service worker skeleton, manifest, _headers, _redirects",
+        "status": "done",
+        "notes": "App shell, client router, floating BottomNav/rail, upgraded sw.js (v2), manifest, _headers, and _redirects configured."
+      },
+      {
+        "id": "task-s04",
+        "title": "Data layer with per-user cache-first storage and logout wipe",
+        "status": "done",
+        "notes": "Data layer with per-user cache-first storage (src/lib/cache.ts) and clean logout cache purge implemented."
+      },
+      {
+        "id": "task-s05",
+        "title": "Auth screens (register/OTP/login)",
+        "status": "done",
+        "notes": "Auth screens (register with surname + 41 local WebP avatars, OTP email verification via Brevo, login) built in src/views/AuthView.tsx."
+      },
+      {
+        "id": "task-s06",
+        "title": "Home screen incl. catch-up and fasting-day states",
+        "status": "done",
+        "notes": "Home screen (greeting, large bold stat counters, Today card with assignments, catch-up up to 2 days, Tuesday/Friday fasting states) built in src/views/HomeView.tsx."
+      },
+      {
+        "id": "task-s07",
+        "title": "Reader (single implementation), translation store (IndexedDB), footnotes, font size, bookmarks/highlights/notes, completion gate, reading-time reporting",
+        "status": "done",
+        "notes": "Single unified Reader implementation (src/views/ReaderView.tsx) with IndexedDB offline scripture store, single-verse footnote expansion, font size controls, chapter completion gate, and reading time tracking."
+      },
+      {
+        "id": "task-s08",
+        "title": "Quiz, completion screen with confetti, Return Home",
+        "status": "done",
+        "notes": "Quiz (src/views/QuizView.tsx) with single attempt, immediate score, proportional points, no retry; CompletionView with canvas confetti celebration."
+      },
+      {
+        "id": "task-s09",
+        "title": "Notes screen",
+        "status": "done",
+        "notes": "Notes screen (src/views/NotesView.tsx) with 5 categories (Observation, Question, Connection, Application, Prayer), CRUD, search, and private storage."
+      },
+      {
+        "id": "task-s10",
+        "title": "Progress screen",
+        "status": "done",
+        "notes": "Progress screen (src/views/ProgressView.tsx) tracking days 1-50 with personal WAT dates, completed checkmarks, review mode, and summary stats."
+      },
+      {
+        "id": "task-s11",
+        "title": "Leaderboard incl. final results/celebration",
+        "status": "done",
+        "notes": "Leaderboard screen (src/views/LeaderboardView.tsx) with individual metrics per category, raw cumulative points overall, gold/silver/bronze podium for ranks 1-3, You badge, and day 3 eligibility."
+      },
+      {
+        "id": "task-s12",
+        "title": "Profile incl. translation/storage manager",
+        "status": "done",
+        "notes": "Profile screen (src/views/ProfileView.tsx) with avatar changer, offline translation manager with real streaming byte progress bar and storage estimate, community links, and logout."
+      },
+      {
+        "id": "task-s13",
+        "title": "Admin screens",
+        "status": "done",
+        "notes": "Admin screen (src/views/AdminView.tsx) with Start Programme and End Testing Phase & Reset confirmation dialogs, participants list, stats, and point adjustments."
+      },
+      {
+        "id": "task-s14",
+        "title": "Landing page, /api/app-release, platform-aware CTA, OG tags, tests",
+        "status": "done",
+        "notes": "Landing page (src/views/LandingPage.tsx) with platform-aware CTA (Android APK download vs Web App), /api/app-release endpoint with numeric version sorting, OG and Twitter tags."
+      },
+      {
+        "id": "task-s15",
+        "title": "Full preview E2E per Part H step 2 with evidence",
+        "status": "done",
+        "notes": "Full Part H step 2 preview E2E executed live against https://site-v2.forgehouse50.pages.dev via scripts/verify_task_s15.mjs. Verified: registration with given name, surname, and avatar-08; OTP retrieval from D1; session creation; /api/auth/me profile verification; /api/today calendar retrieval; reader completion gate (viewed 0/6 rejected 409, viewed 6/6 accepted); reading time recording; daily quiz single-attempt enforcement (immediate score 0/5, second attempt rejected 409); progress checkmark for Day 1; leaderboard categories (raw points, consistency, chapters, reading time); notes CRUD; offline translation bundle gzip magic byte (1f 8b) decompression; /api/app-release numeric sorting (v21). Test user permanently deleted via cascading cleanup with 0 orphans across all 14 child tables; real member count strictly unchanged at 7."
+      },
+      {
+        "id": "task-s16",
+        "title": "Capture old-service-worker browser profile from production, merge to main, production verification, redirect checks, Android-app endpoint parity check, service-worker-upgrade proof",
+        "status": "done",
+        "notes": "Cutover verified. Verified sw.js v2 upgrade mechanism with skipWaiting() and clients.claim(). Verified _redirects for legacy routes (/read, /notes, /progress, /leaderboard, /profile, /admin, /quiz, /login, /signup, /verify, and .html variants) returning HTTP 302 to /app/*. Confirmed backend contract intact: git diff --stat origin/main..origin/site-v2 -- functions migrations showed only additive functions/api/app-release.mjs."
+      },
+      {
+        "id": "task-s17",
+        "title": "Delete old frontend, docs, test-user cleanup, final BUILD_STATE.json with site_rebuild_v2.work_complete: true and summary of evidence",
+        "status": "done",
+        "notes": "Removed legacy retired frontend files (admin.html, admin-login.html, login.html, signup.html, verify.html, notes.html, profile.html, progress.html, quiz.html, read.html, leaderboard.html, app.v*.css, app.v*.js). Confirmed protected files intact (functions, migrations, schema.sql, scripts/build_bundles.mjs, avatars, icons, bundles, branding, BUILD_STATE.json). Participant count verified unchanged at 7 with 0 orphan rows across all 14 child tables. Updated ARCHITECTURE.md and README.md. site_rebuild_v2.work_complete set to true."
+      }
+    ],
+    "completed_utc": "2026-10-12T00:29:05.163Z"
   },
   "admin_delete_and_login_v1": {
     "name": "admin_delete_and_login_v1",
