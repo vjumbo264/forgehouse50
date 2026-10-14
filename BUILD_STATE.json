@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-14T07:15:09.831783+00:00",
+  "last_updated_utc": "2026-10-14T07:24:21.986235+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1864,9 +1864,9 @@
       {
         "id": "w2",
         "title": "Item 2 \u2014 website: 2a foundations, 2b data layer and scripture, 2c landing + /api/app-release, 2d app parity, 2e navigation to spec, 2f PWA + service-worker migration, 2g verify and merge",
-        "status": "pending",
+        "status": "done",
         "gate": "w1",
-        "notes": ""
+        "notes": "DONE (w2): Website repaired, rebuilt and merged to main. Root causes diagnosed: (1) main branch was serving legacy unmerged frontend with broken read.html calling /api/read/passage with raw KJV instead of versewell prefix, (2) missing landing page at /, (3) old service worker caching legacy scripts. Rebuilt frontend merged from site-v2 to main: landing page at /, full SPA web app at /app/ with 100% app parity, IndexedDB scripture store with gzip 1f 8b magic bytes check, platform-aware download button via /api/app-release, dynamic floating pill bottom navigation to Item 6 spec matching operator screenshots, v2 service worker with skipWaiting and clients.claim, _redirects for legacy routes. Verified all 14 E2E steps via scripts/verify_task_s15.mjs with 0 orphans and real participants untouched."
       },
       {
         "id": "w3",
