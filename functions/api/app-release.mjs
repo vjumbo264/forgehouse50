@@ -1,13 +1,20 @@
 // GET /api/app-release — resolves the latest signed Android APK for ForgeHouse 50.
+// Spec: read releases of vjumbo264/forgebuild through the GitHub API,
+// select the numerically highest N from tags matching ^forgehouse50-v(\d+)$,
+// and return { version, tag, apkUrl, sizeBytes, publishedAt, versionCode, sha256, changelog }.
+
 import { json } from '../lib/http.mjs';
 
 const SLUG = 'forgehouse50';
 const FALLBACK_RELEASE = {
-  version: 18,
-  tag: 'forgehouse50-v18',
-  apkUrl: 'https://github.com/vjumbo264/forgebuild/releases/download/forgehouse50-v18/app-forgehouse50-v18.apk',
-  sizeBytes: 8774197,
-  publishedAt: '2026-10-08T15:39:02Z',
+  version: 21,
+  tag: 'forgehouse50-v21',
+  apkUrl: 'https://github.com/vjumbo264/forgebuild/releases/download/forgehouse50-v21/app-forgehouse50-v21.apk',
+  sizeBytes: 8826613,
+  publishedAt: '2026-10-11T23:55:10Z',
+  versionCode: 21,
+  sha256: '0a32d81174a0c1d1d99f9006c46becc53a507e7c618c18736cdecda286f1db49',
+  changelog: null,
 };
 
 export async function onRequestGet({ env }) {
@@ -39,8 +46,11 @@ export async function onRequestGet({ env }) {
       if (r.draft || r.prerelease) continue;
       const match = (r.tag_name || '').match(tagPattern);
       if (!match) continue;
+
       const versionNum = parseInt(match[1], 10);
       const apk = (r.assets || []).find((a) => a.name && a.name.endsWith('.apk'));
+      const releaseJsonAsset = (r.assets || []).find((a) => a.name === 'release.json');
+
       if (apk && apk.browser_download_url) {
         candidates.push({
           version: versionNum,
@@ -48,6 +58,10 @@ export async function onRequestGet({ env }) {
           apkUrl: apk.browser_download_url,
           sizeBytes: apk.size || 0,
           publishedAt: r.published_at || new Date().toISOString(),
+          releaseJsonUrl: releaseJsonAsset ? releaseJsonAsset.browser_download_url : null,
+          versionCode: null,
+          sha256: null,
+          changelog: null,
         });
       }
     }
@@ -58,9 +72,29 @@ export async function onRequestGet({ env }) {
       });
     }
 
-    // Sort descending by integer version (v18 > v10 > v9)
+    // Sort descending by integer version (v22 > v21 > v18)
     candidates.sort((a, b) => b.version - a.version);
     const latest = candidates[0];
+
+    // If release.json exists as an asset, fetch it to enrich metadata
+    if (latest.releaseJsonUrl) {
+      try {
+        const rjRes = await fetch(latest.releaseJsonUrl, { headers });
+        if (rjRes.ok) {
+          const rj = await rjRes.json();
+          if (rj) {
+            latest.versionCode = rj.versionCode ?? null;
+            latest.sha256 = rj.sha256 ?? null;
+            latest.changelog = Array.isArray(rj.changelog) ? rj.changelog : null;
+          }
+        }
+      } catch (_) {
+        // Tolerated — fallback to nulls
+      }
+    }
+
+    // Clean up internal url property before sending response
+    delete latest.releaseJsonUrl;
 
     return json(latest, 200, {
       'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
