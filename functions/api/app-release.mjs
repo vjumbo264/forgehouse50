@@ -7,14 +7,18 @@ import { json } from '../lib/http.mjs';
 
 const SLUG = 'forgehouse50';
 const FALLBACK_RELEASE = {
-  version: 21,
-  tag: 'forgehouse50-v21',
-  apkUrl: 'https://github.com/vjumbo264/forgebuild/releases/download/forgehouse50-v21/app-forgehouse50-v21.apk',
-  sizeBytes: 8826613,
-  publishedAt: '2026-10-11T23:55:10Z',
-  versionCode: 21,
-  sha256: '0a32d81174a0c1d1d99f9006c46becc53a507e7c618c18736cdecda286f1db49',
-  changelog: null,
+  version: 22,
+  tag: 'forgehouse50-v22',
+  apkUrl: 'https://github.com/vjumbo264/forgebuild/releases/download/forgehouse50-v22/app-forgehouse50-v22.apk',
+  sizeBytes: 8860924,
+  publishedAt: '2026-10-14T09:48:24Z',
+  versionCode: 22,
+  sha256: '7c762aefa4cc8117b71b9743d10866b6fb4f0910e66058692b62dbdd5a57c599',
+  changelog: [
+    'Password reset with 6-digit email verification code',
+    'In-app update checks and new version notifications',
+    'What's new changelog viewer in Profile',
+  ],
 };
 
 export async function onRequestGet({ env }) {
