@@ -62,6 +62,32 @@ export function otpEmailHtml(code, name = '') {
 </body></html>`;
 }
 
+export function resetPasswordEmailHtml(code, name = "") {
+  const greeting = name ? `Hi ${escapeHtml(name)},` : "Hello,";
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#0f1216;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;padding:32px 24px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <span style="font-size:22px;font-weight:700;color:#f5f1e8;letter-spacing:0.5px;">ForgeHouse <span style="color:#c9a227;">50</span></span>
+      <div style="color:#8b93a1;font-size:12px;margin-top:4px;">Read the New Testament in 50 Reading Days</div>
+    </div>
+    <div style="background:#171c23;border:1px solid #262d38;border-radius:14px;padding:28px 24px;">
+      <p style="color:#e8e4da;font-size:15px;margin:0 0 8px;">${greeting}</p>
+      <p style="color:#b6bdc9;font-size:14px;line-height:1.55;margin:0 0 20px;">
+        Use the 6-digit code below to reset your ForgeHouse 50 password. It expires in <strong style="color:#e8e4da;">10 minutes</strong>.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <span style="display:inline-block;font-size:34px;font-weight:700;letter-spacing:10px;color:#c9a227;background:#0f1216;border:1px solid #2c3542;border-radius:12px;padding:14px 24px 14px 34px;">${code}</span>
+      </div>
+      <p style="color:#8b93a1;font-size:12px;line-height:1.5;margin:20px 0 0;">
+        If you didn't request a password reset, you can safely ignore this email. Your password will not change until you enter this code and choose a new one.
+      </p>
+    </div>
+    <p style="color:#5c6470;font-size:11px;text-align:center;margin:20px 0 0;">
+      Sent from ForgeHouse 50. &copy; ForgeHouse Global.
+    </p>
+  </div></body></html>`;
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }

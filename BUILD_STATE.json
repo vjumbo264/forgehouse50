@@ -1873,7 +1873,7 @@
         "title": "Item 3 \u2014 forgot password: backend, then app, then website, each pushed before the next",
         "status": "pending",
         "gate": "w2",
-        "notes": ""
+        "notes": "Backend complete: added /api/auth/forgot_password, /api/auth/reset_password (with kebab-case aliases), resetPasswordEmailHtml helper, full validation, security guard against account enumeration, and unit tests in scripts/test_forgot_password.mjs."
       },
       {
         "id": "w4",
