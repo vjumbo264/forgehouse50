@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-14T09:42:10.826636+00:00",
+  "last_updated_utc": "2026-10-14T09:53:19.359435+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1885,9 +1885,9 @@
       {
         "id": "w5",
         "title": "Item 5 \u2014 minimum UI size on small and low-density screens",
-        "status": "pending",
+        "status": "done",
         "gate": "w4",
-        "notes": ""
+        "notes": "DONE (w5): Minimum UI size and scaling on small and low-density screens implemented. Defined 360dp reference layout width in ResponsiveScaling. Wrapped ForgeHouseTheme with ResponsiveScreenProvider so that when screenWidthDp < 360, density scales down by screenWidthDp / 360 (providing 360dp equivalent layout width) and font scale is capped at min(systemFontScale, 1.15). Screens 360dp and wider remain unscaled, preventing any unwanted magnification. JVM unit tests in ResponsiveScalingLogicTest verify 320dp, 340dp, 360dp, 411dp, 600dp and fontScale 1.0, 1.3, 2.0 behaviour."
       },
       {
         "id": "w6",
