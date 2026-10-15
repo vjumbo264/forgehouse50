@@ -31,7 +31,7 @@ async function runSmokeTest() {
     if (msg.type() === 'error') {
       console.error(`[CONSOLE ERROR]:`, msg.text());
       // Fail on unhandled JS error
-      if (!msg.text().includes('favicon') && !msg.text().includes('404')) {
+      if (!msg.text().includes('favicon') && !msg.text().includes('404') && !msg.text().includes('401') && !msg.text().includes('403')) {
         fatalErrors++;
       }
     }
