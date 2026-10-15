@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-15T04:58:11.427686+00:00",
+  "last_updated_utc": "2026-10-15T05:02:52.257693+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1951,6 +1951,13 @@
         "title": "Item 6 \u2014 Android nav slide animation and swipe between tabs, final release; verify every item once more against production; set fixes_oct15_v1.work_complete to true in each repo and push",
         "status": "pending",
         "gate": "f5",
+        "notes": ""
+      },
+      {
+        "id": "f7",
+        "title": "Item 7 \u2014 Profile pictures: 7a backend, 7b Android app (release), 7c website, 7d admin moderation",
+        "status": "pending",
+        "gate": "f6",
         "notes": ""
       }
     ]
