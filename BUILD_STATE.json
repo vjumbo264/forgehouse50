@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-15T05:09:53.324816+00:00",
+  "last_updated_utc": "2026-10-15T06:21:53.397055+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1942,9 +1942,9 @@
       {
         "id": "f5",
         "title": "Item 5 \u2014 admin Observation/Question notes view, honest wording and one-time notice, release",
-        "status": "in_progress",
+        "status": "done",
         "gate": "f4",
-        "notes": "In progress (f5): Implementing admin Observation and Question notes view, user-facing honest visibility copy and one-time notice, and admin Notes tab."
+        "notes": "DONE (f5): Admin Observation & Question notes view and privacy safeguards implemented across backend, Android app, and website. Backend: (1) Added /api/admin/notes GET route requiring admin authentication, querying only Observation and Question notes, with strict server-side filtering excluding Prayer, Insight (Scripture Connection), and Application notes under all parameters; (2) Supported type, userId, day, and q search filters with pagination and counts; (3) Added unit test suite in scripts/test_item5_admin_notes.mjs proving privacy exclusion and filter functionality; (4) Updated ARCHITECTURE.md and README.md with clear disclosure of leader note visibility. Website: (1) Note creation helper text updated to \"Note (your leaders can read this)\" for observations/questions and \"Note (private to you)\" for others; (2) Note cards display \"Visible to leaders\" badge; (3) One-time notice modal added on first open; (4) Admin view equipped with Notes tab, filters (type, person, day, search), and card layout; (5) sw.js bumped to fh50-v2-07."
       },
       {
         "id": "f6",

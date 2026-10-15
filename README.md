@@ -51,7 +51,7 @@ WRITE NOTE → SEE PROGRESS → SEE LEADERBOARD.
 7. **Progress** (`/progress`) shows days 1–50 with dates, assignments,
    completion, reading time and notes count, plus totals and streaks.
 8. **Leaderboard** (`/leaderboard`): Overall, Consistency, Chapters, Reading
-   Time, Observations, Questions — aggregate counts only, never note content.
+   Time, Observations, Questions — admins can view participants' Observation and Question notes for leader support, while Insight, Prayer, and Application notes remain strictly private to the user, enforced on the server.
 
 ## Phone-only administration (Termux + browser dashboards)
 

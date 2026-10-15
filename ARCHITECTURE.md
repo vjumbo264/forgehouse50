@@ -65,7 +65,8 @@ The backend in `functions/` remains untouched except for additive read-only endp
 - `POST /api/read/time` — `{ day_number, seconds }` (reading time reporting)
 - `GET /api/quiz/<day>` — quiz questions and prior attempt status
 - `POST /api/quiz/submit` — `{ day_number, answers }` (single attempt)
-- `GET /api/notes`, `POST /api/notes`, `PUT /api/notes/<id>`, `DELETE /api/notes/<id>` — private notes
+- `GET /api/notes`, `POST /api/notes`, `PUT /api/notes/<id>`, `DELETE /api/notes/<id>` — user notes (Observation and Question notes visible to leaders; Insight, Prayer, and Application strictly private to the user)
+- `GET /api/admin/notes?type=observation|question|all-visible&userId=&day=&q=&page=` — admin oversight for Observation and Question notes only (Insight, Prayer, Application strictly barred on the server)
 - `GET /api/progress` — 50-day completion and streak stats
 - `GET /api/leaderboard?category=<cat>` — rankings (day 3+ eligibility)
 - `GET /api/final_results`, `POST /api/final_results` — post-programme celebration
