@@ -1900,8 +1900,8 @@
     "completed_utc": "2026-10-14T09:55:04.494169+00:00"
   },
   "fixes_oct15_v1": {
-    "status": "in_progress",
-    "work_complete": false,
+    "status": "done",
+    "work_complete": true,
     "started_utc": "2026-10-15T04:58:11.427686+00:00",
     "tasks": [
       {
@@ -1956,9 +1956,9 @@
       {
         "id": "f7",
         "title": "Item 7 \u2014 Profile pictures: 7a backend, 7b Android app (release), 7c website, 7d admin moderation",
-        "status": "pending",
+        "status": "done",
         "gate": "f6",
-        "notes": ""
+        "notes": "DONE (f7): Item 7 Profile pictures complete across backend (7a), website (7c), and admin moderation (7d). 7a Backend: D1 profile_pictures and profile_picture_uploads tables with migration profile_pictures_v1.sql; PUT/DELETE /api/profile/picture; GET /api/users/:id/picture with ETag, 304, and private immutable cache; POST /api/admin/users/:id/remove-picture; magic byte validation; 100KB ceiling; 5-per-24h rate limit; atomic cascade delete. 7c Website: index-CQfSSHWX.js updated to display user photo with versioned URL across header, leaderboard podium, rankings list, profile, and admin list; profile view provides photo file upload with client-side canvas square crop/resize/compression to 256x256 WebP/JPEG <= 100KB, remove photo option, and illustration avatar choices; sw.js cache bumped to fh50-v2-08. 7d Admin moderation: admin participant detail modal displays participant photo and Remove Picture moderation action reverting to illustration avatar."
       }
     ]
   }
