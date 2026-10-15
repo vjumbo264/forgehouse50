@@ -13,6 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify build assets exist
+        run: node scripts/verify_assets.mjs
+
       - name: Deploy Pages project (static + Functions)
         uses: cloudflare/wrangler-action@v3
         with:
@@ -20,11 +28,18 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy public --project-name=forgehouse50
 
-      # Schema is idempotent (CREATE TABLE IF NOT EXISTS / INSERT OR IGNORE),
-      # so applying it on every deploy is safe and keeps D1 in sync.
+      # Schema is idempotent (CREATE TABLE IF NOT EXISTS / INSERT OR IGNORE)
       - name: Apply D1 schema (idempotent)
         run: |
           npx wrangler@latest d1 execute forgehouse50-db --remote --file=schema.sql --yes
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Install Playwright
+        run: npx playwright install chromium --with-deps
+
+      - name: Post-deploy smoke test
+        run: node scripts/smoke_test.mjs
+        env:
+          TEST_URL: https://forgehouse50.pages.dev

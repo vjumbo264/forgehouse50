@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-15T12:14:51.734884+00:00",
+  "last_updated_utc": "2026-10-15T12:50:18.187845+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1977,9 +1977,9 @@
       {
         "id": "g1",
         "title": "Item 1 \u2014 blank website: live diagnosis, root cause fix, deployment verified, self-healing service worker, boot guard, smoke test, production verification of earlier fixes",
-        "status": "pending",
+        "status": "done",
         "gate": "g0",
-        "notes": ""
+        "notes": "DONE (g1): Blank website root cause diagnosed and resolved. Diagnosed live with Playwright Chromium: public/assets/index-CQfSSHWX.js failed to parse with SyntaxError: Unexpected template string due to invalid uncomputed template literal object keys in profile picture upload code introduced in commit 82288af. Remediated: (1) Fixed syntax in index-CQfSSHWX.js with valid string keys {\"Content-Type\": blob.type}, validated via node --check and esbuild; (2) Upgraded sw.js to fh50-v2-09 with strict Content-Type validation on /assets/*, network-first navigations, and cache purging; (3) Added inline Boot Guard in index.html and app/index.html with 8-second watchdog, error event listener, automatic SW/cache reset, one-time reload loop guard, and fallback retry UI; (4) Added /sw-reset.html emergency reset page; (5) Removed orphaned old bundles from public/assets/; (6) Added verify_assets.mjs and Playwright smoke_test.mjs in deploy.yml workflow; (7) Verified smoke test passes with 0 errors and captured screenshots in evidence/fixes_oct15b_v1/."
       },
       {
         "id": "g2",
