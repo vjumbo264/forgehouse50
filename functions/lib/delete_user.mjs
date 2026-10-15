@@ -18,6 +18,8 @@ export const USER_CHILD_TABLES = [
   'leaderboard_snapshots',
   'final_rank_acks',
   'final_rankings',
+  'profile_pictures',
+  'profile_picture_uploads',
 ];
 
 /**

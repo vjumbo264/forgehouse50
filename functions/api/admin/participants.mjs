@@ -9,13 +9,13 @@ export async function onRequestGet({ request, env }) {
   if (!requireAdmin(user)) return forbidden('Admin access required');
 
   const { results } = await env.DB.prepare(
-    `SELECT pr.id, pr.name, pr.surname AS surname, pr.email, pr.role, pr.avatar_id, pr.created_at,
+    `SELECT pr.id, pr.name, pr.surname AS surname, pr.email, pr.role, pr.avatar_id, pr.created_at, pic.version AS picture_version,
             COALESCE((SELECT COUNT(*) FROM reading_progress rp WHERE rp.user_id = pr.id AND rp.completed = 1),0) AS days_completed,
             COALESCE((SELECT SUM(rp.chapters_read) FROM reading_progress rp WHERE rp.user_id = pr.id AND rp.completed = 1),0) AS chapters,
             COALESCE((SELECT SUM(rp.reading_seconds) FROM reading_progress rp WHERE rp.user_id = pr.id),0) AS reading_seconds,
             COALESCE((SELECT SUM(p.points) FROM points p WHERE p.user_id = pr.id),0) AS points,
             COALESCE((SELECT COUNT(*) FROM notes n WHERE n.user_id = pr.id),0) AS notes_count
-     FROM profiles pr WHERE pr.email_verified = 1
+     FROM profiles pr LEFT JOIN profile_pictures pic ON pic.user_id = pr.id WHERE pr.email_verified = 1
      ORDER BY points DESC LIMIT 500`
   ).all();
 
@@ -33,6 +33,7 @@ export async function onRequestGet({ request, env }) {
       total_reading_seconds: sec,
       reading_time_formatted: readingTimeFormatted,
       status: p.role || 'member',
+      picture_version: p.picture_version ?? null,
     };
   });
 
