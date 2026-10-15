@@ -216,3 +216,11 @@ unavailable state rather than placeholder text.
 - Once the programme has started (`programme_config.start_at` exists), **End Testing Phase & Reset** (`POST /api/admin/end_testing`) is permanently blocked server-side, returning **HTTP 409 Conflict** with `"The programme has started; reset is disabled"`.
 - The admin dashboard button is disabled with that reason.
 - **Start Programme** (`POST /api/admin/programme`) is fully idempotent: subsequent taps return `{ ok: true, already_started: true }` and preserve the existing stored timestamp.
+
+---
+
+## 13. Data Integrity & No Mock Data Policy (fixes_oct15_v1)
+
+- **Single Source of Truth**: Both the native Android application (`apps/forgehouse50` in `vjumbo264/forgebuild`) and the website (`https://forgehouse50.pages.dev`) connect to the exact same Cloudflare D1 database: `forgehouse50-db` (UUID `351aca36-14e4-4c6f-8e13-127caae5b72f`).
+- **Zero Mock / Synthetic Data in Production**: All fallback mock arrays (such as synthetic participant lists in client bundles) are prohibited and eradicated. If an endpoint fails or returns no records, the UI must display an honest empty state or honest error message, never fabricated data.
+- **Contract Parity**: `/api/leaderboard` returns both `entries` (Android contract) and `rankings` (web alias) pointing to the same list of real participant records from D1.

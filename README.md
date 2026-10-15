@@ -187,3 +187,9 @@ Soli Deo Gloria.
 - Once the programme has started (`programme_config.start_at` exists), **End Testing Phase & Reset** (`POST /api/admin/end_testing`) is permanently blocked server-side, returning **HTTP 409 Conflict** with `"The programme has started; reset is disabled"`.
 - The admin dashboard button is disabled with that reason.
 - **Start Programme** (`POST /api/admin/programme`) is fully idempotent: subsequent taps return `{ ok: true, already_started: true }` and preserve the existing stored timestamp.
+
+## Data Integrity & Production Database
+
+- **D1 Database**: `forgehouse50-db` (UUID `351aca36-14e4-4c6f-8e13-127caae5b72f`).
+- **Data Policy**: Zero mock, synthetic, or demo user data in live code paths. On empty query results or offline failure, clients display honest empty or error states.
+- **API Parity**: Android and web clients consume the exact same endpoints (`/api/leaderboard`, `/api/today`, `/api/progress`, `/api/admin/*`) backed by the live D1 database.

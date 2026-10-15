@@ -91,9 +91,13 @@ export async function onRequestGet({ request, env }) {
     rank: i + 1,
     user_id: r.user_id,
     display_name: `${r.display_name || 'Member'}${r.surname ? ' ' + r.surname.trim()[0].toUpperCase() + '.' : ''}`, // Issue 1: tight rows show 'Given S.'
+    name: r.display_name || 'Member',
+    surname: r.surname || '',
     avatar_url: r.avatar_url,
     avatar_id: r.avatar_id ?? null,
     value: r.value,
+    metric_value: r.value,
+    metric_label: category === 'consistency' ? 'days' : category === 'chapters' ? 'chapters' : category === 'reading_time' ? 'min' : 'pts',
     ...(category === 'consistency' ? { streak_current: r.streak_current, streak_longest: r.streak_longest } : {}),
     ...(category === 'overall' ? { elapsed_days: r.elapsed_days, total_points: r.total_points } : {}),
   }));
@@ -101,6 +105,7 @@ export async function onRequestGet({ request, env }) {
   return json({
     category,
     entries: out,
+    rankings: out, // Compatibility alias for frontend
     eligible_count: eligible.length,
     gate: { min_elapsed_days: LEADERBOARD_MIN_ELAPSED_DAYS },
     scoring: category === 'overall' ? { formula: 'raw cumulative total points (sum of all point sources)', k: null } : undefined,
