@@ -10,7 +10,7 @@
  * - Deletes all legacy caches on activation.
  */
 
-const VERSION = "fh50-v2-04";
+const VERSION = "fh50-v2-05";
 const SHELL_CACHE = `shell-${VERSION}`;
 const AVATAR_CACHE = "fh50-avatars";
 
