@@ -309,5 +309,11 @@ CREATE TABLE IF NOT EXISTS admin_audit (
   action              TEXT NOT NULL,
   target_user_id      TEXT,
   target_display_name TEXT,
+  day_number          INTEGER,
+  points_reversed     INTEGER DEFAULT 0,
+  previous_reading_seconds INTEGER DEFAULT 0,
+  previous_quiz_score TEXT,
+  request_id          TEXT,
   created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
+CREATE INDEX IF NOT EXISTS idx_admin_audit_request_id ON admin_audit (request_id);

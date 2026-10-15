@@ -22,10 +22,16 @@ export async function onRequestGet({ request, env }) {
   const participants = (results || []).map(p => {
     const fullName = [p.name, p.surname].filter(Boolean).join(' ').trim() || p.name || 'Member';
     const shortTag = (p.id || '').slice(-4);
+    const sec = p.reading_seconds || 0;
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const readingTimeFormatted = `${hrs} h ${mins} m read`;
     return {
       ...p,
       full_name: fullName,
       short_tag: shortTag,
+      total_reading_seconds: sec,
+      reading_time_formatted: readingTimeFormatted,
       status: p.role || 'member',
     };
   });
