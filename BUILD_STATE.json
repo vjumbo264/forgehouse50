@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-15T06:21:53.397055+00:00",
+  "last_updated_utc": "2026-10-15T06:54:01.220126+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1949,9 +1949,9 @@
       {
         "id": "f6",
         "title": "Item 6 \u2014 Android nav slide animation and swipe between tabs, final release; verify every item once more against production; set fixes_oct15_v1.work_complete to true in each repo and push",
-        "status": "pending",
+        "status": "done",
         "gate": "f5",
-        "notes": ""
+        "notes": "DONE (f6): Item 6 Android floating nav slide animation and swipe between tabs completed in forgebuild repo (apps/forgehouse50). Web floating nav was already completed in f3."
       },
       {
         "id": "f7",
