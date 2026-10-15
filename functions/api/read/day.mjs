@@ -1,6 +1,5 @@
-// GET /api/read/day?n= — a reading day's assignments + this user's state.
-// per_user_calendar_and_quiz_v1: `date` is this user's OWN date for day n
-// (from user_reading_days), not the shared reading_days row.
+// GET /api/read/day?n=&day= — a reading day's assignments + this user's state.
+// Accepts both 'n' and 'day' query parameters for client compatibility.
 import { json, badRequest } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
 import { estimateMinutes, ensureUserCalendar, userDayMap, TOTAL_DAYS } from '../../lib/calendar.mjs';
@@ -9,7 +8,8 @@ export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
-  const n = parseInt(new URL(request.url).searchParams.get('n') || '0', 10);
+  const url = new URL(request.url);
+  const n = parseInt(url.searchParams.get('n') || url.searchParams.get('day') || '0', 10);
   if (!n || n < 1 || n > TOTAL_DAYS) return badRequest('A reading day between 1 and 50 is required');
 
   const { rows } = await ensureUserCalendar(env.DB, user.id);
@@ -28,7 +28,7 @@ export async function onRequestGet({ request, env }) {
 
   return json({
     day_number: n,
-    date,                                    // THIS user's date for day n
+    date,
     assignments: assignments || [],
     chapter_count: chapters,
     est_minutes: estimateMinutes(chapters),
