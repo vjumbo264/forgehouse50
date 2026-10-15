@@ -1,8 +1,8 @@
 {
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
-  "build_complete": true,
-  "last_updated_utc": "2026-10-14T09:55:04.494188+00:00",
+  "build_complete": false,
+  "last_updated_utc": "2026-10-15T04:58:11.427686+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1898,5 +1898,61 @@
       }
     ],
     "completed_utc": "2026-10-14T09:55:04.494169+00:00"
+  },
+  "fixes_oct15_v1": {
+    "status": "in_progress",
+    "work_complete": false,
+    "started_utc": "2026-10-15T04:58:11.427686+00:00",
+    "tasks": [
+      {
+        "id": "f0",
+        "title": "Clone both repos, read BUILD_STATE.json (including ops_batch_oct14_v1), seed fixes_oct15_v1 in each repo with gate, commit and push",
+        "status": "done",
+        "gate": null,
+        "notes": "Cloned forgebuild and forgehouse50. Inspected BUILD_STATE.json in both repos; verified ops_batch_oct14_v1 is complete. Appended prompt instruction to PROMPT_HISTORY/forgehouse50.md. Seeded fixes_oct15_v1 with gates f0-f6."
+      },
+      {
+        "id": "f1",
+        "title": "Item 1 \u2014 website data audit, root cause, fix, equality proof against the app's data",
+        "status": "pending",
+        "gate": "f0",
+        "notes": ""
+      },
+      {
+        "id": "f2",
+        "title": "Item 2 \u2014 reading completion, offline timer, 5-minute minimum: 2a backend, 2b Android (then release), 2c website",
+        "status": "pending",
+        "gate": "f1",
+        "notes": ""
+      },
+      {
+        "id": "f3",
+        "title": "Item 3 \u2014 website nav contrast fix plus automated contrast checks in both themes",
+        "status": "pending",
+        "gate": "f2",
+        "notes": ""
+      },
+      {
+        "id": "f4",
+        "title": "Item 4 \u2014 admin reading-time view and reset latest day (paired), backend then Android then website",
+        "status": "pending",
+        "gate": "f3",
+        "notes": ""
+      },
+      {
+        "id": "f5",
+        "title": "Item 5 \u2014 admin Observation/Question notes view, honest wording and one-time notice, release",
+        "status": "pending",
+        "gate": "f4",
+        "notes": ""
+      },
+      {
+        "id": "f6",
+        "title": "Item 6 \u2014 Android nav slide animation and swipe between tabs, final release; verify every item once more against production; set fixes_oct15_v1.work_complete to true in each repo and push",
+        "status": "pending",
+        "gate": "f5",
+        "notes": ""
+      }
+    ]
   }
 }
