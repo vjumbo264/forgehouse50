@@ -118,12 +118,14 @@ export const versewellProvider = {
         for (const i of intros) allIntros.push({ chapter: ch, start_verse: i.start_verse, end_verse: i.end_verse, text: i.text });
       }
       for (const v of data.verses) {
-        chapters.push({
+        const item = {
           chapter: ch,
           verse: v.verse,
           text: v.text,
           footnotes: Array.isArray(v.footnotes) ? v.footnotes : [],
-        });
+        };
+        if (v.heading_before) item.heading_before = v.heading_before;
+        chapters.push(item);
       }
     }
 

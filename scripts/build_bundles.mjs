@@ -6,7 +6,7 @@
 // proven importer; one HTTP fetch per translation replaces 260 chapter calls.
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
-const VW = 'https://versewell.pages.dev/static-data';
+const VW = process.env.VW_LOCAL || 'https://versewell.pages.dev/static-data';
 const NT = [['Matthew',28],['Mark',16],['Luke',24],['John',21],['Acts',28],['Romans',16],['1 Corinthians',16],['2 Corinthians',13],['Galatians',6],['Ephesians',6],['Philippians',4],['Colossians',4],['1 Thessalonians',5],['2 Thessalonians',3],['1 Timothy',6],['2 Timothy',4],['Titus',3],['Philemon',1],['Hebrews',13],['James',5],['1 Peter',5],['2 Peter',3],['1 John',5],['2 John',1],['3 John',1],['Jude',1],['Revelation',22]];
 async function j(u){ const r = await fetch(u); const ct=(r.headers.get('content-type')||'').toLowerCase(); if(!r.ok||!ct.includes('application/json')) return null; return r.json(); }
 const top = await j(`${VW}/index.json`);
@@ -25,7 +25,11 @@ for (const v of top.versions) {
       const d = await j(`${VW}/${code}/${entry.slug}/${ch}.json`);
       if (!d?.verses?.length) { console.log('missing chapter', code, book, ch); ok = false; break; }
       books[book][String(ch)] = {
-        v: d.verses.map(x => ({ n: x.verse, t: x.text, f: Array.isArray(x.footnotes) ? x.footnotes : [] })),
+        v: d.verses.map(x => {
+          const vObj = { n: x.verse, t: x.text, f: Array.isArray(x.footnotes) ? x.footnotes : [] };
+          if (x.heading_before) vObj.h = x.heading_before;
+          return vObj;
+        }),
         i: (Array.isArray(d.intros) ? d.intros : []).map(x => ({ s: x.start_verse||0, e: x.end_verse||0, t: x.text||'' })),
       };
     }

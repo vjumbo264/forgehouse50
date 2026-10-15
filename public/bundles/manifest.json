@@ -1,12 +1,12 @@
 {
-  "generated": "2026-09-16T16:47:24.350Z",
+  "generated": "2026-10-15T16:58:42.402Z",
   "bundles": [
     {
       "id": "versewell-amp",
       "code": "AMP",
       "name": "Amplified Bible",
       "url": "/bundles/amp.json.gz",
-      "bytes": 537411,
+      "bytes": 545707,
       "chapters": 260
     },
     {
@@ -22,7 +22,7 @@
       "code": "GW",
       "name": "GOD’S WORD Translation",
       "url": "/bundles/gw.json.gz",
-      "bytes": 345380,
+      "bytes": 352515,
       "chapters": 260
     },
     {
@@ -38,7 +38,7 @@
       "code": "MSG",
       "name": "The Message",
       "url": "/bundles/msg.json.gz",
-      "bytes": 392602,
+      "bytes": 392589,
       "chapters": 260
     },
     {
@@ -46,7 +46,7 @@
       "code": "NIV",
       "name": "New International Version",
       "url": "/bundles/niv.json.gz",
-      "bytes": 354023,
+      "bytes": 360665,
       "chapters": 260
     },
     {
@@ -54,7 +54,7 @@
       "code": "NKJV",
       "name": "New King James Version",
       "url": "/bundles/nkjv.json.gz",
-      "bytes": 349598,
+      "bytes": 365024,
       "chapters": 260
     },
     {
@@ -62,7 +62,7 @@
       "code": "NLT",
       "name": "New Living Translation",
       "url": "/bundles/nlt.json.gz",
-      "bytes": 388479,
+      "bytes": 398007,
       "chapters": 260
     },
     {
@@ -70,7 +70,7 @@
       "code": "NLV",
       "name": "New Life Version",
       "url": "/bundles/nlv.json.gz",
-      "bytes": 326011,
+      "bytes": 339160,
       "chapters": 260
     },
     {
@@ -86,7 +86,7 @@
       "code": "TPT",
       "name": "The Passion Translation",
       "url": "/bundles/tpt.json.gz",
-      "bytes": 781552,
+      "bytes": 793492,
       "chapters": 260
     },
     {
@@ -94,7 +94,7 @@
       "code": "VOICE",
       "name": "The Voice",
       "url": "/bundles/voice.json.gz",
-      "bytes": 522355,
+      "bytes": 522401,
       "chapters": 260
     }
   ]
