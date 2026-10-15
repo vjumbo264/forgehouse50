@@ -105,8 +105,9 @@ export async function getUser(request, env) {
 
   // 2. Check participant sessions
   const row = await env.DB.prepare(`
-    SELECT s.id AS session_id, s.expires_at, p.id, p.email, p.name, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at
+    SELECT s.id AS session_id, s.expires_at, p.id, p.email, p.name, p.surname, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at, pic.version AS picture_version
     FROM sessions s JOIN profiles p ON p.id = s.user_id
+    LEFT JOIN profile_pictures pic ON pic.user_id = p.id
     WHERE s.id = ?`).bind(token).first();
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {

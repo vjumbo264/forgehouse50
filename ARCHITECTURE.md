@@ -225,3 +225,11 @@ unavailable state rather than placeholder text.
 - **Single Source of Truth**: Both the native Android application (`apps/forgehouse50` in `vjumbo264/forgebuild`) and the website (`https://forgehouse50.pages.dev`) connect to the exact same Cloudflare D1 database: `forgehouse50-db` (UUID `351aca36-14e4-4c6f-8e13-127caae5b72f`).
 - **Zero Mock / Synthetic Data in Production**: All fallback mock arrays (such as synthetic participant lists in client bundles) are prohibited and eradicated. If an endpoint fails or returns no records, the UI must display an honest empty state or honest error message, never fabricated data.
 - **Contract Parity**: `/api/leaderboard` returns both `entries` (Android contract) and `rankings` (web alias) pointing to the same list of real participant records from D1.
+
+---
+
+## 14. Profile Pictures & Request Budget (fixes_oct15_v1 Item 7)
+- **Storage**: User profile photos are stored directly in Cloudflare D1 table `profile_pictures` (`user_id`, `content_type`, `bytes` BLOB, `version`, `updated_at`). Clients resize and compress to 256x256 WebP/JPEG under 100 KB before upload.
+- **Caching & Request Budget**: Cloudflare free tier allows 100,000 Worker requests/day. Photos are fetched through versioned URLs (`/api/users/:id/picture?v=<version>`) with `Cache-Control: private, max-age=86400, immutable` and `ETag` validation (HTTP 304). Browsers and native Coil caches store images locally, so leaderboards and participant lists do not re-download images on repeat visits. An active user base of 100 members consumes an estimated 300-600 photo requests daily (<0.6% of the 100,000 daily free tier budget).
+- **Validation & Rate Limiting**: Server enforces magic byte validation (JPEG `FF D8 FF`, WebP `RIFF....WEBP`), rejects empty or oversized (>100KB) payloads, and rate limits uploads to 5 per user per 24 hours (HTTP 429 with `Retry-After`).
+- **Moderation & Cascade**: User deletions atomically cascade to `profile_pictures` and `profile_picture_uploads`. Admins can moderate photos via `POST /api/admin/users/:id/remove-picture`, reverting the participant to their illustration avatar with an `admin_audit` entry.

@@ -317,3 +317,22 @@ CREATE TABLE IF NOT EXISTS admin_audit (
   created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_admin_audit_request_id ON admin_audit (request_id);
+
+-- Item 7a Profile pictures and upload tracking
+CREATE TABLE IF NOT EXISTS profile_pictures (
+  user_id      TEXT PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  content_type TEXT NOT NULL,
+  bytes        BLOB NOT NULL,
+  version      INTEGER NOT NULL DEFAULT 1,
+  updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_pictures_user_id ON profile_pictures(user_id);
+
+CREATE TABLE IF NOT EXISTS profile_picture_uploads (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  uploaded_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_picture_uploads_user_date ON profile_picture_uploads(user_id, uploaded_at);

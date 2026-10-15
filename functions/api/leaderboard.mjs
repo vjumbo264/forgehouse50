@@ -36,6 +36,7 @@ const AGG_SQL = `
     pr.avatar_url,
     pr.avatar_id,
     pr.created_at,
+    pic.version AS picture_version,
     COALESCE((SELECT SUM(points) FROM points p WHERE p.user_id = pr.id), 0) AS total_points,
     COALESCE((SELECT MAX(urd.day_number) FROM user_reading_days urd WHERE urd.user_id = pr.id AND urd.date <= ?), 0) AS elapsed_days,
     COALESCE((SELECT COUNT(*) FROM reading_progress rp WHERE rp.user_id = pr.id AND rp.completed = 1), 0) AS days_completed,
@@ -44,6 +45,7 @@ const AGG_SQL = `
     COALESCE((SELECT COUNT(*) FROM notes n WHERE n.user_id = pr.id AND n.note_type = 'observation'), 0) AS observations,
     COALESCE((SELECT COUNT(*) FROM notes n2 WHERE n2.user_id = pr.id AND n2.note_type = 'question'), 0) AS questions
   FROM profiles pr
+  LEFT JOIN profile_pictures pic ON pic.user_id = pr.id
   WHERE pr.email_verified = 1 AND pr.role != 'admin'`;
 
 export async function onRequestGet({ request, env }) {
@@ -95,6 +97,7 @@ export async function onRequestGet({ request, env }) {
     surname: r.surname || '',
     avatar_url: r.avatar_url,
     avatar_id: r.avatar_id ?? null,
+    picture_version: r.picture_version ?? null,
     value: r.value,
     metric_value: r.value,
     metric_label: category === 'consistency' ? 'days' : category === 'chapters' ? 'chapters' : category === 'reading_time' ? 'min' : 'pts',

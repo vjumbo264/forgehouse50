@@ -23,6 +23,8 @@ const CHILD_TABLES = [
   'otp_codes',
   'leaderboard_snapshots',
   'final_rank_acks',
+  'profile_pictures',
+  'profile_picture_uploads',
 ];
 
 export async function onRequestPost({ request, env }) {

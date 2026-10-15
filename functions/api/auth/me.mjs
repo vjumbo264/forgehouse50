@@ -36,6 +36,7 @@ export async function onRequestGet({ request, env }) {
   return json({
     id: user.id, email: user.email, name: user.name, surname: user.surname || '', avatar_url: user.avatar_url,
     avatar_id: user.avatar_id ?? null,
+    picture_version: user.picture_version ?? null,
     role: user.role, email_verified: !!user.email_verified, created_at: user.created_at,
     stats, badges,
     programme: {
