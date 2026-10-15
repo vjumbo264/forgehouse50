@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-15T06:54:01.220126+00:00",
+  "last_updated_utc": "2026-10-15T12:14:51.734884+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1959,6 +1959,90 @@
         "status": "done",
         "gate": "f6",
         "notes": "DONE (f7): Item 7 Profile pictures complete across backend (7a), website (7c), and admin moderation (7d). 7a Backend: D1 profile_pictures and profile_picture_uploads tables with migration profile_pictures_v1.sql; PUT/DELETE /api/profile/picture; GET /api/users/:id/picture with ETag, 304, and private immutable cache; POST /api/admin/users/:id/remove-picture; magic byte validation; 100KB ceiling; 5-per-24h rate limit; atomic cascade delete. 7c Website: index-CQfSSHWX.js updated to display user photo with versioned URL across header, leaderboard podium, rankings list, profile, and admin list; profile view provides photo file upload with client-side canvas square crop/resize/compression to 256x256 WebP/JPEG <= 100KB, remove photo option, and illustration avatar choices; sw.js cache bumped to fh50-v2-08. 7d Admin moderation: admin participant detail modal displays participant photo and Remove Picture moderation action reverting to illustration avatar."
+      }
+    ]
+  },
+  "fixes_oct15b_v1": {
+    "status": "in_progress",
+    "work_complete": false,
+    "started_utc": "2026-10-15T12:14:51.734884+00:00",
+    "tasks": [
+      {
+        "id": "g0",
+        "title": "Clone both repos (and locate VerseWell repo), read every BUILD_STATE.json (including ops_batch_oct14_v1 and fixes_oct15_v1), seed fixes_oct15b_v1 with gate, commit and push",
+        "status": "done",
+        "gate": null,
+        "notes": "Cloned vjumbo264/forgebuild, vjumbo264/forgehouse50, and located vjumbo264/versewell (main branch). Verified prior tasks complete. Appended new instructions to PROMPT_HISTORY/forgehouse50.md. Seeded fixes_oct15b_v1 with gates g0-g10."
+      },
+      {
+        "id": "g1",
+        "title": "Item 1 \u2014 blank website: live diagnosis, root cause fix, deployment verified, self-healing service worker, boot guard, smoke test, production verification of earlier fixes",
+        "status": "pending",
+        "gate": "g0",
+        "notes": ""
+      },
+      {
+        "id": "g2",
+        "title": "Item 2 \u2014 missing chapter 6 bug: diagnose, fix, regression and full-schedule tests, bundle audit; release if the app changed",
+        "status": "pending",
+        "gate": "g1",
+        "notes": ""
+      },
+      {
+        "id": "g3",
+        "title": "Item 3 \u2014 reader rebuild: 3a timer correctness, 3b layout and continuous scroll and progress, 3c persistence, 3d header, intro, encouragement; release",
+        "status": "pending",
+        "gate": "g2",
+        "notes": ""
+      },
+      {
+        "id": "g4",
+        "title": "Item 4 \u2014 verse headings: VerseWell fix or fallback, regenerated bundles, both clients",
+        "status": "pending",
+        "gate": "g3",
+        "notes": ""
+      },
+      {
+        "id": "g5",
+        "title": "Item 5 \u2014 website parity: VerseWell only, downloaded-only switcher, reader parity, timer, profile pictures, contrast",
+        "status": "pending",
+        "gate": "g4",
+        "notes": ""
+      },
+      {
+        "id": "g6",
+        "title": "Item 6 \u2014 updater: keep the APK, Profile status, hideable download, wavy progress",
+        "status": "pending",
+        "gate": "g5",
+        "notes": ""
+      },
+      {
+        "id": "g7",
+        "title": "Item 7 \u2014 support message (both clients)",
+        "status": "pending",
+        "gate": "g6",
+        "notes": ""
+      },
+      {
+        "id": "g8",
+        "title": "Item 8 \u2014 notes UI with pickers (8a), then community sharing, anonymity, admin replies, WhatsApp copy (8b)",
+        "status": "pending",
+        "gate": "g7",
+        "notes": ""
+      },
+      {
+        "id": "g9",
+        "title": "Item 9 \u2014 announcements",
+        "status": "pending",
+        "gate": "g8",
+        "notes": ""
+      },
+      {
+        "id": "g10",
+        "title": "Item 10 \u2014 UI refinement pass; final releases; verify every item once more against production; set fixes_oct15b_v1.work_complete to true in each repo and push",
+        "status": "pending",
+        "gate": "g9",
+        "notes": ""
       }
     ]
   }
