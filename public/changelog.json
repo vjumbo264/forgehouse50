@@ -1,0 +1,186 @@
+[
+  {
+    "version": "v31",
+    "date": "2026-10-17",
+    "items": [
+      "Redesigned Reader Experience: Uncluttered, compact header and unified bottom dock that never overlaps controls or obscures verses",
+      "Calm Reading Counters: Real-time verses-left counter and chapter indicators that smoothly count down as you read through your daily chapters",
+      "Two-Mode App Updater: Choose between updating directly inside the app with instant install on return, or opening the download link in your browser",
+      "Persistent Home Update Card: A prominent home screen card appears when an update is downloaded and ready, letting you tap to install anytime",
+      "Prayer and Application Sharing: Prayers and Applications can now be sent to church leaders for guidance, with sent and reply timestamps and optional group sharing",
+      "Material Expressive Send Animation: Clear visual feedback with animated loading states and confirmation checkmarks when sending notes",
+      "Dynamic Home Screen: Smooth, animated expanding cards in priority order that open up space without crowding your dashboard",
+      "Scripture Quote Cards: Beautifully styled, branded Scripture quote cards with leadership responses for sharing inspired passages with your community"
+    ]
+  },
+  {
+    "version": "v30",
+    "date": "2026-10-17",
+    "items": [
+      "Notes and Insights Repair: Seamless saving and editing for all note types including private personal Insights",
+      "Synchronized Notes Counter: Home screen note counts now reflect all your saved notes instantaneously",
+      "Resilient Error Recovery: Helpful messages and offline draft preservation when saving notes"
+    ]
+  },
+  {
+    "version": "v29",
+    "date": "2026-10-17",
+    "items": [
+      "Bible Translations Overhaul: Fixed offline footnote parsing across all 12 New Testament translations",
+      "Unified Bible Translations Screen: Single, clear interface showing downloaded versions and live wavy progress indicators during download",
+      "Direct Reader Translation Switcher: Switch between your downloaded translations instantly from the reader with the new compact Aa chip",
+      "Offline Scripture Engine: Resilient offline bundles allow continuous scripture reading without requiring an internet connection"
+    ]
+  },
+  {
+    "version": "v28",
+    "date": "2026-10-17",
+    "items": [
+      "Community and Leadership Answers: Inspiring reflections and questions answered by leaders now appear directly on your home feed",
+      "ForgeHouse Announcements: Official programme announcements and updates now displayed prominently on the home screen",
+      "Interactive Scripture Pickers: Convenient book, chapter, and verse pickers when writing and attaching notes to scripture",
+      "Community Play Store Support: In-app support card to help support ForgeHouse 50 on the Google Play Store"
+    ]
+  },
+  {
+    "version": "v27",
+    "date": "2026-10-17",
+    "items": [
+      "Continuous Chapter Reading: Read smoothly across multiple assigned chapters in one continuous scroll",
+      "Chapter Progress and Position Restore: The reader remembers your exact scroll position and chapter so you can resume right where you left off",
+      "Clear Verse-Level Section Headings: Authentic scripture headings now display cleanly above corresponding verses",
+      "Active Reading Timer: Offline-safe timer tracks your 5-minute active reading goal with encouragement and pause indicators"
+    ]
+  },
+  {
+    "version": "v26",
+    "date": "2026-10-15",
+    "items": [
+      "Dynamic Animated Pill Navigation: Modern animated floating pill bar with smooth horizontal swipe gestures between tabs",
+      "Edge-to-Edge Reading Experience: Full-height reading view maximizing scripture text visibility on all screen sizes"
+    ]
+  },
+  {
+    "version": "v25",
+    "date": "2026-10-15",
+    "items": [
+      "Observations and Questions Sent to Leaders: Church leadership receives your observations and questions with optional anonymity",
+      "Custom Profile Pictures: Choose and personalize your avatar with integrated crop and zoom tools"
+    ]
+  },
+  {
+    "version": "v24",
+    "date": "2026-10-15",
+    "items": [
+      "Offline Reading Timer and 5-Minute Minimum: Accurately tracks reading duration and unlocks day completion after 5 minutes and final chapter"
+    ]
+  },
+  {
+    "version": "v23",
+    "date": "2026-10-14",
+    "items": [
+      "Responsive Small-Screen Scaling: Adaptive typography and fluid margins optimized for compact mobile screens"
+    ]
+  },
+  {
+    "version": "v22",
+    "date": "2026-10-14",
+    "items": [
+      "Forgot Password Recovery: Reset your password securely via 6-digit email verification codes",
+      "In-App Version Alerts: Automatic notifications when new programme features and bug fixes become available"
+    ]
+  },
+  {
+    "version": "v21",
+    "date": "2026-10-11",
+    "items": [
+      "Automatic Scripture Context: New notes automatically pre-fill the book, chapter, and verse you are currently reading"
+    ]
+  },
+  {
+    "version": "v20",
+    "date": "2026-10-11",
+    "items": [
+      "Sign-in improvements and session stability enhancements"
+    ]
+  },
+  {
+    "version": "v19",
+    "date": "2026-10-11",
+    "items": [
+      "Smooth horizontal scrolling for translation options in the Bible reader"
+    ]
+  },
+  {
+    "version": "v18",
+    "date": "2026-10-08",
+    "items": [
+      "Unified reading experience across Home, Progress, and catch-up views",
+      "Clean icon-only footnote markers beside relevant verses",
+      "Direct navigation to the daily quiz upon completing reading"
+    ]
+  },
+  {
+    "version": "v17",
+    "date": "2026-10-08",
+    "items": [
+      "Inactivity reset for reading streaks",
+      "Pre-filled WhatsApp community support message"
+    ]
+  },
+  {
+    "version": "v16",
+    "date": "2026-10-08",
+    "items": [
+      "Home screen widget layout and progress display improvements"
+    ]
+  },
+  {
+    "version": "v15",
+    "date": "2026-10-08",
+    "items": [
+      "Material You dynamic theming and Plus Jakarta Sans typography"
+    ]
+  },
+  {
+    "version": "v14",
+    "date": "2026-10-08",
+    "items": [
+      "Pill-style stat cards and faster cache-first screen rendering"
+    ]
+  },
+  {
+    "version": "v13",
+    "date": "2026-09-27",
+    "items": [
+      "Two-day catch-up reading sessions",
+      "Home screen widget with automatic progress refresh",
+      "Direct WhatsApp community and support links"
+    ]
+  },
+  {
+    "version": "v8",
+    "date": "2026-09-16",
+    "items": [
+      "Per-chapter reader navigation and font size controls",
+      "Single-file offline translation bundles"
+    ]
+  },
+  {
+    "version": "v7",
+    "date": "2026-09-16",
+    "items": [
+      "Offline Bible reading with bundled King James Version and downloadable translations",
+      "Streak-based leaderboard consistency rankings"
+    ]
+  },
+  {
+    "version": "v1",
+    "date": "2026-09-14",
+    "items": [
+      "Read the New Testament in 50 reading days with chapter-by-chapter tracking",
+      "Daily comprehension quizzes and confidence-weighted leaderboards",
+      "Personal reading notes and highlights"
+    ]
+  }
+]
