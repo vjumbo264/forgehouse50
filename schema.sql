@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS audio_progress (
 CREATE TABLE IF NOT EXISTS notes (
   id           TEXT PRIMARY KEY,
   user_id      TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  note_type    TEXT NOT NULL CHECK (note_type IN ('observation','question','scripture_connection','application','prayer')),
+  note_type    TEXT NOT NULL CHECK (note_type IN ('observation','question','scripture_connection','application','prayer','insight')),
   body         TEXT NOT NULL,
   book         TEXT NOT NULL,
   chapter      INTEGER NOT NULL,
