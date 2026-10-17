@@ -45,6 +45,24 @@ export async function onRequestGet({ request, env }) {
         .bind(user.id, todayDayNumber).first()
     : null;
 
+  // Catch-up mode: uncompleted days up to today on user schedule (Item 5)
+  const uncompletedPast = await env.DB.prepare(`
+    SELECT d.day_number, d.date
+    FROM user_reading_days d
+    LEFT JOIN reading_progress p ON p.user_id = ? AND p.day_number = d.day_number AND p.completed = 1
+    WHERE d.user_id = ? AND d.date <= ? AND (p.completed IS NULL OR p.completed = 0)
+    ORDER BY d.day_number ASC
+  `).bind(user.id, user.id, today).all();
+  const backlog = uncompletedPast?.results || [];
+  const catchUpDays = [];
+  for (const b of backlog.slice(0, 2)) {
+    catchUpDays.push({
+      day_number: b.day_number,
+      date: b.date,
+      assignment: await assignmentFor(b.day_number),
+    });
+  }
+
   const stats = await userAggregates(env.DB, user.id);
 
   return json({
@@ -61,6 +79,11 @@ export async function onRequestGet({ request, env }) {
     } : null,
     next_reading_day: nextDay ? { day_number: nextDay.day_number, date: nextDay.date, assignment: await assignmentFor(nextDay.day_number) } : null,
     stats,
+    catch_up: {
+      count: backlog.length,
+      is_catch_up: backlog.length > 1,
+      days: catchUpDays,
+    },
     programme: { total_days: TOTAL_DAYS, total_chapters: 260 },
   });
 }
