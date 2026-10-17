@@ -3,7 +3,7 @@ import fs from "fs";
 
 console.log("=== Testing Item 7 Complete Changelog and What's New ===");
 
-const raw = fs.readFileSync("/repos/forgehouse50/public/changelog.json", "utf8");
+const raw = fs.readFileSync(new URL("../public/changelog.json", import.meta.url), "utf8");
 const changelog = JSON.parse(raw);
 
 // 1. Structure
