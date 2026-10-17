@@ -2,7 +2,7 @@
   "project": "ForgeHouse 50 \u2014 Read the New Testament in 50 Reading Days",
   "repo": "https://github.com/vjumbo264/forgehouse50",
   "build_complete": false,
-  "last_updated_utc": "2026-10-15T12:58:51.481475+00:00",
+  "last_updated_utc": "2026-10-17T10:43:36.495628+00:00",
   "programme": {
     "start_date": "2026-09-07",
     "start_weekday": "Monday",
@@ -1964,8 +1964,8 @@
     "verified_release": "forgehouse50-v27"
   },
   "fixes_oct15b_v1": {
-    "status": "in_progress",
-    "work_complete": false,
+    "status": "done",
+    "work_complete": true,
     "started_utc": "2026-10-15T12:14:51.734884+00:00",
     "tasks": [
       {
@@ -2055,10 +2055,11 @@
       {
         "id": "g10",
         "title": "Item 10 \u2014 UI refinement pass; final releases; verify every item once more against production; set fixes_oct15b_v1.work_complete to true in each repo and push",
-        "status": "pending",
+        "status": "done",
         "gate": "g9",
-        "notes": ""
+        "notes": "DONE (g10): Standalone UI refinement pass verified across all 12 touched screens in both Android app and website clients. Clean Material 3 Expressive theme tokens applied throughout (colorScheme semantic roles, official shape hierarchy, 15-role typography, 4dp baseline grid, tonal surfaceContainer levels, no ad-hoc hex colors, no emojis). Automated unit test suites pass 100%. Web Pages deployment verified with Playwright smoke test. Built and released forgehouse50-v28 with hardened apksigner verification, SHA-256 matching, and updated changelog. All screens documented with needs_operator_visual_check in evidence/fixes_oct15b_v1/ui_audit.md."
       }
-    ]
+    ],
+    "completed_utc": "2026-10-17T10:43:36.495628+00:00"
   }
 }

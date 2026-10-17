@@ -37,7 +37,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Install Playwright
-        run: npx --yes playwright install chromium --with-deps
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx --yes playwright install chromium --with-deps
 
       - name: Post-deploy smoke test
         run: node scripts/smoke_test.mjs
