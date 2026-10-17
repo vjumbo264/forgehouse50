@@ -1960,7 +1960,8 @@
         "gate": "f6",
         "notes": "DONE (f7): Item 7 Profile pictures complete across backend (7a), website (7c), and admin moderation (7d). 7a Backend: D1 profile_pictures and profile_picture_uploads tables with migration profile_pictures_v1.sql; PUT/DELETE /api/profile/picture; GET /api/users/:id/picture with ETag, 304, and private immutable cache; POST /api/admin/users/:id/remove-picture; magic byte validation; 100KB ceiling; 5-per-24h rate limit; atomic cascade delete. 7c Website: index-CQfSSHWX.js updated to display user photo with versioned URL across header, leaderboard podium, rankings list, profile, and admin list; profile view provides photo file upload with client-side canvas square crop/resize/compression to 256x256 WebP/JPEG <= 100KB, remove photo option, and illustration avatar choices; sw.js cache bumped to fh50-v2-08. 7d Admin moderation: admin participant detail modal displays participant photo and Remove Picture moderation action reverting to illustration avatar."
       }
-    ]
+    ],
+    "verified_release": "forgehouse50-v27"
   },
   "fixes_oct15b_v1": {
     "status": "in_progress",
@@ -2005,9 +2006,9 @@
       {
         "id": "g4a",
         "title": "Item A — Release the Android app now (forgehouse50-v27, carries unreleased g2 chapter fix, g3 reader rebuild, g4 verse headings)",
-        "status": "pending",
+        "status": "done",
         "gate": "g4",
-        "notes": ""
+        "notes": "DONE (g4a): Released forgehouse50-v27 via GitHub Actions workflow run 39012676223 with signed APK, apksigner verified, SHA-256 b31d3ab71532f0054726ca74a609cc6a66386f3cceca4c9a890664bcb7e0a62d (9095772 bytes), release.json generated, downloaded back and verified byte-for-byte. Live /api/app-release successfully serves v27."
       },
       {
         "id": "g4b",
