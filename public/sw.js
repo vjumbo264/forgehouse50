@@ -1,5 +1,5 @@
 /* ForgeHouse 50 — Self-Healing Service Worker (v2)
- * Version: fh50-v2-09
+ * Version: fh50-v2-10
  *
  * Requirements (Item 1 & Item 5):
  * - Never serve /assets/* blindly from cache.
@@ -10,7 +10,7 @@
  * - Deletes all legacy caches on activation.
  */
 
-const VERSION = "fh50-v2-09";
+const VERSION = "fh50-v2-10";
 const SHELL_CACHE = `shell-${VERSION}`;
 const AVATAR_CACHE = "fh50-avatars";
 

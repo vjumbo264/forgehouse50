@@ -233,3 +233,11 @@ unavailable state rather than placeholder text.
 - **Caching & Request Budget**: Cloudflare free tier allows 100,000 Worker requests/day. Photos are fetched through versioned URLs (`/api/users/:id/picture?v=<version>`) with `Cache-Control: private, max-age=86400, immutable` and `ETag` validation (HTTP 304). Browsers and native Coil caches store images locally, so leaderboards and participant lists do not re-download images on repeat visits. An active user base of 100 members consumes an estimated 300-600 photo requests daily (<0.6% of the 100,000 daily free tier budget).
 - **Validation & Rate Limiting**: Server enforces magic byte validation (JPEG `FF D8 FF`, WebP `RIFF....WEBP`), rejects empty or oversized (>100KB) payloads, and rate limits uploads to 5 per user per 24 hours (HTTP 429 with `Retry-After`).
 - **Moderation & Cascade**: User deletions atomically cascade to `profile_pictures` and `profile_picture_uploads`. Admins can moderate photos via `POST /api/admin/users/:id/remove-picture`, reverting the participant to their illustration avatar with an `admin_audit` entry.
+
+## Notes & Community Policy (Oct 17, 2026)
+
+- **Always Delivered to Leaders**: Every Observation and Question note is automatically and transactionally copied to the `leader_inbox` table. Users have no option to keep Observations and Questions private from leaders.
+- **Strict Privacy for Other Notes**: Insight (`scripture_connection`), Prayer, and Application notes remain strictly private to the user. They are never written to `leader_inbox` and never exposed via any admin or community endpoint.
+- **Community Publishing**: Answered Observation and Question notes may be published to the community feed by leaders. Publishing strictly requires a leader reply.
+- **Anonymity Control**: Authors choose whether their name is shown to the community via a toggle ("Show my name if this is shared with the group", default: off/Anonymous). Leaders always see the real author's identity in the Leaders' Inbox regardless of this setting.
+- **Note Deletion Lifecycle**: When a user deletes a note from their personal list, the note is removed from their private view, but the copy previously submitted to the `leader_inbox` is preserved for leadership continuity. When an admin deletes a participant account, all data (including leader inbox submissions) is cascade-deleted.

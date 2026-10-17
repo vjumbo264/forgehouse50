@@ -53,7 +53,7 @@ async function main() {
   for (const t of tables) {
     const tableName = t.name;
     const cols = await queryD1(`PRAGMA table_info(${tableName})`);
-    if (cols.some(c => c.name === 'user_id')) {
+    if (cols.some(c => c.name === 'user_id' || c.name === 'author_user_id')) {
       userTables.push(tableName);
     }
   }
@@ -62,7 +62,7 @@ async function main() {
 
   let totalOrphans = 0;
   for (const t of userTables) {
-    const res = await queryD1(`SELECT COUNT(*) AS total, (SELECT COUNT(*) FROM ${t} WHERE user_id NOT IN (SELECT id FROM profiles)) AS orphans FROM ${t}`);
+    const res = await queryD1(`SELECT COUNT(*) AS total, (SELECT COUNT(*) FROM ${t} WHERE (CASE WHEN '${t}' = 'leader_inbox' THEN author_user_id ELSE user_id END) NOT IN (SELECT id FROM profiles)) AS orphans FROM ${t}`);
     const total = res[0]?.total ?? 0;
     const orphans = res[0]?.orphans ?? 0;
     console.log(`  Table [${t}]: ${total} total rows, ${orphans} orphan rows`);
