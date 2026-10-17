@@ -36,6 +36,40 @@ for (const htmlFile of htmlFiles) {
   }
 }
 
+
+// Verify all bundles in manifest have plain scalar footnotes (Item 1 CI gate)
+import zlib from 'zlib';
+const manifestPath = path.join(publicDir, 'bundles', 'manifest.json');
+if (fs.existsSync(manifestPath)) {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  for (const b of manifest.bundles || []) {
+    const bPath = path.join(publicDir, b.url);
+    if (!fs.existsSync(bPath)) {
+      console.error('Missing bundle:', b.url);
+      errors++;
+      continue;
+    }
+    const raw = fs.readFileSync(bPath);
+    const unzipped = (raw[0] === 0x1f && raw[1] === 0x8b) ? zlib.gunzipSync(raw) : raw;
+    const data = JSON.parse(unzipped.toString('utf8'));
+    for (const [book, chs] of Object.entries(data)) {
+      if (typeof chs !== 'object') continue;
+      for (const [ch, chData] of Object.entries(chs)) {
+        for (const verse of chData.v || []) {
+          for (const fn of verse.f || []) {
+            if (typeof fn === 'object' && fn !== null) {
+              console.error('Non-scalar footnote in bundle:', b.url, book, ch, verse.n, fn);
+              errors++;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  console.log('Verified all manifest bundles: all footnotes are plain scalars.');
+}
+
 if (errors > 0) {
   console.error(`Asset verification FAILED with ${errors} error(s).`);
   process.exit(1);

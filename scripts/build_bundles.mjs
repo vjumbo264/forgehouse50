@@ -26,7 +26,17 @@ for (const v of top.versions) {
       if (!d?.verses?.length) { console.log('missing chapter', code, book, ch); ok = false; break; }
       books[book][String(ch)] = {
         v: d.verses.map(x => {
-          const vObj = { n: x.verse, t: x.text, f: Array.isArray(x.footnotes) ? x.footnotes : [] };
+          const rawFootnotes = Array.isArray(x.footnotes) ? x.footnotes : [];
+          const stringFootnotes = rawFootnotes.map(fn => {
+            if (typeof fn === 'string') return fn;
+            if (typeof fn === 'object' && fn !== null) {
+              const marker = (fn.marker || '').trim();
+              const text = (fn.text || '').trim();
+              return marker && text ?  : (text || marker);
+            }
+            return String(fn || '');
+          });
+          const vObj = { n: x.verse, t: x.text, f: stringFootnotes };
           if (x.heading_before) vObj.h = x.heading_before;
           return vObj;
         }),
