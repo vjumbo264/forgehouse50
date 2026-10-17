@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env }) {
   const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)));
   const offset = (page - 1) * limit;
 
-  let whereClauses = ["li.type IN ('observation', 'question')"];
+  let whereClauses = ["li.type IN ('observation', 'question', 'prayer', 'application')"];
   let params = [];
 
   if (statusParam === 'new' || statusParam === 'unanswered') {
@@ -30,7 +30,7 @@ export async function onRequestGet({ request, env }) {
     whereClauses.push("li.status = 'hidden'");
   }
 
-  if (typeParam === 'observation' || typeParam === 'question') {
+  if (['observation', 'question', 'prayer', 'application'].includes(typeParam)) {
     whereClauses.push("li.type = ?");
     params.push(typeParam);
   }
@@ -59,7 +59,7 @@ export async function onRequestGet({ request, env }) {
 
   const querySql = `
     SELECT li.id, li.note_id, li.author_user_id, li.type, li.reference, li.text,
-           li.show_name, li.status, li.created_at, li.updated_at,
+           li.show_name, li.allow_group_share, li.status, li.first_sent_at, li.sent_at, li.created_at, li.updated_at,
            pr.name AS author_first_name, pr.surname AS author_surname, pr.email AS author_email,
            cr.id AS reply_id, cr.text AS reply_text, cr.admin_id AS reply_admin_id,
            cr.created_at AS reply_created_at, cr.updated_at AS reply_updated_at,
@@ -86,6 +86,9 @@ export async function onRequestGet({ request, env }) {
       reference: row.reference,
       text: row.text,
       show_name: row.show_name === 1,
+      allow_group_share: row.allow_group_share === 1,
+      first_sent_at: row.first_sent_at || row.created_at,
+      sent_at: row.sent_at || row.updated_at || row.created_at,
       status: row.status,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -95,6 +98,7 @@ export async function onRequestGet({ request, env }) {
         text: row.reply_text,
         admin_id: row.reply_admin_id,
         created_at: row.reply_created_at,
+        replied_at: row.reply_created_at,
         updated_at: row.reply_updated_at
       } : null
     };

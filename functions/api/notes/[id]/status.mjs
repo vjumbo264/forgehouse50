@@ -16,8 +16,9 @@ export async function onRequestGet({ request, env }) {
   const id = noteId(request);
 
   const query = `
-    SELECT n.id, n.note_type, n.created_at,
-           li.id AS inbox_id, li.status AS inbox_status, li.show_name,
+    SELECT n.id, n.note_type, n.created_at, n.updated_at,
+           li.id AS inbox_id, li.status AS inbox_status, li.show_name, li.allow_group_share,
+           li.first_sent_at, li.sent_at,
            cr.text AS reply_text, cr.created_at AS reply_created_at
     FROM notes n
     LEFT JOIN leader_inbox li ON li.note_id = n.id
@@ -28,7 +29,7 @@ export async function onRequestGet({ request, env }) {
   const item = await env.DB.prepare(query).bind(id, user.id).first();
   if (!item) return notFound('Note not found');
 
-  const isLeaderVisible = item.note_type === 'observation' || item.note_type === 'question';
+  const isLeaderVisible = ['observation', 'question', 'prayer', 'application'].includes(item.note_type);
 
   return json({
     ok: true,
@@ -37,10 +38,14 @@ export async function onRequestGet({ request, env }) {
     sent_to_leaders: isLeaderVisible,
     inbox_status: item.inbox_status || (isLeaderVisible ? 'new' : null),
     answered: !!item.reply_text,
+    first_sent_at: item.first_sent_at || (isLeaderVisible ? item.created_at : null),
+    sent_at: item.sent_at || (isLeaderVisible ? (item.updated_at || item.created_at) : null),
     reply: item.reply_text ? {
       text: item.reply_text,
-      created_at: item.reply_created_at
+      created_at: item.reply_created_at,
+      replied_at: item.reply_created_at
     } : null,
-    show_name: item.show_name === 1
+    show_name: item.show_name === 1,
+    allow_group_share: item.allow_group_share === 1
   });
 }

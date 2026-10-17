@@ -17,7 +17,7 @@ export async function onRequestPost({ request, env }) {
   const shouldPublish = body?.publish !== false;
 
   const inboxItem = await env.DB.prepare(
-    'SELECT li.id, li.status, cr.id AS reply_id FROM leader_inbox li LEFT JOIN community_replies cr ON cr.inbox_id = li.id WHERE li.id = ?'
+    'SELECT li.id, li.type, li.allow_group_share, li.status, cr.id AS reply_id FROM leader_inbox li LEFT JOIN community_replies cr ON cr.inbox_id = li.id WHERE li.id = ?'
   ).bind(id).first();
 
   if (!inboxItem) return notFound('Inbox item not found');
@@ -25,6 +25,9 @@ export async function onRequestPost({ request, env }) {
   if (shouldPublish) {
     if (!inboxItem.reply_id) {
       return badRequest('Cannot publish an item without a leader reply. Write a reply first.');
+    }
+    if ((inboxItem.type === 'prayer' || inboxItem.type === 'application') && !inboxItem.allow_group_share) {
+      return badRequest(`Cannot publish this ${inboxItem.type}: author has not granted permission to share with the group.`);
     }
   }
 

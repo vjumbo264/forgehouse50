@@ -236,8 +236,12 @@ unavailable state rather than placeholder text.
 
 ## Notes & Community Policy (Oct 17, 2026)
 
-- **Always Delivered to Leaders**: Every Observation and Question note is automatically and transactionally copied to the `leader_inbox` table. Users have no option to keep Observations and Questions private from leaders.
-- **Strict Privacy for Other Notes**: Insight (`scripture_connection`), Prayer, and Application notes remain strictly private to the user. They are never written to `leader_inbox` and never exposed via any admin or community endpoint.
+- **Delivered to Leaders**: Observation, Question, Prayer, and Application are all automatically delivered to the leaders (`leader_inbox`). Leaders always see the real author.
+- **Strict Privacy for Insight Notes**: Insight notes stay strictly private to the user (server-enforced, verified). They are never written to `leader_inbox` and never exposed to leaders or the community.
+- **Author Group Sharing & Anonymity Policy**:
+  - For all leader-bound notes, the author can choose "Show my name if this is shared with the group" (default off; shown to community as "Anonymous"; leaders always see real author).
+  - For Prayer and Application notes, leaders may read and reply privately, but can publish an item to the community ONLY if the author ticked "Allow my leaders to share this with the group" (default off). Server strictly rejects publishing without `allow_group_share`.
+  - Timestamps: `first_sent_at` and `sent_at` are tracked for submissions and edits; `replied_at` tracks leadership responses.
 - **Community Publishing**: Answered Observation and Question notes may be published to the community feed by leaders. Publishing strictly requires a leader reply.
 - **Anonymity Control**: Authors choose whether their name is shown to the community via a toggle ("Show my name if this is shared with the group", default: off/Anonymous). Leaders always see the real author's identity in the Leaders' Inbox regardless of this setting.
 - **Note Deletion Lifecycle**: When a user deletes a note from their personal list, the note is removed from their private view, but the copy previously submitted to the `leader_inbox` is preserved for leadership continuity. When an admin deletes a participant account, all data (including leader inbox submissions) is cascade-deleted.

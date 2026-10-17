@@ -30,7 +30,7 @@ const clientEndpoints = [
   { client: 'Admin Leaders Inbox', method: 'POST', path: '/api/admin/inbox/:id/hide', purpose: 'Admin hide item' }
 ];
 
-const functionsDir = path.resolve('functions/api');
+const functionsDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../functions/api");
 
 function checkRoute(method, reqPath) {
   // Normalize path segments

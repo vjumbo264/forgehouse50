@@ -343,11 +343,14 @@ CREATE TABLE IF NOT EXISTS leader_inbox (
   id TEXT PRIMARY KEY,
   note_id TEXT UNIQUE,
   author_user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('observation', 'question')),
+  type TEXT NOT NULL CHECK (type IN ('observation', 'question', 'prayer', 'application')),
   reference TEXT NOT NULL,
   text TEXT NOT NULL,
   show_name INTEGER NOT NULL DEFAULT 0,
+  allow_group_share INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'answered', 'published', 'hidden')),
+  first_sent_at TEXT,
+  sent_at TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
