@@ -13,6 +13,7 @@ import { json, badRequest, readJson, uuid, nowIso, conflict, forbidden } from '.
 import { requireUser } from '../../lib/auth.mjs';
 import { awardPoints } from '../../lib/points.mjs';
 import { ensureUserCalendar, elapsedDays, utcToday, TOTAL_DAYS } from '../../lib/calendar.mjs';
+import { getRestDayStatus } from '../../lib/rest_day.mjs';
 
 export const MIN_READING_SECONDS = 300; // 5 minutes per reading day
 export const MAX_READING_SECONDS_CEILING = 21600; // 6 hours
@@ -142,6 +143,14 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
+  const isCatchup = n < elapsed;
+  if (isCatchup && !isAdmin) {
+    const restDay = await getRestDayStatus(env.DB);
+    if (restDay.is_rest_day && !restDay.catchup_allowed) {
+      return conflict(restDay.message || "Catch-up closes at 7pm today for Bible Study, continue tomorrow.");
+    }
+  }
+
   // ── Record completion in DB ─────────────────────────────────────────────
   const chapterRow = await env.DB.prepare(
     'SELECT COALESCE(SUM(chapter_count),0) AS chapters FROM reading_assignments WHERE day_number = ?'
@@ -165,7 +174,6 @@ export async function onRequestPost({ request, env }) {
 
   const reading = await awardPoints(env.DB, targetUserId, 'reading_completed', `reading_completed:${targetUserId}:${n}`, { dayNumber: n });
 
-  const isCatchup = n < elapsed;
   const streak = isCatchup
     ? { awarded: false, points: 0 }
     : await awardPoints(env.DB, targetUserId, 'daily_streak', `daily_streak:${targetUserId}:${n}`, { dayNumber: n });

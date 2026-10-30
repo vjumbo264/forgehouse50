@@ -1,10 +1,12 @@
 // GET /api/today — today's programme status + assignment (authenticated).
 // per_user_calendar_and_quiz_v1: every date below is computed against THIS
 // user's own calendar (user_reading_days), not the shared reading_days.
+
 import { json } from '../lib/http.mjs';
 import { requireUser } from '../lib/auth.mjs';
 import { classifyUserDate, estimateMinutes, ensureUserCalendar, utcToday, userDateMap, elapsedDays, TOTAL_DAYS } from '../lib/calendar.mjs';
 import { userAggregates } from '../lib/points.mjs';
+import { getRestDayStatus } from '../lib/rest_day.mjs';
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
@@ -13,12 +15,10 @@ export async function onRequestGet({ request, env }) {
   const today = utcToday();
   const { startDate, rows } = await ensureUserCalendar(env.DB, user.id);
   const byDate = userDateMap(rows);
-
   const status = classifyUserDate(today, byDate);
   const todayDayNumber = byDate.get(today) || null;
 
-  // Next reading day ON THE USER'S OWN SCHEDULE (today if it's one and not
-  // yet completed, else the next upcoming one).
+  // Next reading day ON THE USER'S OWN SCHEDULE
   const upcoming = (rows || []).filter(d => d.date >= today);
   const nextDay = upcoming[0] || null;
 
@@ -45,7 +45,7 @@ export async function onRequestGet({ request, env }) {
         .bind(user.id, todayDayNumber).first()
     : null;
 
-  // Catch-up mode: uncompleted days up to today on user schedule (Item 5)
+  // Catch-up mode: uncompleted days up to today on user schedule (Item 5 & Item i6)
   const uncompletedPast = await env.DB.prepare(`
     SELECT d.day_number, d.date
     FROM user_reading_days d
@@ -53,14 +53,20 @@ export async function onRequestGet({ request, env }) {
     WHERE d.user_id = ? AND d.date <= ? AND (p.completed IS NULL OR p.completed = 0)
     ORDER BY d.day_number ASC
   `).bind(user.id, user.id, today).all();
+
   const backlog = uncompletedPast?.results || [];
+  const restDay = await getRestDayStatus(env.DB);
+  const catchupOpen = !restDay.is_rest_day || restDay.catchup_allowed;
+
   const catchUpDays = [];
-  for (const b of backlog.slice(0, 2)) {
-    catchUpDays.push({
-      day_number: b.day_number,
-      date: b.date,
-      assignment: await assignmentFor(b.day_number),
-    });
+  if (catchupOpen) {
+    for (const b of backlog.slice(0, 2)) {
+      catchUpDays.push({
+        day_number: b.day_number,
+        date: b.date,
+        assignment: await assignmentFor(b.day_number),
+      });
+    }
   }
 
   const stats = await userAggregates(env.DB, user.id);
@@ -81,9 +87,14 @@ export async function onRequestGet({ request, env }) {
     stats,
     catch_up: {
       count: backlog.length,
-      is_catch_up: backlog.length > 1,
+      is_catch_up: backlog.length > 0,
       days: catchUpDays,
+      window_open: catchupOpen,
+      cutoff_message: restDay.message,
     },
+    rest_day: restDay,
     programme: { total_days: TOTAL_DAYS, total_chapters: 260 },
+  }, 200, {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
 }
