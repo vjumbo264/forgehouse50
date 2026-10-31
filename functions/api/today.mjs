@@ -6,13 +6,14 @@ import { json } from '../lib/http.mjs';
 import { requireUser } from '../lib/auth.mjs';
 import { classifyUserDate, estimateMinutes, ensureUserCalendar, utcToday, userDateMap, elapsedDays, TOTAL_DAYS } from '../lib/calendar.mjs';
 import { userAggregates } from '../lib/points.mjs';
-import { getRestDayStatus } from '../lib/rest_day.mjs';
+import { getRestDayStatus, getWatDateAndMinutes } from '../lib/rest_day.mjs';
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
-  const today = utcToday();
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  const today = getWatDateAndMinutes(nowMs).isoDate;
   const { startDate, rows } = await ensureUserCalendar(env.DB, user.id);
   const byDate = userDateMap(rows);
   const status = classifyUserDate(today, byDate);
@@ -55,7 +56,7 @@ export async function onRequestGet({ request, env }) {
   `).bind(user.id, user.id, today).all();
 
   const backlog = uncompletedPast?.results || [];
-  const restDay = await getRestDayStatus(env.DB);
+  const restDay = await getRestDayStatus(env.DB, nowMs);
   const catchupOpen = !restDay.is_rest_day || restDay.catchup_allowed;
 
   const catchUpDays = [];

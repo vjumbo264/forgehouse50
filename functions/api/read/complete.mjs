@@ -12,8 +12,8 @@
 import { json, badRequest, readJson, uuid, nowIso, conflict, forbidden } from '../../lib/http.mjs';
 import { requireUser } from '../../lib/auth.mjs';
 import { awardPoints } from '../../lib/points.mjs';
-import { ensureUserCalendar, elapsedDays, utcToday, TOTAL_DAYS } from '../../lib/calendar.mjs';
-import { getRestDayStatus } from '../../lib/rest_day.mjs';
+import { ensureUserCalendar, elapsedDays, userDayMap, TOTAL_DAYS } from '../../lib/calendar.mjs';
+import { getRestDayStatus, getWatDateAndMinutes } from '../../lib/rest_day.mjs';
 
 export const MIN_READING_SECONDS = 300; // 5 minutes per reading day
 export const MAX_READING_SECONDS_CEILING = 21600; // 6 hours
@@ -47,11 +47,16 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true, already_completed: true, day_number: n, points_awarded: 0 });
   }
 
-  // ── Sequential + read-ahead guards ─────────────────────────────────────
+  // ── Sequential + read-ahead + rest-day guards (i6) ─────────────────────
+  const evalNowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  const todayStr = getWatDateAndMinutes(evalNowMs).isoDate;
+  const restDay = await getRestDayStatus(env.DB, evalNowMs);
   const { rows } = await ensureUserCalendar(env.DB, targetUserId);
-  const elapsed = elapsedDays(rows, utcToday());
+  const elapsed = elapsedDays(rows, todayStr);
+  const scheduledDate = userDayMap(rows).get(n) || null;
+  const isCatchup = Boolean(scheduledDate && scheduledDate < todayStr);
 
-  if (n > 1) {
+  if (n > 1 && !isAdmin) {
     const prev = await env.DB.prepare(
       'SELECT completed FROM reading_progress WHERE user_id = ? AND day_number = ?'
     ).bind(targetUserId, n - 1).first();
@@ -59,9 +64,23 @@ export async function onRequestPost({ request, env }) {
       return conflict(BLOCK_MESSAGES.previous_day_incomplete + ' (Complete Day ' + (n - 1) + ' first.)');
     }
   }
-
-  if (n > elapsed + 1 && !isAdmin) {
-    return conflict(BLOCK_MESSAGES.read_ahead_limit);
+  if (!isAdmin) {
+    if (restDay.is_rest_day) {
+      if (!isCatchup) {
+        return new Response(JSON.stringify({
+          code: 'normal_reading_locked_on_rest_day',
+          error: 'Today is a rest day. Scheduled reading resumes tomorrow.'
+        }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (!restDay.catchup_allowed) {
+        return new Response(JSON.stringify({
+          code: 'rest_day_catchup_closed',
+          error: restDay.message || 'Catch-up closes at 7pm today for Bible Study, continue tomorrow.'
+        }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+      }
+    } else if (n > elapsed + 1) {
+      return conflict(BLOCK_MESSAGES.read_ahead_limit);
+    }
   }
 
   // ── Final chapter reached check (Item 2a.1) ───────────────────────────
@@ -90,8 +109,8 @@ export async function onRequestPost({ request, env }) {
   }
 
   // ── Active reading time calculation and sanity checks (Item 2a.2-2a.5) ──
-  const now = new Date();
-  const nowMs = now.getTime();
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  const now = new Date(nowMs);
   const rawSeconds = body?.readingSeconds ?? body?.reading_seconds;
   const isLegacy = (rawSeconds === undefined || rawSeconds === null);
 
@@ -143,13 +162,7 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  const isCatchup = n < elapsed;
-  if (isCatchup && !isAdmin) {
-    const restDay = await getRestDayStatus(env.DB);
-    if (restDay.is_rest_day && !restDay.catchup_allowed) {
-      return conflict(restDay.message || "Catch-up closes at 7pm today for Bible Study, continue tomorrow.");
-    }
-  }
+  // isCatchup & rest-day cutoff already validated above against scheduledDate < todayStr
 
   // ── Record completion in DB ─────────────────────────────────────────────
   const chapterRow = await env.DB.prepare(
