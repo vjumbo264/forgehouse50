@@ -41,7 +41,7 @@ const env = { DB: db, SKIP_GITHUB_SYNC: true };
 async function callAppRelease({ bearer = null, cookie = null } = {}) {
   const headers = new Headers();
   if (bearer) headers.set('Authorization', `Bearer ${bearer}`);
-  if (cookie) headers.set('Cookie', `fh_session=${cookie}`);
+  if (cookie) headers.set('Cookie', `fh50_session=${cookie}`);
   const req = new Request('https://forgehouse50.pages.dev/api/app-release', { headers });
   const res = await getAppRelease({ request: req, env });
   assert.equal(res.status, 200);
