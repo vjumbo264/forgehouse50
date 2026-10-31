@@ -1,17 +1,17 @@
-// GET  /api/community/chat/messages?since=&limit= — group chat messages
-// POST /api/community/chat/messages — send a group chat message
-
-import { json, badRequest, forbidden, readJson, nowIso, uuid } from '../../../lib/http.mjs';
+// GET & POST /api/community/chat/messages — shared church-wide group chat
+import { json, badRequest, forbidden, readJson, uuid } from '../../../lib/http.mjs';
 import { requireUser } from '../../../lib/auth.mjs';
+import {
+  CHAT_MAX_MESSAGE_LENGTH,
+  MESSAGE_SELECT_SQL,
+  checkChatRateLimit,
+  isMemberMuted,
+  markGroupReadIfNewer,
+  resolveSenderDisplayName,
+  serializeChatMessage,
+} from '../../../lib/chat.mjs';
 
-function formatAuthorName(name, surname) {
-  const given = (name || '').trim();
-  const sur = (surname || '').trim();
-  if (given && sur) {
-    return `${given} ${sur[0].toUpperCase()}.`;
-  }
-  return given || 'Member';
-}
+const NO_CACHE = { 'Cache-Control': 'no-cache, no-store, must-revalidate' };
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
@@ -19,70 +19,118 @@ export async function onRequestGet({ request, env }) {
 
   const url = new URL(request.url);
   const since = (url.searchParams.get('since') || '').trim();
+  const before = (url.searchParams.get('before') || '').trim();
   const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  const nowStr = new Date(nowMs).toISOString();
 
-  let sql = `
-    SELECT m.id, m.sender_user_id, m.reply_to_message_id, m.text, m.is_deleted, m.created_at,
-           p.name AS author_name, p.surname AS author_surname, p.avatar_id, p.role AS author_role,
-           rm.text AS reply_to_text, rp.name AS reply_to_author_name, rp.surname AS reply_to_author_surname
-    FROM community_chat_messages m
-    JOIN profiles p ON p.id = m.sender_user_id
-    LEFT JOIN community_chat_messages rm ON rm.id = m.reply_to_message_id
-    LEFT JOIN profiles rp ON rp.id = rm.sender_user_id
-    WHERE m.channel_type = 'group' AND m.is_deleted = 0
-  `;
-  const params = [];
+  const muted = user.role === 'admin' ? false : await isMemberMuted(env.DB, user.id);
+
+  // Mode 1: Incremental cursor poll (?since=...)
   if (since) {
-    sql += ' AND m.created_at > ?';
-    params.push(since);
+    const { results } = await env.DB.prepare(
+      `${MESSAGE_SELECT_SQL}
+       WHERE m.channel_type = 'group' AND m.is_deleted = 0 AND m.created_at > ?
+       ORDER BY m.created_at ASC, m.rowid ASC
+       LIMIT ?`
+    )
+      .bind(since, limit)
+      .all();
+
+    const { results: delRows } = await env.DB.prepare(
+      `SELECT id FROM community_chat_messages
+       WHERE channel_type = 'group' AND is_deleted = 1 AND updated_at > ?
+       LIMIT 100`
+    )
+      .bind(since)
+      .all();
+
+    const messages = (results || []).map((r) => serializeChatMessage(r, user.id));
+    const deletedIds = (delRows || []).map((r) => r.id);
+    const latestTs = messages.length > 0 ? messages[messages.length - 1].created_at : null;
+
+    if (latestTs) {
+      await markGroupReadIfNewer(env.DB, user.id, latestTs, nowStr);
+    }
+
+    return json(
+      {
+        ok: true,
+        messages,
+        deleted_ids: deletedIds,
+        has_older: false,
+        oldest_timestamp: messages.length > 0 ? messages[0].created_at : null,
+        last_timestamp: latestTs || since,
+        is_muted: muted,
+      },
+      200,
+      NO_CACHE
+    );
   }
-  sql += ' ORDER BY m.created_at ASC LIMIT ?';
-  params.push(limit);
 
-  const { results } = await env.DB.prepare(sql).bind(...params).all();
+  // Mode 2: Older history pagination (?before=...)
+  if (before) {
+    const { results } = await env.DB.prepare(
+      `${MESSAGE_SELECT_SQL}
+       WHERE m.channel_type = 'group' AND m.is_deleted = 0 AND m.created_at < ?
+       ORDER BY m.created_at DESC, m.rowid DESC
+       LIMIT ?`
+    )
+      .bind(before, limit + 1)
+      .all();
 
-  // Check current user's mute status
-  const memberRow = await env.DB.prepare(
-    'SELECT is_muted FROM community_chat_members WHERE user_id = ?'
-  ).bind(user.id).first();
+    const rows = results || [];
+    const hasOlder = rows.length > limit;
+    const chronological = (hasOlder ? rows.slice(0, limit) : rows).reverse();
+    const messages = chronological.map((r) => serializeChatMessage(r, user.id));
 
-  const isMuted = memberRow?.is_muted === 1;
+    return json(
+      {
+        ok: true,
+        messages,
+        deleted_ids: [],
+        has_older: hasOlder,
+        oldest_timestamp: messages.length > 0 ? messages[0].created_at : null,
+        last_timestamp: messages.length > 0 ? messages[messages.length - 1].created_at : null,
+        is_muted: muted,
+      },
+      200,
+      NO_CACHE
+    );
+  }
 
-  const messages = (results || []).map((r) => ({
-    id: r.id,
-    sender_id: r.sender_user_id,
-    is_me: r.sender_user_id === user.id,
-    author_name: formatAuthorName(r.author_name, r.author_surname),
-    author_role: r.author_role,
-    avatar_id: r.avatar_id,
-    text: r.text,
-    created_at: r.created_at,
-    reply_to: r.reply_to_message_id
-      ? {
-          id: r.reply_to_message_id,
-          author_name: formatAuthorName(r.reply_to_author_name, r.reply_to_author_surname),
-          text: (r.reply_to_text || '').slice(0, 100),
-        }
-      : null,
-  }));
+  // Mode 3: Initial latest page (newest N in chronological order: oldest at top, newest at bottom)
+  const { results } = await env.DB.prepare(
+    `${MESSAGE_SELECT_SQL}
+     WHERE m.channel_type = 'group' AND m.is_deleted = 0
+     ORDER BY m.created_at DESC, m.rowid DESC
+     LIMIT ?`
+  )
+    .bind(limit + 1)
+    .all();
 
-  // Update last_read_group_at
-  const now = nowIso();
-  await env.DB.prepare(
-    `INSERT INTO community_chat_members (user_id, last_read_group_at, updated_at)
-     VALUES (?, ?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET last_read_group_at = excluded.last_read_group_at, updated_at = excluded.updated_at`
-  ).bind(user.id, now, now).run();
+  const rows = results || [];
+  const hasOlder = rows.length > limit;
+  const chronological = (hasOlder ? rows.slice(0, limit) : rows).reverse();
+  const messages = chronological.map((r) => serializeChatMessage(r, user.id));
+  const latestTs = messages.length > 0 ? messages[messages.length - 1].created_at : null;
+
+  if (latestTs) {
+    await markGroupReadIfNewer(env.DB, user.id, latestTs, nowStr);
+  }
 
   return json(
     {
       ok: true,
       messages,
-      is_muted: isMuted,
-      last_timestamp: messages.length ? messages[messages.length - 1].created_at : since,
+      deleted_ids: [],
+      has_older: hasOlder,
+      oldest_timestamp: messages.length > 0 ? messages[0].created_at : null,
+      last_timestamp: latestTs,
+      is_muted: muted,
     },
     200,
-    { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+    NO_CACHE
   );
 }
 
@@ -90,13 +138,14 @@ export async function onRequestPost({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
-  // Check if muted
-  const memberRow = await env.DB.prepare(
-    'SELECT is_muted FROM community_chat_members WHERE user_id = ?'
-  ).bind(user.id).first();
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  const nowStr = new Date(nowMs).toISOString();
 
-  if (memberRow?.is_muted === 1) {
-    return forbidden('You are currently muted from posting messages.');
+  if (user.role !== 'admin') {
+    const muted = await isMemberMuted(env.DB, user.id);
+    if (muted) {
+      return forbidden('You have been muted by an administrator and cannot send messages.');
+    }
   }
 
   const body = await readJson(request);
@@ -104,40 +153,53 @@ export async function onRequestPost({ request, env }) {
   const replyToId = body?.reply_to_id ? String(body.reply_to_id).trim() : null;
 
   if (!text) return badRequest('Message text is required');
-  if (text.length > 1000) return badRequest('Message text cannot exceed 1000 characters');
+  if (text.length > CHAT_MAX_MESSAGE_LENGTH) {
+    return badRequest(`Message text cannot exceed ${CHAT_MAX_MESSAGE_LENGTH} characters`);
+  }
 
-  // Basic rate limiting: max 30 messages in the last 60 seconds
-  const recentCount = await env.DB.prepare(
-    "SELECT COUNT(*) AS c FROM community_chat_messages WHERE sender_user_id = ? AND created_at > datetime('now', '-60 seconds')"
-  ).bind(user.id).first();
+  if (replyToId) {
+    const targetMsg = await env.DB.prepare(
+      "SELECT id FROM community_chat_messages WHERE id = ? AND channel_type = 'group' AND is_deleted = 0"
+    )
+      .bind(replyToId)
+      .first();
+    if (!targetMsg) {
+      return badRequest('Replied message not found');
+    }
+  }
 
-  if ((recentCount?.c ?? 0) >= 30) {
-    return forbidden('Rate limit exceeded. Please wait a moment before sending another message.');
+  const rate = await checkChatRateLimit(env.DB, user.id, nowMs);
+  if (!rate.allowed) {
+    return json(
+      { error: 'Rate limit exceeded. Please wait a moment before sending another message.' },
+      429,
+      NO_CACHE
+    );
   }
 
   const id = uuid();
-  const now = nowIso();
+  const senderRole = user.role === 'admin' ? 'admin' : 'member';
+  const senderDisplayName = await resolveSenderDisplayName(env.DB, user);
 
   await env.DB.prepare(
-    `INSERT INTO community_chat_messages (id, channel_type, direct_thread_id, sender_user_id, recipient_user_id, reply_to_message_id, text, created_at, updated_at)
-     VALUES (?, 'group', NULL, ?, NULL, ?, ?, ?, ?)`
-  ).bind(id, user.id, replyToId, text, now, now).run();
+    `INSERT INTO community_chat_messages (
+       id, channel_type, direct_thread_id, sender_user_id, sender_role,
+       sender_display_name, recipient_user_id, reply_to_message_id, text, created_at, updated_at
+     ) VALUES (?, 'group', NULL, ?, ?, ?, NULL, ?, ?, ?, ?)`
+  )
+    .bind(id, user.id, senderRole, senderDisplayName, replyToId, text, nowStr, nowStr)
+    .run();
+
+  await markGroupReadIfNewer(env.DB, user.id, nowStr, nowStr);
+
+  const inserted = await env.DB.prepare(`${MESSAGE_SELECT_SQL} WHERE m.id = ?`).bind(id).first();
 
   return json(
     {
       ok: true,
-      message: {
-        id,
-        sender_id: user.id,
-        is_me: true,
-        author_name: formatAuthorName(user.name, user.surname),
-        author_role: user.role,
-        avatar_id: user.avatar_id,
-        text,
-        created_at: now,
-      },
+      message: serializeChatMessage(inserted, user.id),
     },
     201,
-    { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+    NO_CACHE
   );
 }

@@ -7,6 +7,7 @@ import { requireUser } from '../lib/auth.mjs';
 import { classifyUserDate, estimateMinutes, ensureUserCalendar, utcToday, userDateMap, elapsedDays, TOTAL_DAYS } from '../lib/calendar.mjs';
 import { userAggregates } from '../lib/points.mjs';
 import { getRestDayStatus, getWatDateAndMinutes } from '../lib/rest_day.mjs';
+import { getChatUnreadSummary } from '../lib/chat.mjs';
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
@@ -71,6 +72,7 @@ export async function onRequestGet({ request, env }) {
   }
 
   const stats = await userAggregates(env.DB, user.id, nowMs);
+  const chatUnread = await getChatUnreadSummary(env.DB, user);
 
   return json({
     date: today,
@@ -94,6 +96,7 @@ export async function onRequestGet({ request, env }) {
       cutoff_message: restDay.message,
     },
     rest_day: restDay,
+    chat_unread: chatUnread,
     programme: { total_days: TOTAL_DAYS, total_chapters: 260 },
   }, 200, {
     'Cache-Control': 'no-cache, no-store, must-revalidate',
