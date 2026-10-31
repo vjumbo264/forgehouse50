@@ -55,55 +55,64 @@ export async function totalPoints(db, userId) {
 // 4. If inactive (neither caught up nor active within the current/previous reading day),
 //    current streak resets to 0 immediately.
 // 5. Longest streak records the user's all-time maximum consecutive run and is preserved.
-export async function streaks(db, userId) {
+export async function streaks(db, userId, nowMs = Date.now()) {
   const { results: progressRows } = await db.prepare(
     'SELECT day_number, completed_at, updated_at FROM reading_progress WHERE user_id = ? AND completed = 1 ORDER BY day_number'
   ).bind(userId).all();
-  const days = (progressRows || []).map(r => r.day_number);
-
-  let longest = 0, currentRun = 0, prev = 0;
-  for (const d of days) {
-    currentRun = (d === prev + 1) ? currentRun + 1 : 1;
-    if (currentRun > longest) longest = currentRun;
-    prev = d;
-  }
-
-  // "current streak" = run ending at the highest completed day
-  if (days.length === 0) {
+  const rows = progressRows || [];
+  if (rows.length === 0) {
     return { current: 0, longest: 0 };
   }
 
   // Evaluate activity status against the user's WAT calendar schedule
-  const today = watToday();
+  const today = watToday(nowMs);
   const { rows: calendarRows } = await ensureUserCalendar(db, userId);
-  const elapsed = elapsedDays(calendarRows, today);
-  const highestCompleted = days[days.length - 1];
+  const userDayMap = new Map((calendarRows || []).map(r => [r.day_number, r.date]));
 
-  // ISSUE 4: Catch-up / backlog days (highestCompleted < elapsed) must NEVER increase streak.
-  // Streak specifically measures consecutive genuine activity on actual current calendar days.
-  // If the user has not completed up to today's scheduled reading day, they are in
-  // catch-up backlog recovery mode and current streak is 0.
-  if (highestCompleted < elapsed) {
+  function isRowOnTime(r) {
+    const sched = userDayMap.get(r.day_number);
+    const compDate = watDateOf(r.completed_at || r.updated_at);
+    // A day is on-time iff completed on or before its scheduled WAT date (including +1 read-ahead).
+    // Catch-up backlog days completed late (compDate > sched) never add to current or longest streak.
+    return Boolean(compDate && sched && compDate <= sched);
+  }
+
+  // Longest streak: maximum consecutive ON-TIME completed reading days in day_number order.
+  let longest = 0, onTimeRun = 0, prevOnTimeDay = 0;
+  for (const r of rows) {
+    if (isRowOnTime(r)) {
+      onTimeRun = (r.day_number === prevOnTimeDay + 1) ? onTimeRun + 1 : 1;
+      if (onTimeRun > longest) longest = onTimeRun;
+      prevOnTimeDay = r.day_number;
+    } else {
+      onTimeRun = 0;
+      prevOnTimeDay = 0;
+    }
+  }
+
+  // Inactivity / missed-day reset (i7 fix):
+  // A scheduled reading day only counts as MISSED once its WAT calendar date has strictly passed
+  // (r.date < today) without completion. Today's scheduled reading (r.date === today) remains open
+  // until 23:59:59 WAT, so an active daily reader keeps their streak throughout today before reading,
+  // and grows it by +1 upon completing today's reading on time.
+  // Rest days (Tue/Fri) have no row in calendarRows, so they neither break nor add to the streak.
+  const completedSet = new Set(rows.map(r => r.day_number));
+  const hasMissedPastDay = (calendarRows || []).some(r => r.date < today && !completedSet.has(r.day_number));
+  if (hasMissedPastDay) {
     return { current: 0, longest };
   }
 
-  // When caught up or on schedule (highestCompleted >= elapsed):
+  // When all strictly past scheduled days are completed:
   // Current streak counts consecutive on-time completed days ending at highestCompleted.
-  // A day was completed on-time if its completion WAT date <= its scheduled date
-  // (or if completed on today's date for current/read-ahead days).
-  const userDayMap = new Map((calendarRows || []).map(r => [r.day_number, r.date]));
+  // If the user caught up missed days late (compDate > sched), isRowOnTime is false so cur stays 0
+  // until they complete a current scheduled reading day on time.
   let cur = 0;
-  for (let i = progressRows.length - 1; i >= 0; i--) {
-    const r = progressRows[i];
-    if (i < progressRows.length - 1 && r.day_number !== progressRows[i + 1].day_number - 1) {
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    if (i < rows.length - 1 && r.day_number !== rows[i + 1].day_number - 1) {
       break;
     }
-    const sched = userDayMap.get(r.day_number);
-    const compDate = watDateOf(r.completed_at || r.updated_at);
-    // A day is on-time if completed on or before its scheduled calendar date (including read-ahead).
-    // Catch-up backlog days completed late (compDate > sched) break the streak.
-    const isOnTime = compDate && sched && compDate <= sched;
-    if (isOnTime) {
+    if (isRowOnTime(r)) {
       cur++;
     } else {
       break; // Broken by a backlog/catch-up recovery day
@@ -114,7 +123,7 @@ export async function streaks(db, userId) {
 }
 
 // ── Aggregates used by stats / leaderboard / badges ────────────────────────
-export async function userAggregates(db, userId) {
+export async function userAggregates(db, userId, nowMs = Date.now()) {
   const [progress, notes, audio, points] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS days_completed, COALESCE(SUM(chapters_read),0) AS chapters,
                        COALESCE(SUM(reading_seconds),0) AS reading_seconds
@@ -126,7 +135,7 @@ export async function userAggregates(db, userId) {
     db.prepare('SELECT COUNT(*) AS audio_sessions FROM audio_progress WHERE user_id = ? AND completed = 1').bind(userId).first(),
     totalPoints(db, userId),
   ]);
-  const { current, longest } = await streaks(db, userId);
+  const { current, longest } = await streaks(db, userId, nowMs);
   return {
     days_completed: progress?.days_completed ?? 0,
     chapters: progress?.chapters ?? 0,

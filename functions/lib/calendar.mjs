@@ -122,8 +122,8 @@ export function classifyDate(dateStr, planByDate) {
 // single funnel (calendar generation, quiz day, read-ahead cap, leaderboard
 // elapsed_days, join window, programme end) and now returns the WAT date.
 export const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1, no DST
-export function watToday() { return new Date(Date.now() + WAT_OFFSET_MS).toISOString().slice(0, 10); }
-export function utcToday() { return watToday(); }
+export function watToday(nowMs = Date.now()) { return new Date(nowMs + WAT_OFFSET_MS).toISOString().slice(0, 10); }
+export function utcToday(nowMs = Date.now()) { return watToday(nowMs); }
 
 export function watDateOf(isoOrTimestamp) {
   if (!isoOrTimestamp) return null;

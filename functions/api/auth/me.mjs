@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env }) {
       role: 'admin',
       email_verified: true,
       created_at: new Date().toISOString(),
-      stats: { total_points: 0, days_completed: 0, chapters_read: 0, reading_seconds: 0, current_streak: 0, longest_streak: 0, notes_total: 0 },
+      stats: { points: 0, total_points: 0, days_completed: 0, chapters: 0, chapters_read: 0, reading_seconds: 0, streak_current: 0, streak_longest: 0, current_streak: 0, longest_streak: 0, notes_total: 0 },
       badges: [],
       programme: {
         started: programme.started,
@@ -32,7 +32,8 @@ export async function onRequestGet({ request, env }) {
     });
   }
 
-  const [stats, badges] = await Promise.all([userAggregates(env.DB, user.id), userBadges(env.DB, user.id)]);
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  const [stats, badges] = await Promise.all([userAggregates(env.DB, user.id, nowMs), userBadges(env.DB, user.id)]);
   return json({
     id: user.id, email: user.email, name: user.name, surname: user.surname || '', avatar_url: user.avatar_url,
     avatar_id: user.avatar_id ?? null,
@@ -44,5 +45,7 @@ export async function onRequestGet({ request, env }) {
       concluded: !!programme.final_snapshot_at,
       programme_end_date: programme.programme_end_date,
     },
+  }, 200, {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
 }

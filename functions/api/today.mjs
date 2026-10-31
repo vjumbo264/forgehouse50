@@ -70,7 +70,7 @@ export async function onRequestGet({ request, env }) {
     }
   }
 
-  const stats = await userAggregates(env.DB, user.id);
+  const stats = await userAggregates(env.DB, user.id, nowMs);
 
   return json({
     date: today,

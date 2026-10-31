@@ -11,13 +11,14 @@ export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
   const { startDate, rows: calRows } = await ensureUserCalendar(env.DB, user.id);
-  const today = utcToday();
+  const today = utcToday(nowMs);
 
   const [progressRows, noteCounts, stats, quizRows] = await Promise.all([
     env.DB.prepare('SELECT day_number, completed, reading_seconds, chapters_read FROM reading_progress WHERE user_id = ?').bind(user.id).all(),
     env.DB.prepare('SELECT day_number, COUNT(*) AS c FROM notes WHERE user_id = ? GROUP BY day_number').bind(user.id).all(),
-    userAggregates(env.DB, user.id),
+    userAggregates(env.DB, user.id, nowMs),
     // at most ONE attempt row per day (unique index idx_quiz_one_attempt)
     env.DB.prepare('SELECT day_number, score, total, passed FROM quiz_attempts WHERE user_id = ?').bind(user.id).all(),
   ]);
@@ -70,5 +71,7 @@ export async function onRequestGet({ request, env }) {
       reading_seconds_total: stats.reading_seconds,
     },
     programme: { total_days: TOTAL_DAYS },
+  }, 200, {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
 }

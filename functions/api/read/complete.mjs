@@ -169,7 +169,7 @@ export async function onRequestPost({ request, env }) {
     'SELECT COALESCE(SUM(chapter_count),0) AS chapters FROM reading_assignments WHERE day_number = ?'
   ).bind(n).first();
   const chapters = chapterRow?.chapters ?? 0;
-  const completedAt = nowIso();
+  const completedAt = now.toISOString();
 
   await env.DB.prepare(
     `INSERT INTO reading_progress (id, user_id, day_number, completed, completed_at, reading_seconds, first_opened_at, final_chapter_reached_at, time_source, chapters_read, updated_at)
