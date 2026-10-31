@@ -79,7 +79,7 @@ export async function syncReleasesFromGitHub(env, { force = false } = {}) {
 
       // Newly discovered releases default to 'hold' when pre-release/releaseHold,
       // otherwise 'admins_only' — NEVER 'everyone'. Existing rollout_state is never overwritten by sync.
-      const initialRollout = releaseHoldFlag ? 'hold' : 'admins_only';
+      const initialRollout = 'hold';
 
       await env.DB.prepare(
         `INSERT INTO app_releases (version_code, version_name, tag, apk_url, size_bytes, sha256, changelog, rollout_state)
