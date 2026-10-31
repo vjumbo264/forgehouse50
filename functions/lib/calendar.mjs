@@ -155,7 +155,11 @@ export async function ensureUserCalendar(db, userId) {
   const prof = await db.prepare(
     'SELECT programme_start_date, email_verified FROM profiles WHERE id = ?'
   ).bind(userId).first();
-  if (!prof) return { startDate: null, rows: [] };
+  if (!prof) {
+    // Dedicated admin_credentials sessions do not have a profiles row;
+    // return the canonical programme schedule in-memory without touching user_reading_days FK.
+    return { startDate: START_DATE, rows: generateReadingDayDates(START_DATE, TOTAL_DAYS) };
+  }
 
   // Lazy-set fallback (documented judgment): first per-user calendar use.
   let startDate = prof.programme_start_date;

@@ -1,17 +1,34 @@
-// GET /api/announcements — returns active announcements with pagination (no caching delay).
+// GET /api/announcements — returns active and retired (archived) announcements for the archive screen.
 import { json } from '../../lib/http.mjs';
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+  'CDN-Cache-Control': 'no-store',
+  'Cloudflare-CDN-Cache-Control': 'no-store',
+};
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const cursor = (url.searchParams.get('cursor') || '').trim();
-  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+  const statusFilter = (url.searchParams.get('status') || 'all').trim();
+  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10) || 20));
 
-  let sql = "SELECT id, title, body, created_at FROM announcements WHERE status = 'active'";
+  let sql = "SELECT id, title, body, status, created_at, updated_at FROM announcements WHERE ";
   const params = [];
+  if (statusFilter === 'active' || statusFilter === 'archived') {
+    sql += "status = ?";
+    params.push(statusFilter);
+  } else {
+    sql += "status IN ('active', 'archived')";
+  }
+
   if (cursor) {
     sql += " AND created_at < ?";
     params.push(cursor);
   }
+
   sql += " ORDER BY created_at DESC LIMIT ?";
   params.push(limit + 1);
 
@@ -29,8 +46,6 @@ export async function onRequestGet({ request, env }) {
       has_more: hasMore,
     },
     200,
-    {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-    }
+    NO_STORE_HEADERS
   );
 }

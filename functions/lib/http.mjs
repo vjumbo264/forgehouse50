@@ -46,5 +46,8 @@ export function clearSessionCookie() {
 export function getSessionToken(request) {
   const cookie = request.headers.get('Cookie') || '';
   const m = cookie.match(/(?:^|;\s*)fh50_session=([a-f0-9]{64})/);
-  return m ? m[1] : null;
+  if (m) return m[1];
+  const auth = request.headers.get('Authorization') || '';
+  const bm = auth.match(/^Bearer\s+([a-f0-9]{64})$/i);
+  return bm ? bm[1].toLowerCase() : null;
 }
