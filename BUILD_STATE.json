@@ -2217,5 +2217,11 @@
         ]
       }
     ]
+  },
+  "oct30_contract_master_state": {
+    "contract": "fixes_oct30_v1",
+    "master_repo": "vjumbo264/forgehouse50-android",
+    "master_file": "BUILD_STATE.json",
+    "note": "Master build state for Oct 30 contract (i0-i11) lives in vjumbo264/forgehouse50-android/BUILD_STATE.json."
   }
 }
