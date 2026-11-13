@@ -1,10 +1,12 @@
-// Shared helpers for Community Chat (group chat + private admin<->member threads).
+// Shared helpers for Community Chat (group chat + private leadership<->member threads).
 // Privacy invariant: NEVER expose email, phone, full surname, or raw admin login usernames.
+// Soft-delete invariant (k5): NEVER expose original text of deleted messages to non-admin callers.
 
 export const CHAT_MAX_MESSAGE_LENGTH = 1000;
 export const CHAT_RATE_LIMIT_MAX_PER_MIN = 10;
 export const CHAT_RATE_LIMIT_WINDOW_MS = 60_000;
 export const EPOCH_ISO = '1970-01-01T00:00:00.000Z';
+export const DELETED_MESSAGE_PLACEHOLDER = 'This message was deleted';
 
 export function formatMemberChatName(name, surname) {
   const given = String(name || '').trim();
@@ -42,48 +44,70 @@ export function computeRowAuthorName(row) {
   return row.sender_display_name || 'Member';
 }
 
-export function serializeChatMessage(row, viewerUserId) {
+export function serializeChatMessage(row, viewerUserId, viewerIsAdmin = false) {
+  const isDeleted = row.is_deleted === 1;
   let replyTo = null;
   if (row.reply_to_message_id) {
-    const replyDeleted = row.reply_is_deleted === 1 || row.reply_id == null;
+    const replyMissing = row.reply_id == null;
+    const replyDeleted = row.reply_is_deleted === 1 || replyMissing;
+    const replyAuthor = replyMissing
+      ? 'Member'
+      : row.reply_sender_role === 'admin'
+        ? row.reply_sender_display_name || 'Pastor Dave'
+        : row.reply_profile_name
+          ? formatMemberChatName(row.reply_profile_name, row.reply_profile_surname)
+          : row.reply_sender_display_name || 'Member';
     if (replyDeleted) {
       replyTo = {
         id: row.reply_to_message_id,
-        author_name: 'Removed',
-        author_role: 'member',
-        text: 'Message removed by moderator',
+        author_name: replyAuthor,
+        author_role: row.reply_sender_role || 'member',
+        text: viewerIsAdmin && !replyMissing
+          ? String(row.reply_text || '').slice(0, 180)
+          : DELETED_MESSAGE_PLACEHOLDER,
+        is_deleted: true,
       };
     } else {
-      const replyAuthor =
-        row.reply_sender_role === 'admin'
-          ? row.reply_sender_display_name || 'Pastor Dave'
-          : row.reply_profile_name
-            ? formatMemberChatName(row.reply_profile_name, row.reply_profile_surname)
-            : row.reply_sender_display_name || 'Member';
       replyTo = {
         id: row.reply_id,
         author_name: replyAuthor,
         author_role: row.reply_sender_role || 'member',
         text: String(row.reply_text || '').slice(0, 180),
+        is_deleted: false,
       };
     }
   }
 
   const isAdminSender = row.sender_role === 'admin';
+  const isMe = row.sender_user_id === viewerUserId;
   return {
     id: row.id,
     channel_type: row.channel_type,
     thread_id: row.direct_thread_id || null,
     sender_id: row.sender_user_id,
-    is_me: row.sender_user_id === viewerUserId,
+    is_me: isMe,
     author_name: computeRowAuthorName(row),
     author_role: isAdminSender ? 'admin' : 'member',
     avatar_id: isAdminSender ? null : (row.profile_avatar_id || null),
     picture_version: isAdminSender ? null : (row.profile_picture_version ?? null),
-    text: row.text,
+    text: isDeleted && !viewerIsAdmin ? DELETED_MESSAGE_PLACEHOLDER : row.text,
+    is_deleted: isDeleted,
+    deleted_at: isDeleted ? (row.deleted_at || row.updated_at || null) : null,
+    deleted_by: isDeleted && viewerIsAdmin ? (row.deleted_by || null) : null,
+    client_msg_id: isMe ? (row.client_msg_id || null) : null,
     reply_to: replyTo,
     created_at: row.created_at,
+    updated_at: row.updated_at || row.created_at,
   };
+}
+
+export function maxCursorTimestamp(rows, fallback = null) {
+  let maxTs = null;
+  for (const r of rows) {
+    if (r.created_at && (!maxTs || r.created_at > maxTs)) maxTs = r.created_at;
+    if (r.updated_at && (!maxTs || r.updated_at > maxTs)) maxTs = r.updated_at;
+  }
+  return maxTs || fallback;
 }
 
 export const MESSAGE_SELECT_SQL = `
@@ -96,7 +120,12 @@ export const MESSAGE_SELECT_SQL = `
     m.sender_display_name,
     m.reply_to_message_id,
     m.text,
+    m.is_deleted,
+    m.deleted_by,
+    m.deleted_at,
+    m.client_msg_id,
     m.created_at,
+    m.updated_at,
     p.name AS profile_name,
     p.surname AS profile_surname,
     p.avatar_id AS profile_avatar_id,
@@ -192,7 +221,6 @@ export async function getChatUnreadSummary(db, user) {
     .bind(user.id)
     .first();
   const lastReadGroup = memberRow?.last_read_group_at || EPOCH_ISO;
-
   const groupRow = await db
     .prepare(
       `SELECT COUNT(*) AS c

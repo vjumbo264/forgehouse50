@@ -410,6 +410,8 @@ CREATE TABLE IF NOT EXISTS community_chat_messages (
   text                TEXT NOT NULL,
   is_deleted          INTEGER NOT NULL DEFAULT 0,
   deleted_by          TEXT,
+  deleted_at          TEXT,
+  client_msg_id       TEXT,
   created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
@@ -424,6 +426,8 @@ CREATE INDEX IF NOT EXISTS idx_chat_direct_thread_updated
   ON community_chat_messages(channel_type, direct_thread_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_chat_sender_created
   ON community_chat_messages(sender_user_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_client_msg_id
+  ON community_chat_messages(sender_user_id, client_msg_id) WHERE client_msg_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS community_chat_members (
   user_id             TEXT PRIMARY KEY,

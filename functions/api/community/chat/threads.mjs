@@ -1,7 +1,8 @@
-// GET /api/community/chat/threads — lists private direct threads, unread summary, and (for admins) privacy-safe member directory
+// GET /api/community/chat/threads — lists private leadership<->member threads, unread summary, and (for admins) member directory (k6)
 import { json } from '../../../lib/http.mjs';
 import { requireUser } from '../../../lib/auth.mjs';
 import {
+  DELETED_MESSAGE_PLACEHOLDER,
   EPOCH_ISO,
   formatMemberChatName,
   getChatUnreadSummary,
@@ -20,26 +21,13 @@ export async function onRequestGet({ request, env }) {
 
   if (!isAdmin) {
     const lastMsg = await env.DB.prepare(
-      `SELECT text, created_at, sender_role, sender_display_name
+      `SELECT text, is_deleted, created_at, sender_role, sender_display_name
        FROM community_chat_messages
-       WHERE channel_type = 'direct' AND direct_thread_id = ? AND is_deleted = 0
+       WHERE channel_type = 'direct' AND direct_thread_id = ?
        ORDER BY created_at DESC, rowid DESC LIMIT 1`
     )
       .bind(user.id)
       .first();
-
-    if (!lastMsg) {
-      return json(
-        {
-          ok: true,
-          is_muted: muted,
-          unread,
-          threads: [],
-        },
-        200,
-        NO_CACHE
-      );
-    }
 
     const adminNameRow = await env.DB.prepare(
       `SELECT sender_display_name
@@ -50,6 +38,12 @@ export async function onRequestGet({ request, env }) {
       .bind(user.id)
       .first();
 
+    const safeLatest = !lastMsg
+      ? null
+      : lastMsg.is_deleted === 1
+        ? DELETED_MESSAGE_PLACEHOLDER
+        : lastMsg.text;
+
     return json(
       {
         ok: true,
@@ -59,14 +53,16 @@ export async function onRequestGet({ request, env }) {
           {
             thread_id: user.id,
             user_id: user.id,
-            title: adminNameRow?.sender_display_name || 'Pastor Dave',
-            subtitle: 'ForgeHouse Leadership',
+            title: 'ForgeHouse Leadership',
+            subtitle: adminNameRow?.sender_display_name
+              ? `With ${adminNameRow.sender_display_name} & leaders`
+              : 'Private chat with pastors & leaders',
             avatar_id: null,
             picture_version: null,
             is_muted: muted,
             unread_count: unread.direct_unread,
-            latest_message: lastMsg.text,
-            latest_timestamp: lastMsg.created_at,
+            latest_message: safeLatest,
+            latest_timestamp: lastMsg?.created_at || null,
           },
         ],
       },
@@ -75,7 +71,7 @@ export async function onRequestGet({ request, env }) {
     );
   }
 
-  // Admin view: active member threads + privacy-safe verified member directory for starting new threads
+  // Admin view: shared leadership inbox across all member threads + verified member directory
   const { results: threadRows } = await env.DB.prepare(
     `SELECT
        p.id AS user_id,
@@ -84,11 +80,12 @@ export async function onRequestGet({ request, env }) {
        p.avatar_id,
        pic.version AS picture_version,
        COALESCE(cm.is_muted, 0) AS is_muted,
-       (SELECT m.text FROM community_chat_messages m
-        WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id AND m.is_deleted = 0
+       (SELECT CASE WHEN m.is_deleted = 1 THEN '[Deleted] ' || m.text ELSE m.text END
+        FROM community_chat_messages m
+        WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id
         ORDER BY m.created_at DESC, m.rowid DESC LIMIT 1) AS latest_message,
        (SELECT m.created_at FROM community_chat_messages m
-        WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id AND m.is_deleted = 0
+        WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id
         ORDER BY m.created_at DESC, m.rowid DESC LIMIT 1) AS latest_timestamp,
        (SELECT COUNT(*) FROM community_chat_messages m
         WHERE m.channel_type = 'direct'
@@ -104,7 +101,7 @@ export async function onRequestGet({ request, env }) {
      LEFT JOIN community_chat_members cm ON cm.user_id = p.id
      WHERE EXISTS (
        SELECT 1 FROM community_chat_messages m
-       WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id AND m.is_deleted = 0
+       WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id
      )
      ORDER BY latest_timestamp DESC`
   )

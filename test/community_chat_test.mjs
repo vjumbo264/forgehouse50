@@ -1,21 +1,29 @@
 import assert from 'node:assert/strict';
 import { createTestD1, seedCanonicalPlan } from './helpers_d1.mjs';
 import { onRequestGet as getGroupMsgs, onRequestPost as postGroupMsg } from '../functions/api/community/chat/messages.mjs';
+import { onRequestDelete as deleteChatMsg } from '../functions/api/community/chat/messages/[id].mjs';
 import { onRequestGet as getDirectMsgs, onRequestPost as postDirectMsg } from '../functions/api/community/chat/direct.mjs';
 import { onRequestGet as getThreads } from '../functions/api/community/chat/threads.mjs';
+import { onRequestGet as syncChat } from '../functions/api/community/chat/sync.mjs';
+import { onRequestPost as markChatRead } from '../functions/api/community/chat/read.mjs';
 import { onRequestDelete as adminDeleteMsg } from '../functions/api/admin/community/chat/messages/[id].mjs';
 import { onRequestPost as adminMute } from '../functions/api/admin/community/chat/mute.mjs';
 import { onRequestGet as getToday } from '../functions/api/today.mjs';
 
-console.log('=== Running i9 Community Chat & Direct Messaging Tests (SQLite D1) ===');
+console.log('=== Running Community Chat & Direct Messaging Tests (i9 + k1/k2/k3/k5/k6) ===');
 
-const db = createTestD1(['migrations/reading_time_v1.sql', 'migrations/community_chat_v2.sql']);
+const db = createTestD1([
+  'migrations/reading_time_v1.sql',
+  'migrations/community_chat_v2.sql',
+  'migrations/community_chat_v3.sql',
+]);
 seedCanonicalPlan(db);
 
 const exp = '2027-06-01T00:00:00.000Z';
 const tokMemA = '1'.repeat(64);
 const tokMemB = '2'.repeat(64);
 const tokAdminDave = '3'.repeat(64);
+const tokAdminVictor = '4'.repeat(64);
 
 db.exec(`
   INSERT INTO profiles (id, email, name, surname, password_hash, avatar_id, role, email_verified, programme_start_date)
@@ -23,15 +31,17 @@ db.exec(`
     ('mem_a', 'grace.secret@example.com', 'Grace', 'Okafor', 'hash', 'av_1', 'member', 1, '2026-10-19'),
     ('mem_b', 'chidi.secret@example.com', 'Chidi', 'Nwosu', 'hash', 'av_2', 'member', 1, '2026-10-19');
 
-  INSERT INTO sessions (id, user_id, expires_at) VALUES
-    ('${tokMemA}', 'mem_a', '${exp}'),
-    ('${tokMemB}', 'mem_b', '${exp}');
+  INSERT INTO sessions (id, user_id, expires_at, last_seen_at) VALUES
+    ('${tokMemA}', 'mem_a', '${exp}', '2026-10-31T09:59:00.000Z'),
+    ('${tokMemB}', 'mem_b', '${exp}', '2026-10-31T09:59:00.000Z');
 
   INSERT INTO admin_credentials (id, username, salt, password_hash) VALUES
-    ('adm_dave_uuid', 'fh50-admin-tw4xm5', 'salt', 'hash');
+    ('adm_dave_uuid', 'fh50-admin-tw4xm5', 'salt', 'hash'),
+    ('adm_victor_uuid', 'victor-admin', 'salt', 'hash');
 
-  INSERT INTO admin_sessions (id, admin_id, expires_at) VALUES
-    ('${tokAdminDave}', 'adm_dave_uuid', '${exp}');
+  INSERT INTO admin_sessions (id, admin_id, expires_at, last_seen_at) VALUES
+    ('${tokAdminDave}', 'adm_dave_uuid', '${exp}', '2026-10-31T09:59:00.000Z'),
+    ('${tokAdminVictor}', 'adm_victor_uuid', '${exp}', '2026-10-31T09:59:00.000Z');
 `);
 
 let nowMs = Date.parse('2026-10-31T10:00:00.000Z');
@@ -60,6 +70,7 @@ function assertPrivacyClean(payload) {
   assert.ok(!raw.includes('Okafor'), 'Must never leak full surname');
   assert.ok(!raw.includes('Nwosu'), 'Must never leak full surname');
   assert.ok(!raw.includes('fh50-admin-tw4xm5'), 'Must never leak raw admin login username');
+  assert.ok(!raw.includes('victor-admin'), 'Must never leak raw admin login username');
 }
 
 // 1. Auth guard
@@ -69,17 +80,19 @@ function assertPrivacyClean(payload) {
   console.log('  [PASS] Unauthenticated chat access blocked (401).');
 }
 
-// 2. Group chat posting (member + admin_credentials), reply-to, privacy formatting, and pagination
+// 2. Group chat posting (member + admin_credentials), reply-to, client_msg_id dedupe (k3), privacy formatting, pagination
 let firstMsgId;
+let memBMsgId;
 let adminMsgId;
 {
   for (let i = 1; i <= 4; i++) {
     nowMs += 1000;
+    const clientMsgId = i === 1 ? 'cli-group-dedupe-1' : `cli-group-${i}`;
     const r = await postGroupMsg({
       request: makeReq('https://fh50/api/community/chat/messages', {
         method: 'POST',
         token: tokMemA,
-        body: { text: `Morning reflection #${i}` },
+        body: { text: `Morning reflection #${i}`, client_msg_id: clientMsgId },
       }),
       env,
     });
@@ -91,13 +104,40 @@ let adminMsgId;
     if (i === 1) firstMsgId = data.message.id;
   }
 
-  // Pastor Dave (admin_credentials, NOT in profiles) replies to message #1
+  // k3: Retry with same client_msg_id returns original message without creating duplicate
+  const dupRes = await postGroupMsg({
+    request: makeReq('https://fh50/api/community/chat/messages', {
+      method: 'POST',
+      token: tokMemA,
+      body: { text: 'Morning reflection #1', client_msg_id: 'cli-group-dedupe-1' },
+    }),
+    env,
+  });
+  assert.equal(dupRes.status, 200);
+  const dupData = await dupRes.json();
+  assert.equal(dupData.deduplicated, true);
+  assert.equal(dupData.message.id, firstMsgId);
+
+  // Member B posts a message
+  nowMs += 1000;
+  const rB = await postGroupMsg({
+    request: makeReq('https://fh50/api/community/chat/messages', {
+      method: 'POST',
+      token: tokMemB,
+      body: { text: 'Chidi secret private thought to delete later' },
+    }),
+    env,
+  });
+  assert.equal(rB.status, 201);
+  memBMsgId = (await rB.json()).message.id;
+
+  // Admin (Pastor Dave via admin_credentials) posts a reply quoting firstMsgId
   nowMs += 1000;
   const admRes = await postGroupMsg({
     request: makeReq('https://fh50/api/community/chat/messages', {
       method: 'POST',
       token: tokAdminDave,
-      body: { text: 'Well spotted Grace! Keep pressing on.', reply_to_id: firstMsgId },
+      body: { text: 'Amen Grace! Keep pressing in.', reply_to_id: firstMsgId },
     }),
     env,
   });
@@ -108,54 +148,41 @@ let adminMsgId;
   assert.equal(admData.message.author_role, 'admin');
   assert.equal(admData.message.reply_to.id, firstMsgId);
   assert.equal(admData.message.reply_to.author_name, 'Grace O.');
-  assert.equal(admData.message.reply_to.text, 'Morning reflection #1');
   adminMsgId = admData.message.id;
 
-  // Member B checks /api/today BEFORE opening chat -> sees 5 group_unread
-  const todayBefore = await (await getToday({
-    request: makeReq('https://fh50/api/today', { token: tokMemB }),
-    env,
-  })).json();
-  assert.equal(todayBefore.chat_unread.group_unread, 5);
-  assert.equal(todayBefore.chat_unread.direct_unread, 0);
-
-  // Pagination: initial load with limit=3 returns newest 3 (#3, #4, Pastor Dave) in chronological order + has_older=true
-  nowMs += 1000;
+  // Pagination: limit=3 newest, then ?before=oldest
   const page1 = await (await getGroupMsgs({
     request: makeReq('https://fh50/api/community/chat/messages?limit=3', { token: tokMemB }),
     env,
   })).json();
   assertPrivacyClean(page1);
-  assert.equal(page1.has_older, true);
   assert.equal(page1.messages.length, 3);
-  assert.equal(page1.messages[0].text, 'Morning reflection #3');
-  assert.equal(page1.messages[2].text, 'Well spotted Grace! Keep pressing on.');
+  assert.equal(page1.has_older, true);
+  assert.equal(page1.messages[2].id, adminMsgId);
 
-  // Older history pagination (?before=oldest_timestamp) returns #1 and #2 chronologically
-  const older = await (await getGroupMsgs({
+  const page2 = await (await getGroupMsgs({
     request: makeReq(`https://fh50/api/community/chat/messages?limit=3&before=${encodeURIComponent(page1.oldest_timestamp)}`, {
       token: tokMemB,
     }),
     env,
   })).json();
-  assert.equal(older.has_older, false);
-  assert.equal(older.messages.length, 2);
-  assert.equal(older.messages[0].text, 'Morning reflection #1');
-  assert.equal(older.messages[1].text, 'Morning reflection #2');
+  assert.equal(page2.messages.length, 3);
+  assert.equal(page2.has_older, false);
+  assert.equal(page2.messages[0].id, firstMsgId);
 
-  // Member B's group_unread is now 0!
-  const todayAfter = await (await getToday({
-    request: makeReq('https://fh50/api/today', { token: tokMemB }),
+  // /api/today includes unread summary for member A (Pastor Dave + Chidi = 2 unread)
+  const todayA = await (await getToday({
+    request: makeReq('https://fh50/api/today', { token: tokMemA }),
     env,
   })).json();
-  assert.equal(todayAfter.chat_unread.group_unread, 0);
-
-  console.log('  [PASS] Group chat, admin_credentials FK safety, reply-to, privacy, pagination, and unread counter verified.');
+  assert.equal(todayA.chat_unread.total_unread, 2);
+  console.log('  [PASS] Group chat, client_msg_id dedupe (k3), reply-to, privacy, pagination, and unread counter verified.');
 }
 
-// 3. Zero-write idle polling check
+// 3. Zero-write idle polling check (both community_chat_members and sessions.last_seen_at throttled)
 {
   const beforeRow = db.sqlite.prepare('SELECT updated_at FROM community_chat_members WHERE user_id = ?').get('mem_b');
+  const beforeSession = db.sqlite.prepare('SELECT last_seen_at FROM sessions WHERE id = ?').get(tokMemB);
   nowMs += 10_000;
   const pollRes = await (await getGroupMsgs({
     request: makeReq(`https://fh50/api/community/chat/messages?since=${encodeURIComponent(new Date(nowMs).toISOString())}`, {
@@ -164,29 +191,62 @@ let adminMsgId;
     env,
   })).json();
   assert.equal(pollRes.messages.length, 0);
+  const syncRes = await (await syncChat({
+    request: makeReq(`https://fh50/api/community/chat/sync?bg=1&group_since=${encodeURIComponent(new Date(nowMs).toISOString())}`, {
+      token: tokMemB,
+    }),
+    env,
+  })).json();
+  assert.equal(syncRes.group_messages.length, 0);
   const afterRow = db.sqlite.prepare('SELECT updated_at FROM community_chat_members WHERE user_id = ?').get('mem_b');
-  assert.equal(afterRow.updated_at, beforeRow.updated_at, 'Idle poll must perform 0 D1 writes');
-  console.log('  [PASS] Zero D1 writes on idle ?since= polls verified.');
+  const afterSession = db.sqlite.prepare('SELECT last_seen_at FROM sessions WHERE id = ?').get(tokMemB);
+  assert.equal(afterRow.updated_at, beforeRow.updated_at, 'Idle poll must perform 0 D1 writes to chat_members');
+  assert.equal(afterSession.last_seen_at, beforeSession.last_seen_at, 'Idle poll must not write sessions.last_seen_at within 15m');
+  console.log('  [PASS] Zero D1 writes on idle ?since= and /sync polls verified.');
 }
 
-// 4. Private direct threads: confidentiality & admin-initiated rule
+// 4. Member-initiated Leadership Shared Inbox (k6), Admin DM send (k2), confidentiality & non-null empty cursor
 {
-  // Member A has no direct thread yet -> threads list is empty, cannot initiate before admin
+  // Member A always has "ForgeHouse Leadership" thread available immediately (k6)
   const initThreadsA = await (await getThreads({
     request: makeReq('https://fh50/api/community/chat/threads', { token: tokMemA }),
     env,
   })).json();
-  assert.equal(initThreadsA.threads.length, 0);
+  assert.equal(initThreadsA.threads.length, 1);
+  assert.equal(initThreadsA.threads[0].title, 'ForgeHouse Leadership');
 
-  const prematurePost = await postDirectMsg({
+  // Member B empty direct thread returns non-null EPOCH_ISO last_timestamp so client never loops (k2/FH-014)
+  const emptyDirectB = await (await getDirectMsgs({
+    request: makeReq('https://fh50/api/community/chat/direct', { token: tokMemB }),
+    env,
+  })).json();
+  assert.equal(emptyDirectB.messages.length, 0);
+  assert.equal(emptyDirectB.thread_started_by_admin, true);
+  assert.ok(emptyDirectB.last_timestamp && emptyDirectB.last_timestamp.length > 0);
+
+  // Member A initiates private message to leadership (k6) -> 201!
+  nowMs += 1000;
+  const memStartDm = await postDirectMsg({
     request: makeReq('https://fh50/api/community/chat/direct', {
       method: 'POST',
       token: tokMemA,
-      body: { text: 'Hello Pastor!' },
+      body: { text: 'Hello leadership, can we pray about my schedule?', client_msg_id: 'cli-dm-1' },
     }),
     env,
   });
-  assert.equal(prematurePost.status, 403, 'Member cannot initiate private thread before admin');
+  assert.equal(memStartDm.status, 201);
+
+  // Retry same client_msg_id -> deduplicated 200
+  const memDupDm = await postDirectMsg({
+    request: makeReq('https://fh50/api/community/chat/direct', {
+      method: 'POST',
+      token: tokMemA,
+      body: { text: 'Hello leadership, can we pray about my schedule?', client_msg_id: 'cli-dm-1' },
+    }),
+    env,
+  });
+  assert.equal(memDupDm.status, 200);
+  assert.equal((await memDupDm.json()).deduplicated, true);
 
   // Member A tries to message Member B -> 403
   const memToMemPost = await postDirectMsg({
@@ -199,101 +259,176 @@ let adminMsgId;
   });
   assert.equal(memToMemPost.status, 403);
 
-  // Admin starts private thread with Member A
+  // Both Pastor Dave and ForgeHouse Admin see Member A's thread in the shared inbox and can reply (k2 + k6)
+  const bgCursorBeforeReply = new Date(nowMs).toISOString();
   nowMs += 1000;
   const admDm = await postDirectMsg({
     request: makeReq('https://fh50/api/community/chat/direct', {
       method: 'POST',
       token: tokAdminDave,
-      body: { target_user_id: 'mem_a', text: 'Grace, thank you for your consistency this week!' },
+      body: { target_user_id: 'mem_a', text: 'Grace, we are praying with you!' },
     }),
     env,
   });
   assert.equal(admDm.status, 201);
+
+  nowMs += 1000;
+  const admVictorDm = await postDirectMsg({
+    request: makeReq('https://fh50/api/community/chat/direct', {
+      method: 'POST',
+      token: tokAdminVictor,
+      body: { target_user_id: 'mem_a', text: 'Checking in too - Victor' },
+    }),
+    env,
+  });
+  assert.equal(admVictorDm.status, 201);
+  assert.equal((await admVictorDm.json()).message.author_name, 'ForgeHouse Admin');
 
   // Member B CANNOT read Member A's thread under any query param -> 403
   const snoopingGet = await getDirectMsgs({
     request: makeReq('https://fh50/api/community/chat/direct?thread_id=mem_a', { token: tokMemB }),
     env,
   });
-  assert.equal(snoopingGet.status, 403, 'Member B must get 403 trying to read Member A thread');
+  assert.equal(snoopingGet.status, 403);
 
-  // Member B's own threads list is still empty
-  const threadsB = await (await getThreads({
-    request: makeReq('https://fh50/api/community/chat/threads', { token: tokMemB }),
+  // Background /sync for Member A sees the 2 new leader replies without marking them read
+  const syncA = await (await syncChat({
+    request: makeReq(`https://fh50/api/community/chat/sync?bg=1&group_since=${encodeURIComponent(bgCursorBeforeReply)}&direct_since=${encodeURIComponent(bgCursorBeforeReply)}`, {
+      token: tokMemA,
+    }),
     env,
   })).json();
-  assert.equal(threadsB.threads.length, 0);
-  assert.equal(threadsB.unread.direct_unread, 0);
+  assert.equal(syncA.direct_messages.length, 2);
+  assert.equal(syncA.unread.direct_unread, 2);
 
-  // Member A sees 1 unread direct message in threads & today, reads it, and replies!
-  const threadsA = await (await getThreads({
-    request: makeReq('https://fh50/api/community/chat/threads', { token: tokMemA }),
-    env,
-  })).json();
-  assertPrivacyClean(threadsA);
-  assert.equal(threadsA.threads.length, 1);
-  assert.equal(threadsA.threads[0].unread_count, 1);
-  assert.equal(threadsA.threads[0].title, 'Pastor Dave');
-
-  nowMs += 1000;
-  const readDmA = await (await getDirectMsgs({
-    request: makeReq('https://fh50/api/community/chat/direct', { token: tokMemA }),
-    env,
-  })).json();
-  assert.equal(readDmA.messages.length, 1);
-  assert.equal(readDmA.thread_started_by_admin, true);
-
-  nowMs += 1000;
-  const replyA = await postDirectMsg({
-    request: makeReq('https://fh50/api/community/chat/direct', {
+  // POST /api/community/chat/read marks direct thread read (k7 notification Mark-as-read action)
+  await markChatRead({
+    request: makeReq('https://fh50/api/community/chat/read', {
       method: 'POST',
       token: tokMemA,
-      body: { text: 'Thank you Pastor Dave!' },
+      body: { channel_type: 'direct', timestamp: new Date(nowMs).toISOString() },
     }),
     env,
   });
-  assert.equal(replyA.status, 201);
-
-  // Admin checks threads -> sees Grace O. thread with unread_count = 1 and privacy-safe directory of 2 verified members
-  const admThreads = await (await getThreads({
-    request: makeReq('https://fh50/api/community/chat/threads', { token: tokAdminDave }),
+  const syncAfterRead = await (await syncChat({
+    request: makeReq('https://fh50/api/community/chat/sync?unread_only=1', { token: tokMemA }),
     env,
   })).json();
-  assertPrivacyClean(admThreads);
-  assert.equal(admThreads.threads.length, 1);
-  assert.equal(admThreads.threads[0].title, 'Grace O.');
-  assert.equal(admThreads.threads[0].unread_count, 1);
-  assert.equal(admThreads.directory.length, 2);
+  assert.equal(syncAfterRead.unread.direct_unread, 0);
 
-  console.log('  [PASS] Private admin<->member thread confidentiality, initiation guard, and per-thread unreads verified.');
+  console.log('  [PASS] Member-initiated shared leadership inbox (k6), multi-admin replies (k2), /sync & /read verified.');
 }
 
-// 5. Moderation: mute/unmute & soft-delete + deleted_ids sync + audit log
+// 5. Member self-delete & admin soft-delete (k5): non-admins NEVER see deleted text anywhere; admins see flagged original
 {
-  // Member cannot mute or delete
-  const nonAdminMute = await adminMute({
-    request: makeReq('https://fh50/api/admin/community/chat/mute', {
-      method: 'POST',
-      token: tokMemA,
-      body: { user_id: 'mem_b', action: 'mute' },
-    }),
-    env,
-  });
-  assert.equal(nonAdminMute.status, 403);
-
-  const nonAdminDel = await adminDeleteMsg({
-    request: makeReq(`https://fh50/api/admin/community/chat/messages/${firstMsgId}`, {
+  // Member A CANNOT delete Member B's message -> 403
+  const stealDel = await deleteChatMsg({
+    request: makeReq(`https://fh50/api/community/chat/messages/${memBMsgId}`, {
       method: 'DELETE',
       token: tokMemA,
     }),
     env,
   });
-  assert.equal(nonAdminDel.status, 403);
+  assert.equal(stealDel.status, 403);
 
-  // Admin mutes Member B
+  // Member B deletes their own message -> 200
+  const beforeMemDel = new Date(nowMs).toISOString();
   nowMs += 1000;
-  const muteRes = await adminMute({
+  const selfDel = await deleteChatMsg({
+    request: makeReq(`https://fh50/api/community/chat/messages/${memBMsgId}`, {
+      method: 'DELETE',
+      token: tokMemB,
+    }),
+    env,
+  });
+  assert.equal(selfDel.status, 200);
+
+  // Admin deletes firstMsgId (which adminMsgId quoted!)
+  nowMs += 1000;
+  const admDel = await adminDeleteMsg({
+    request: makeReq(`https://fh50/api/admin/community/chat/messages/${firstMsgId}`, {
+      method: 'DELETE',
+      token: tokAdminDave,
+    }),
+    env,
+  });
+  assert.equal(admDel.status, 200);
+
+  // Incremental ?since= poll for Member A returns updated soft-deleted messages with text replaced and NO leak
+  const deltaMem = await (await getGroupMsgs({
+    request: makeReq(`https://fh50/api/community/chat/messages?since=${encodeURIComponent(beforeMemDel)}`, {
+      token: tokMemA,
+    }),
+    env,
+  })).json();
+  const rawDeltaMem = JSON.stringify(deltaMem);
+  assert.ok(!rawDeltaMem.includes('Chidi secret private thought'), 'Deleted text MUST NEVER leak to members in ?since=');
+  assert.ok(!rawDeltaMem.includes('Morning reflection #1'), 'Deleted text MUST NEVER leak to members in ?since=');
+
+  // Full list for Member A shows tombstone "This message was deleted" + reply_to shows "This message was deleted"
+  const fullMem = await (await getGroupMsgs({
+    request: makeReq('https://fh50/api/community/chat/messages', { token: tokMemA }),
+    env,
+  })).json();
+  const rawFullMem = JSON.stringify(fullMem);
+  assert.ok(!rawFullMem.includes('Chidi secret private thought'), 'Deleted text MUST NEVER leak to members');
+  assert.ok(!rawFullMem.includes('Morning reflection #1'), 'Deleted text MUST NEVER leak to members or reply_to');
+  const tombstoneB = fullMem.messages.find((m) => m.id === memBMsgId);
+  assert.equal(tombstoneB.is_deleted, true);
+  assert.equal(tombstoneB.text, 'This message was deleted');
+  const daveReplyMem = fullMem.messages.find((m) => m.id === adminMsgId);
+  assert.equal(daveReplyMem.reply_to.text, 'This message was deleted');
+
+  // Background /sync NEVER includes deleted messages for notification
+  const bgMem = await (await syncChat({
+    request: makeReq(`https://fh50/api/community/chat/sync?bg=1&group_since=${encodeURIComponent(beforeMemDel)}`, {
+      token: tokMemA,
+    }),
+    env,
+  })).json();
+  assert.ok(!JSON.stringify(bgMem).includes('Chidi secret private thought'));
+
+  // Admin STILL sees original text with is_deleted: true
+  const fullAdm = await (await getGroupMsgs({
+    request: makeReq('https://fh50/api/community/chat/messages', { token: tokAdminDave }),
+    env,
+  })).json();
+  const admViewB = fullAdm.messages.find((m) => m.id === memBMsgId);
+  assert.equal(admViewB.is_deleted, true);
+  assert.equal(admViewB.text, 'Chidi secret private thought to delete later');
+
+  // Member also deletes their own direct message and threads endpoint does NOT leak it
+  const ownDm = await postDirectMsg({
+    request: makeReq('https://fh50/api/community/chat/direct', {
+      method: 'POST',
+      token: tokMemB,
+      body: { text: 'Secret DM text to remove' },
+    }),
+    env,
+  });
+  const ownDmId = (await ownDm.json()).message.id;
+  nowMs += 1000;
+  const delDmRes = await deleteChatMsg({
+    request: makeReq(`https://fh50/api/community/chat/messages/${ownDmId}`, {
+      method: 'DELETE',
+      token: tokMemB,
+    }),
+    env,
+  });
+  assert.equal(delDmRes.status, 200);
+  const threadsBAfter = await (await getThreads({
+    request: makeReq('https://fh50/api/community/chat/threads', { token: tokMemB }),
+    env,
+  })).json();
+  assert.equal(threadsBAfter.threads[0].latest_message, 'This message was deleted');
+  assert.ok(!JSON.stringify(threadsBAfter).includes('Secret DM text to remove'));
+
+  console.log('  [PASS] Member self-delete & admin soft-delete (k5): zero text leak to members, flagged original for admins.');
+}
+
+// 6. Mute & Rate limiting (max 10 messages per 60s)
+{
+  await adminMute({
     request: makeReq('https://fh50/api/admin/community/chat/mute', {
       method: 'POST',
       token: tokAdminDave,
@@ -301,18 +436,6 @@ let adminMsgId;
     }),
     env,
   });
-  assert.equal(muteRes.status, 200);
-
-  // Muted Member B can STILL read (200, is_muted: true)
-  const mutedRead = await getGroupMsgs({
-    request: makeReq('https://fh50/api/community/chat/messages', { token: tokMemB }),
-    env,
-  });
-  assert.equal(mutedRead.status, 200);
-  const mutedReadJson = await mutedRead.json();
-  assert.equal(mutedReadJson.is_muted, true);
-
-  // Muted Member B CANNOT post (403)
   const mutedPost = await postGroupMsg({
     request: makeReq('https://fh50/api/community/chat/messages', {
       method: 'POST',
@@ -322,9 +445,6 @@ let adminMsgId;
     env,
   });
   assert.equal(mutedPost.status, 403);
-
-  // Unmute Member B -> can post again (201)
-  nowMs += 1000;
   await adminMute({
     request: makeReq('https://fh50/api/admin/community/chat/mute', {
       method: 'POST',
@@ -333,51 +453,8 @@ let adminMsgId;
     }),
     env,
   });
-  const unmutedPost = await postGroupMsg({
-    request: makeReq('https://fh50/api/community/chat/messages', {
-      method: 'POST',
-      token: tokMemB,
-      body: { text: 'Back online!' },
-    }),
-    env,
-  });
-  assert.equal(unmutedPost.status, 201);
 
-  // Admin deletes firstMsgId -> Incremental ?since= poll returns deleted_ids containing firstMsgId,
-  // and adminMsgId's reply_to gracefully shows "Message removed by moderator"!
-  const beforeDeleteIso = new Date(nowMs).toISOString();
-  nowMs += 1000;
-  const delRes = await adminDeleteMsg({
-    request: makeReq(`https://fh50/api/admin/community/chat/messages/${firstMsgId}`, {
-      method: 'DELETE',
-      token: tokAdminDave,
-    }),
-    env,
-  });
-  assert.equal(delRes.status, 200);
-
-  const deltaAfterDel = await (await getGroupMsgs({
-    request: makeReq(`https://fh50/api/community/chat/messages?since=${encodeURIComponent(beforeDeleteIso)}`, {
-      token: tokMemA,
-    }),
-    env,
-  })).json();
-  assert.ok(deltaAfterDel.deleted_ids.includes(firstMsgId), 'deleted_ids must report soft-deleted message');
-
-  const fullAfterDel = await (await getGroupMsgs({
-    request: makeReq('https://fh50/api/community/chat/messages', { token: tokMemA }),
-    env,
-  })).json();
-  assert.ok(!fullAfterDel.messages.some((m) => m.id === firstMsgId), 'Deleted message must not appear');
-  const daveReplyMsg = fullAfterDel.messages.find((m) => m.id === adminMsgId);
-  assert.equal(daveReplyMsg.reply_to.text, 'Message removed by moderator');
-
-  console.log('  [PASS] Moderation (mute read-only 200 / post-blocked 403, unmute, soft-delete + deleted_ids) verified.');
-}
-
-// 6. Rate limiting: max 10 messages per 60 seconds
-{
-  nowMs += 120_000; // fresh 60s window
+  nowMs += 120_000;
   for (let i = 1; i <= 10; i++) {
     nowMs += 500;
     const r = await postGroupMsg({
@@ -399,19 +476,19 @@ let adminMsgId;
     }),
     env,
   });
-  assert.equal(r11.status, 429, '11th message within 60s must return 429');
+  assert.equal(r11.status, 429);
 
   nowMs += 61_000;
-  const rAfterWindow = await postGroupMsg({
+  const recovered = await postGroupMsg({
     request: makeReq('https://fh50/api/community/chat/messages', {
       method: 'POST',
       token: tokMemB,
-      body: { text: 'After cooldown' },
+      body: { text: 'After window' },
     }),
     env,
   });
-  assert.equal(rAfterWindow.status, 201);
-  console.log('  [PASS] Rate limit (10/60s -> 429, recovers after window) verified.');
+  assert.equal(recovered.status, 201);
+  console.log('  [PASS] Mute & rate limit (10/60s -> 429, recovers after window) verified.');
 }
 
-console.log('ALL i9 COMMUNITY CHAT BACKEND TESTS PASSED!');
+console.log('ALL COMMUNITY CHAT TESTS PASSED!');

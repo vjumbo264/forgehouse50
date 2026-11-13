@@ -1,13 +1,15 @@
-// GET & POST /api/community/chat/direct — private 1:1 thread between admin and a single member
+// GET & POST /api/community/chat/direct — private 1:1 thread between leadership shared inbox and an individual member (k2/k6)
 import { json, badRequest, forbidden, notFound, readJson, uuid } from '../../../lib/http.mjs';
 import { requireUser } from '../../../lib/auth.mjs';
 import {
   CHAT_MAX_MESSAGE_LENGTH,
+  EPOCH_ISO,
   MESSAGE_SELECT_SQL,
   checkChatRateLimit,
   formatMemberChatName,
   isMemberMuted,
   markDirectThreadReadIfNewer,
+  maxCursorTimestamp,
   resolveSenderDisplayName,
   serializeChatMessage,
 } from '../../../lib/chat.mjs';
@@ -18,6 +20,7 @@ export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
+  const isAdmin = user.role === 'admin';
   const url = new URL(request.url);
   const requestedThreadId = (url.searchParams.get('thread_id') || '').trim();
   const since = (url.searchParams.get('since') || '').trim();
@@ -27,9 +30,8 @@ export async function onRequestGet({ request, env }) {
   const nowStr = new Date(nowMs).toISOString();
 
   let threadId;
-  let threadTitle = 'Pastor Dave';
-
-  if (user.role === 'admin') {
+  let threadTitle = 'ForgeHouse Leadership';
+  if (isAdmin) {
     if (!requestedThreadId) return badRequest('thread_id is required for admin');
     const memberProfile = await env.DB.prepare(
       'SELECT id, name, surname FROM profiles WHERE id = ?'
@@ -46,40 +48,25 @@ export async function onRequestGet({ request, env }) {
     threadId = user.id;
   }
 
-  const muted = user.role === 'admin' ? false : await isMemberMuted(env.DB, user.id);
-  const startedRow = await env.DB.prepare(
-    `SELECT 1 AS started FROM community_chat_messages
-     WHERE channel_type = 'direct' AND direct_thread_id = ? AND sender_role = 'admin' AND is_deleted = 0
-     LIMIT 1`
-  )
-    .bind(threadId)
-    .first();
-  const threadStartedByAdmin = !!startedRow;
+  const muted = isAdmin ? false : await isMemberMuted(env.DB, user.id);
 
   if (since) {
     const { results } = await env.DB.prepare(
       `${MESSAGE_SELECT_SQL}
-       WHERE m.channel_type = 'direct' AND m.direct_thread_id = ? AND m.is_deleted = 0 AND m.created_at > ?
+       WHERE m.channel_type = 'direct' AND m.direct_thread_id = ? AND (m.created_at > ? OR m.updated_at > ?)
        ORDER BY m.created_at ASC, m.rowid ASC
        LIMIT ?`
     )
-      .bind(threadId, since, limit)
+      .bind(threadId, since, since, limit)
       .all();
 
-    const { results: delRows } = await env.DB.prepare(
-      `SELECT id FROM community_chat_messages
-       WHERE channel_type = 'direct' AND direct_thread_id = ? AND is_deleted = 1 AND updated_at > ?
-       LIMIT 100`
-    )
-      .bind(threadId, since)
-      .all();
-
-    const messages = (results || []).map((r) => serializeChatMessage(r, user.id));
-    const deletedIds = (delRows || []).map((r) => r.id);
-    const latestTs = messages.length > 0 ? messages[messages.length - 1].created_at : null;
-
-    if (latestTs) {
-      await markDirectThreadReadIfNewer(env.DB, user.id, threadId, latestTs, nowStr);
+    const rows = results || [];
+    const messages = rows.map((r) => serializeChatMessage(r, user.id, isAdmin));
+    const latestUnreadTs = rows
+      .filter((r) => r.is_deleted !== 1)
+      .reduce((acc, r) => (!acc || r.created_at > acc ? r.created_at : acc), null);
+    if (latestUnreadTs) {
+      await markDirectThreadReadIfNewer(env.DB, user.id, threadId, latestUnreadTs, nowStr);
     }
 
     return json(
@@ -87,13 +74,13 @@ export async function onRequestGet({ request, env }) {
         ok: true,
         thread_id: threadId,
         thread_title: threadTitle,
-        thread_started_by_admin: threadStartedByAdmin,
+        thread_started_by_admin: true,
         is_muted: muted,
         messages,
-        deleted_ids: deletedIds,
+        deleted_ids: [],
         has_older: false,
         oldest_timestamp: messages.length > 0 ? messages[0].created_at : null,
-        last_timestamp: latestTs || since,
+        last_timestamp: maxCursorTimestamp(rows, since),
       },
       200,
       NO_CACHE
@@ -103,7 +90,7 @@ export async function onRequestGet({ request, env }) {
   if (before) {
     const { results } = await env.DB.prepare(
       `${MESSAGE_SELECT_SQL}
-       WHERE m.channel_type = 'direct' AND m.direct_thread_id = ? AND m.is_deleted = 0 AND m.created_at < ?
+       WHERE m.channel_type = 'direct' AND m.direct_thread_id = ? AND m.created_at < ?
        ORDER BY m.created_at DESC, m.rowid DESC
        LIMIT ?`
     )
@@ -113,20 +100,20 @@ export async function onRequestGet({ request, env }) {
     const rows = results || [];
     const hasOlder = rows.length > limit;
     const chronological = (hasOlder ? rows.slice(0, limit) : rows).reverse();
-    const messages = chronological.map((r) => serializeChatMessage(r, user.id));
+    const messages = chronological.map((r) => serializeChatMessage(r, user.id, isAdmin));
 
     return json(
       {
         ok: true,
         thread_id: threadId,
         thread_title: threadTitle,
-        thread_started_by_admin: threadStartedByAdmin,
+        thread_started_by_admin: true,
         is_muted: muted,
         messages,
         deleted_ids: [],
         has_older: hasOlder,
         oldest_timestamp: messages.length > 0 ? messages[0].created_at : null,
-        last_timestamp: messages.length > 0 ? messages[messages.length - 1].created_at : null,
+        last_timestamp: maxCursorTimestamp(chronological, EPOCH_ISO),
       },
       200,
       NO_CACHE
@@ -135,7 +122,7 @@ export async function onRequestGet({ request, env }) {
 
   const { results } = await env.DB.prepare(
     `${MESSAGE_SELECT_SQL}
-     WHERE m.channel_type = 'direct' AND m.direct_thread_id = ? AND m.is_deleted = 0
+     WHERE m.channel_type = 'direct' AND m.direct_thread_id = ?
      ORDER BY m.created_at DESC, m.rowid DESC
      LIMIT ?`
   )
@@ -145,11 +132,12 @@ export async function onRequestGet({ request, env }) {
   const rows = results || [];
   const hasOlder = rows.length > limit;
   const chronological = (hasOlder ? rows.slice(0, limit) : rows).reverse();
-  const messages = chronological.map((r) => serializeChatMessage(r, user.id));
-  const latestTs = messages.length > 0 ? messages[messages.length - 1].created_at : null;
-
-  if (latestTs) {
-    await markDirectThreadReadIfNewer(env.DB, user.id, threadId, latestTs, nowStr);
+  const messages = chronological.map((r) => serializeChatMessage(r, user.id, isAdmin));
+  const latestUnreadTs = chronological
+    .filter((r) => r.is_deleted !== 1)
+    .reduce((acc, r) => (!acc || r.created_at > acc ? r.created_at : acc), null);
+  if (latestUnreadTs) {
+    await markDirectThreadReadIfNewer(env.DB, user.id, threadId, latestUnreadTs, nowStr);
   }
 
   return json(
@@ -157,13 +145,13 @@ export async function onRequestGet({ request, env }) {
       ok: true,
       thread_id: threadId,
       thread_title: threadTitle,
-      thread_started_by_admin: threadStartedByAdmin,
+      thread_started_by_admin: true,
       is_muted: muted,
       messages,
       deleted_ids: [],
       has_older: hasOlder,
       oldest_timestamp: messages.length > 0 ? messages[0].created_at : null,
-      last_timestamp: latestTs,
+      last_timestamp: maxCursorTimestamp(chronological, EPOCH_ISO),
     },
     200,
     NO_CACHE
@@ -174,6 +162,7 @@ export async function onRequestPost({ request, env }) {
   const { user, response } = await requireUser(request, env);
   if (response) return response;
 
+  const isAdmin = user.role === 'admin';
   const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
   const nowStr = new Date(nowMs).toISOString();
 
@@ -181,6 +170,7 @@ export async function onRequestPost({ request, env }) {
   const text = String(body?.text || '').trim();
   const replyToId = body?.reply_to_id ? String(body.reply_to_id).trim() : null;
   const explicitTarget = String(body?.target_user_id || body?.thread_id || '').trim();
+  const clientMsgId = body?.client_msg_id ? String(body.client_msg_id).trim().slice(0, 80) : null;
 
   if (!text) return badRequest('Message text is required');
   if (text.length > CHAT_MAX_MESSAGE_LENGTH) {
@@ -190,7 +180,7 @@ export async function onRequestPost({ request, env }) {
   let threadId;
   let recipientId = null;
 
-  if (user.role === 'admin') {
+  if (isAdmin) {
     if (!explicitTarget) {
       return badRequest('target_user_id is required for admin direct message');
     }
@@ -203,7 +193,7 @@ export async function onRequestPost({ request, env }) {
     threadId = targetMember.id;
     recipientId = targetMember.id;
   } else {
-    // Member: strictly prohibited from targeting any other member
+    // Member: strictly prohibited from targeting any other member, but CAN initiate their own leadership thread (k6)
     if (explicitTarget && explicitTarget !== user.id) {
       return forbidden('Members cannot message other members privately.');
     }
@@ -212,24 +202,31 @@ export async function onRequestPost({ request, env }) {
       return forbidden('You have been muted by an administrator and cannot send messages.');
     }
     threadId = user.id;
+  }
 
-    // Member can reply ONLY after an admin has started the private thread
-    const startedRow = await env.DB.prepare(
-      `SELECT 1 AS started FROM community_chat_messages
-       WHERE channel_type = 'direct' AND direct_thread_id = ? AND sender_role = 'admin' AND is_deleted = 0
-       LIMIT 1`
+  // Optimistic send deduplication (k3)
+  if (clientMsgId) {
+    const existing = await env.DB.prepare(
+      `${MESSAGE_SELECT_SQL} WHERE m.sender_user_id = ? AND m.client_msg_id = ? LIMIT 1`
     )
-      .bind(threadId)
+      .bind(user.id, clientMsgId)
       .first();
-    if (!startedRow) {
-      return forbidden('Direct conversations with leadership are started by an administrator.');
+    if (existing) {
+      return json(
+        {
+          ok: true,
+          deduplicated: true,
+          message: serializeChatMessage(existing, user.id, isAdmin),
+        },
+        200,
+        NO_CACHE
+      );
     }
   }
 
   if (replyToId) {
     const targetMsg = await env.DB.prepare(
-      `SELECT id FROM community_chat_messages
-       WHERE id = ? AND channel_type = 'direct' AND direct_thread_id = ? AND is_deleted = 0`
+      "SELECT id FROM community_chat_messages WHERE id = ? AND channel_type = 'direct' AND direct_thread_id = ?"
     )
       .bind(replyToId, threadId)
       .first();
@@ -248,26 +245,25 @@ export async function onRequestPost({ request, env }) {
   }
 
   const id = uuid();
-  const senderRole = user.role === 'admin' ? 'admin' : 'member';
+  const senderRole = isAdmin ? 'admin' : 'member';
   const senderDisplayName = await resolveSenderDisplayName(env.DB, user);
 
   await env.DB.prepare(
     `INSERT INTO community_chat_messages (
        id, channel_type, direct_thread_id, sender_user_id, sender_role,
-       sender_display_name, recipient_user_id, reply_to_message_id, text, created_at, updated_at
-     ) VALUES (?, 'direct', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       sender_display_name, recipient_user_id, reply_to_message_id, text, client_msg_id, created_at, updated_at
+     ) VALUES (?, 'direct', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
-    .bind(id, threadId, user.id, senderRole, senderDisplayName, recipientId, replyToId, text, nowStr, nowStr)
+    .bind(id, threadId, user.id, senderRole, senderDisplayName, recipientId, replyToId, text, clientMsgId, nowStr, nowStr)
     .run();
 
   await markDirectThreadReadIfNewer(env.DB, user.id, threadId, nowStr, nowStr);
 
   const inserted = await env.DB.prepare(`${MESSAGE_SELECT_SQL} WHERE m.id = ?`).bind(id).first();
-
   return json(
     {
       ok: true,
-      message: serializeChatMessage(inserted, user.id),
+      message: serializeChatMessage(inserted, user.id, isAdmin),
     },
     201,
     NO_CACHE

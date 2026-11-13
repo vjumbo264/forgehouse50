@@ -80,7 +80,7 @@ export async function getUser(request, env) {
 
   // 1. Check dedicated admin_sessions first (Part B)
   const adminRow = await env.DB.prepare(`
-    SELECT s.id AS session_id, s.expires_at, a.id AS admin_id, a.username
+    SELECT s.id AS session_id, s.expires_at, s.last_seen_at, a.id AS admin_id, a.username
     FROM admin_sessions s JOIN admin_credentials a ON a.id = s.admin_id
     WHERE s.id = ?`).bind(token).first();
 
@@ -89,8 +89,12 @@ export async function getUser(request, env) {
       await env.DB.prepare('DELETE FROM admin_sessions WHERE id = ?').bind(token).run();
       return null;
     }
-    // rolling refresh of last_seen
-    await env.DB.prepare("UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?").bind(nowIso(), token).run();
+    // Throttle rolling refresh of last_seen to >= 15 min to avoid D1 write burn on chat polls
+    const admSeenMs = adminRow.last_seen_at ? Date.parse(adminRow.last_seen_at) : 0;
+    const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+    if (!admSeenMs || (nowMs - admSeenMs) >= 15 * 60 * 1000) {
+      await env.DB.prepare("UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?").bind(new Date(nowMs).toISOString(), token).run();
+    }
     return {
       session_id: adminRow.session_id,
       id: adminRow.admin_id,
@@ -105,7 +109,7 @@ export async function getUser(request, env) {
 
   // 2. Check participant sessions
   const row = await env.DB.prepare(`
-    SELECT s.id AS session_id, s.expires_at, p.id, p.email, p.name, p.surname, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at, pic.version AS picture_version
+    SELECT s.id AS session_id, s.expires_at, s.last_seen_at, p.id, p.email, p.name, p.surname, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at, pic.version AS picture_version
     FROM sessions s JOIN profiles p ON p.id = s.user_id
     LEFT JOIN profile_pictures pic ON pic.user_id = p.id
     WHERE s.id = ?`).bind(token).first();
@@ -114,8 +118,12 @@ export async function getUser(request, env) {
     await env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(token).run();
     return null;
   }
-  // rolling refresh of last_seen
-  await env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(nowIso(), token).run();
+  // Throttle rolling refresh of last_seen to >= 15 min to avoid D1 write burn on chat polls
+  const memSeenMs = row.last_seen_at ? Date.parse(row.last_seen_at) : 0;
+  const memNowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+  if (!memSeenMs || (memNowMs - memSeenMs) >= 15 * 60 * 1000) {
+    await env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(new Date(memNowMs).toISOString(), token).run();
+  }
 
   // Part B Rule 4: Retire email-based admin. No email OTP login can ever grant admin rights.
   // Profile accounts are strictly participants.
