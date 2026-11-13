@@ -19,7 +19,7 @@ export async function onRequestPost({ request, env }) {
   const nowMs = typeof env.NOW_MS === "number" ? env.NOW_MS : Date.now();
   const nowIsoStr = new Date(nowMs).toISOString();
 
-  const user = await env.DB.prepare("SELECT id, name, email_verified FROM profiles WHERE email = ?")
+  const user = await env.DB.prepare("SELECT id, name, role, email_verified FROM profiles WHERE email = ?")
     .bind(email)
     .first();
   if (!user) return badRequest("No account found for that email");
@@ -50,7 +50,7 @@ export async function onRequestPost({ request, env }) {
 
   const { token, expires } = await createSession(env.DB, user.id, request.headers.get("User-Agent") || "");
   return json(
-    { ok: true, id: user.id, name: user.name, role: "member", message: "Password reset successfully" },
+    { ok: true, id: user.id, name: user.name, role: user.role || "member", message: "Password reset successfully" },
     200,
     { "Set-Cookie": setSessionCookie(token, expires) },
   );

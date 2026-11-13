@@ -119,5 +119,20 @@ const rExpired = await resetPassword({
 });
 assert.equal(rExpired.status, 400);
 
+// 8. Admin profile resetting password preserves role=admin
+db.prepare(
+  `INSERT INTO profiles (id, email, name, surname, password_hash, avatar_id, role, email_verified)
+   VALUES ('u_admin_reset', 'pastor@example.com', 'Pastor', 'Dave', ?, 'av_1', 'admin', 1)`
+).bind(oldHash).run();
+await forgotPassword({ request: makeJsonReq({ email: 'pastor@example.com' }), env });
+const adminOtp = await db.prepare("SELECT code FROM otp_codes WHERE user_id = 'u_admin_reset'").first();
+const rAdminReset = await resetPassword({
+  request: makeJsonReq({ email: 'pastor@example.com', code: adminOtp.code, new_password: 'PastorNewPass99!' }),
+  env,
+});
+assert.equal(rAdminReset.status, 200);
+const adminResetBody = await rAdminReset.json();
+assert.equal(adminResetBody.role, 'admin');
+
 globalThis.fetch = originalFetch;
 console.log('PASSED all auth_reset_test checks!');
