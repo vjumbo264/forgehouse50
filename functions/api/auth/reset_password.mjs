@@ -1,5 +1,5 @@
 // POST /api/auth/reset_password — verify reset OTP code and set new password.
-import { json, badRequest, readJson, setSessionCookie, nowIso } from "../../lib/http.mjs";
+import { json, badRequest, readJson, setSessionCookie } from "../../lib/http.mjs";
 import { hashPassword, createSession, OTP_MAX_ATTEMPTS } from "../../lib/auth.mjs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -16,17 +16,22 @@ export async function onRequestPost({ request, env }) {
   if (!/^\d{6}$/.test(code)) return badRequest("A 6-digit code is required");
   if (newPassword.length < 8) return badRequest("New password must be at least 8 characters");
 
-  const user = await env.DB.prepare("SELECT id, name, email_verified FROM profiles WHERE email = ?").bind(email).first();
+  const nowMs = typeof env.NOW_MS === "number" ? env.NOW_MS : Date.now();
+  const nowIsoStr = new Date(nowMs).toISOString();
+
+  const user = await env.DB.prepare("SELECT id, name, email_verified FROM profiles WHERE email = ?")
+    .bind(email)
+    .first();
   if (!user) return badRequest("No account found for that email");
 
   const otp = await env.DB.prepare(
-    `SELECT id, code, expires_at, consumed_at, attempts FROM otp_codes 
-     WHERE user_id = ? AND purpose = 'password_reset' 
-     ORDER BY created_at DESC LIMIT 1`
+    `SELECT id, code, expires_at, consumed_at, attempts FROM otp_codes
+      WHERE user_id = ? AND purpose = 'password_reset'
+      ORDER BY created_at DESC LIMIT 1`
   ).bind(user.id).first();
 
   if (!otp || otp.consumed_at) return badRequest("No active reset code — request a new one");
-  if (new Date(otp.expires_at).getTime() < Date.now()) return badRequest("That code has expired — request a new one");
+  if (new Date(otp.expires_at).getTime() < nowMs) return badRequest("That code has expired — request a new one");
   if (otp.attempts >= OTP_MAX_ATTEMPTS) return badRequest("Too many attempts — request a new code");
 
   if (otp.code !== code) {
@@ -35,20 +40,18 @@ export async function onRequestPost({ request, env }) {
   }
 
   const passwordHash = await hashPassword(newPassword);
-  const now = nowIso();
-
   await env.DB.batch([
-    env.DB.prepare("UPDATE otp_codes SET consumed_at = ? WHERE id = ?").bind(now, otp.id),
+    env.DB.prepare("UPDATE otp_codes SET consumed_at = ? WHERE id = ?").bind(nowIsoStr, otp.id),
     env.DB.prepare(
       "UPDATE profiles SET password_hash = ?, email_verified = 1, updated_at = ? WHERE id = ?"
-    ).bind(passwordHash, now, user.id),
+    ).bind(passwordHash, nowIsoStr, user.id),
     env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
   ]);
 
   const { token, expires } = await createSession(env.DB, user.id, request.headers.get("User-Agent") || "");
   return json(
-    { ok: true, name: user.name, message: "Password reset successfully" },
+    { ok: true, id: user.id, name: user.name, role: "member", message: "Password reset successfully" },
     200,
-    { "Set-Cookie": setSessionCookie(token, expires) }
+    { "Set-Cookie": setSessionCookie(token, expires) },
   );
 }
