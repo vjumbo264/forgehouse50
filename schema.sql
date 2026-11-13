@@ -460,6 +460,8 @@ CREATE TABLE IF NOT EXISTS app_releases (
   changelog           TEXT,
   rollout_state       TEXT NOT NULL DEFAULT 'hold' CHECK (rollout_state IN ('hold', 'admins_only', 'everyone')),
   mandatory           INTEGER NOT NULL DEFAULT 0,
+  publish_to_forgebuild INTEGER NOT NULL DEFAULT 0,
+  bridged             INTEGER NOT NULL DEFAULT 0,
   updated_by          TEXT,
   created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))

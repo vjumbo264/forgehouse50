@@ -5,7 +5,7 @@ import { onRequestGet as adminListReleases, onRequestPost as adminUpdateRelease 
 
 console.log('=== Running i8 Update Rollout Role/State Matrix Tests (SQLite D1) ===');
 
-const db = createTestD1(['migrations/reading_time_v1.sql', 'migrations/community_chat_and_rollout_v1.sql']);
+const db = createTestD1(['migrations/reading_time_v1.sql', 'migrations/community_chat_and_rollout_v1.sql', 'migrations/app_releases_bridge_v1.sql']);
 const exp = '2027-01-01T00:00:00Z';
 const tokMember = 'a'.repeat(64);
 const tokProfileLegacyAdmin = 'b'.repeat(64); // Part B Rule 4: profile sessions are always members
@@ -155,6 +155,28 @@ async function callAdminPost(token, payload) {
   assert.ok(listData.audit_log[0].summary.includes('pastor_dave'));
   assert.ok(listData.audit_log[0].created_at);
   console.log('  [PASS] Pull back to hold & server-side audit log (time + actor) verified.');
+}
+
+
+// 6. k12: First push to everyone with publish_to_forgebuild=true & dry_run verifies legacy ForgeBuild bridge payload without publishing
+{
+  const resBridge = await callAdminPost(tokAdminPastor, {
+    version_code: 34,
+    action: 'everyone',
+    confirm: 'RELEASE_TO_EVERYONE',
+    publish_to_forgebuild: true,
+    dry_run: true,
+  });
+  assert.equal(resBridge.status, 200);
+  const body = await resBridge.json();
+  assert.equal(body.publish_to_forgebuild, true);
+  assert.equal(body.bridge_dry_run, true);
+  assert.equal(body.bridge_dispatch_preview?.workflow, 'publish-bridge-release.yml');
+  assert.equal(body.bridge_dispatch_preview?.inputs?.CONFIRM_PUSH_TO_ALL_USERS, 'yes');
+  assert.equal(body.bridge_dispatch_preview?.inputs?.tag_name, 'v34');
+  // Revert v34 back to hold so matrix ends clean
+  await callAdminPost(tokAdminPastor, { version_code: 34, action: 'hold' });
+  console.log('  [PASS] k12 ForgeBuild bridge dry-run payload & confirmation verified without touching vjumbo264/forgebuild.');
 }
 
 console.log('ALL i8 UPDATE ROLLOUT BACKEND TESTS PASSED!');
