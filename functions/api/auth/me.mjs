@@ -1,51 +1,56 @@
 // GET /api/auth/me — current session user (safe fields only).
-import { json, unauthorized } from '../../lib/http.mjs';
-import { getUser } from '../../lib/auth.mjs';
+import { json, unavailable } from '../../lib/http.mjs';
+import { requireUser } from '../../lib/auth.mjs';
 import { userAggregates, userBadges } from '../../lib/points.mjs';
 import { refreshProgrammeState } from '../../lib/programme.mjs';
 
 export async function onRequestGet({ request, env }) {
-  const user = await getUser(request, env);
-  if (!user) return unauthorized();
+  const { user, response } = await requireUser(request, env);
+  if (response) return response;
 
-  const programme = await refreshProgrammeState(env.DB);
+  try {
+    const programme = await refreshProgrammeState(env.DB);
 
-  if (user.is_admin_credential) {
+    if (user.is_admin_credential) {
+      return json({
+        id: user.id,
+        email: user.email,
+        name: user.username,
+        username: user.username,
+        surname: '',
+        avatar_url: null,
+        avatar_id: null,
+        role: 'admin',
+        email_verified: true,
+        created_at: new Date().toISOString(),
+        stats: { points: 0, total_points: 0, days_completed: 0, chapters: 0, chapters_read: 0, reading_seconds: 0, streak_current: 0, streak_longest: 0, current_streak: 0, longest_streak: 0, notes_total: 0 },
+        badges: [],
+        programme: {
+          started: programme.started,
+          concluded: !!programme.final_snapshot_at,
+          programme_end_date: programme.programme_end_date,
+        },
+      });
+    }
+
+    const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+    const [stats, badges] = await Promise.all([userAggregates(env.DB, user.id, nowMs), userBadges(env.DB, user.id)]);
     return json({
-      id: user.id,
-      email: user.email,
-      name: user.username,
-      username: user.username,
-      surname: '',
-      avatar_url: null,
-      avatar_id: null,
-      role: 'admin',
-      email_verified: true,
-      created_at: new Date().toISOString(),
-      stats: { points: 0, total_points: 0, days_completed: 0, chapters: 0, chapters_read: 0, reading_seconds: 0, streak_current: 0, streak_longest: 0, current_streak: 0, longest_streak: 0, notes_total: 0 },
-      badges: [],
+      id: user.id, email: user.email, name: user.name, surname: user.surname || '', avatar_url: user.avatar_url,
+      avatar_id: user.avatar_id ?? null,
+      picture_version: user.picture_version ?? null,
+      role: user.role, email_verified: !!user.email_verified, created_at: user.created_at,
+      stats, badges,
       programme: {
         started: programme.started,
         concluded: !!programme.final_snapshot_at,
         programme_end_date: programme.programme_end_date,
       },
+    }, 200, {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
     });
+  } catch (err) {
+    console.error('Auth me error:', err);
+    return unavailable('Server problem, please try again', 'server_error');
   }
-
-  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
-  const [stats, badges] = await Promise.all([userAggregates(env.DB, user.id, nowMs), userBadges(env.DB, user.id)]);
-  return json({
-    id: user.id, email: user.email, name: user.name, surname: user.surname || '', avatar_url: user.avatar_url,
-    avatar_id: user.avatar_id ?? null,
-    picture_version: user.picture_version ?? null,
-    role: user.role, email_verified: !!user.email_verified, created_at: user.created_at,
-    stats, badges,
-    programme: {
-      started: programme.started,
-      concluded: !!programme.final_snapshot_at,
-      programme_end_date: programme.programme_end_date,
-    },
-  }, 200, {
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-  });
 }

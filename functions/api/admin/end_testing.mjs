@@ -5,8 +5,8 @@
 // server-side (HTTP 409 conflict). Testing accounts and live participant data
 // cannot be wiped once the run is active.
 
-import { json, badRequest, unauthorized, forbidden, conflict, readJson } from '../../lib/http.mjs';
-import { getUser } from '../../lib/auth.mjs';
+import { json, badRequest, forbidden, conflict, readJson } from '../../lib/http.mjs';
+import { requireUser } from '../../lib/auth.mjs';
 import { getProgrammeConfig } from '../../lib/programme.mjs';
 
 const CHILD_TABLES = [
@@ -28,8 +28,8 @@ const CHILD_TABLES = [
 ];
 
 export async function onRequestPost({ request, env }) {
-  const me = await getUser(request, env);
-  if (!me) return unauthorized('Not signed in');
+  const { user: me, response } = await requireUser(request, env);
+  if (response) return response;
   if (me.role !== 'admin') return forbidden('Admin only');
 
   // Guard the reset: now that the programme has started, reset is blocked server-side (HTTP 409)

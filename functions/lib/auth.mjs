@@ -3,10 +3,10 @@
 // Chosen because it is implemented natively by the Workers runtime via
 // crypto.subtle (no native modules, no wasm build step).
 
-import { randomHex, uuid, nowIso, getSessionToken } from './http.mjs';
+import { randomHex, uuid, nowIso, getSessionToken, json, unavailable } from './http.mjs';
 
 export const PBKDF2_ITERATIONS = 100000;
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, rolling
+export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, rolling
 export const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours fixed
 export const OTP_TTL_MS = 10 * 60 * 1000;         // 10 minutes
 export const OTP_MAX_ATTEMPTS = 5;
@@ -34,19 +34,25 @@ export async function hashPassword(password) {
 }
 
 export async function verifyPassword(password, stored) {
-  try {
-    const [scheme, iterStr, saltHex, hashHex] = stored.split('$');
-    if (scheme !== 'pbkdf2') return false;
-    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-    const bits = await crypto.subtle.deriveBits(
-      { name: 'PBKDF2', hash: 'SHA-256', salt: hexToBytes(saltHex), iterations: parseInt(iterStr, 10) }, key, 256);
-    const candidate = bytesToHex(new Uint8Array(bits));
-    // constant-time comparison
-    if (candidate.length !== hashHex.length) return false;
-    let diff = 0;
-    for (let i = 0; i < candidate.length; i++) diff |= candidate.charCodeAt(i) ^ hashHex.charCodeAt(i);
-    return diff === 0;
-  } catch { return false; }
+  if (typeof password !== 'string' || typeof stored !== 'string') return false;
+  const parts = stored.split('$');
+  if (parts.length !== 4) return false;
+  const [scheme, iterStr, saltHex, hashHex] = parts;
+  if (scheme !== 'pbkdf2') return false;
+  const iterations = Number.parseInt(iterStr, 10);
+  if (!Number.isFinite(iterations) || iterations <= 0 || String(iterations) !== iterStr) return false;
+  if (!/^[0-9a-f]{16,}$/i.test(saltHex) || saltHex.length % 2 !== 0) return false;
+  if (!/^[0-9a-f]{64}$/i.test(hashHex)) return false;
+
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt: hexToBytes(saltHex), iterations }, key, 256);
+  const candidate = bytesToHex(new Uint8Array(bits));
+  const storedHex = hashHex.toLowerCase();
+  if (candidate.length !== storedHex.length) return false;
+  let diff = 0;
+  for (let i = 0; i < candidate.length; i++) diff |= candidate.charCodeAt(i) ^ storedHex.charCodeAt(i);
+  return diff === 0;
 }
 
 export function generateOtp() {
@@ -55,90 +61,141 @@ export function generateOtp() {
   return (arr[0] % 1000000).toString().padStart(6, '0');
 }
 
-export async function createSession(db, userId, userAgent = '') {
+export async function createSession(db, userId, userAgent = '', nowMs = Date.now()) {
   const token = randomHex(32);
-  const expires = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+  const createdIso = new Date(nowMs).toISOString();
+  const expires = new Date(nowMs + SESSION_TTL_MS).toISOString();
   await db.prepare(
-    'INSERT INTO sessions (id, user_id, expires_at, user_agent) VALUES (?, ?, ?, ?)'
-  ).bind(token, userId, expires, userAgent).run();
+    'INSERT INTO sessions (id, user_id, expires_at, created_at, last_seen_at, user_agent) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(token, userId, expires, createdIso, createdIso, userAgent).run();
   return { token, expires };
 }
 
-export async function createAdminSession(db, adminId, userAgent = '') {
+export async function createAdminSession(db, adminId, userAgent = '', nowMs = Date.now()) {
   const token = randomHex(32);
-  const expires = new Date(Date.now() + ADMIN_SESSION_TTL_MS).toISOString();
+  const createdIso = new Date(nowMs).toISOString();
+  const expires = new Date(nowMs + ADMIN_SESSION_TTL_MS).toISOString();
   await db.prepare(
-    'INSERT INTO admin_sessions (id, admin_id, expires_at, user_agent) VALUES (?, ?, ?, ?)'
-  ).bind(token, adminId, expires, userAgent).run();
+    'INSERT INTO admin_sessions (id, admin_id, expires_at, created_at, last_seen_at, user_agent) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(token, adminId, expires, createdIso, createdIso, userAgent).run();
   return { token, expires };
 }
 
-// Resolve the session cookie to a user or admin. Returns null when unauthenticated.
-export async function getUser(request, env) {
+function detectMalformedToken(request) {
+  const auth = request.headers.get('Authorization') || '';
+  if (/^Bearer\s+\S+/i.test(auth)) return true;
+  const cookie = request.headers.get('Cookie') || '';
+  return /(?:^|;\s*)fh50_session=[^;\s]+/.test(cookie);
+}
+
+// Resolve the session cookie/token to { user, reason }.
+// Throws on DB/runtime errors so callers return 500/503 instead of masking faults as 401.
+export async function resolveSession(request, env) {
   const token = getSessionToken(request);
-  if (!token) return null;
+  if (!token) {
+    return {
+      user: null,
+      reason: detectMalformedToken(request) ? 'session_invalid' : 'session_missing',
+    };
+  }
 
-  // 1. Check dedicated admin_sessions first (Part B)
+  const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
+
+  // 1. Check dedicated admin_sessions first (Part B — fixed 12-hour TTL)
   const adminRow = await env.DB.prepare(`
     SELECT s.id AS session_id, s.expires_at, s.last_seen_at, a.id AS admin_id, a.username
     FROM admin_sessions s JOIN admin_credentials a ON a.id = s.admin_id
     WHERE s.id = ?`).bind(token).first();
 
   if (adminRow) {
-    if (new Date(adminRow.expires_at).getTime() < Date.now()) {
+    const adminExpMs = Date.parse(adminRow.expires_at);
+    if (!Number.isFinite(adminExpMs) || adminExpMs < nowMs) {
       await env.DB.prepare('DELETE FROM admin_sessions WHERE id = ?').bind(token).run();
-      return null;
+      return { user: null, reason: 'session_expired' };
     }
-    // Throttle rolling refresh of last_seen to >= 15 min to avoid D1 write burn on chat polls
+    // Throttle refresh of last_seen to >= 15 min to avoid D1 write burn on chat polls
     const admSeenMs = adminRow.last_seen_at ? Date.parse(adminRow.last_seen_at) : 0;
-    const nowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
-    if (!admSeenMs || (nowMs - admSeenMs) >= 15 * 60 * 1000) {
-      await env.DB.prepare("UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?").bind(new Date(nowMs).toISOString(), token).run();
+    if (!Number.isFinite(admSeenMs) || !admSeenMs || (nowMs - admSeenMs) >= 15 * 60 * 1000) {
+      await env.DB.prepare('UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?')
+        .bind(new Date(nowMs).toISOString(), token).run();
     }
     return {
-      session_id: adminRow.session_id,
-      id: adminRow.admin_id,
-      username: adminRow.username,
-      name: adminRow.username,
-      email: `${adminRow.username}@admin.local`,
-      role: 'admin',
-      is_admin: true,
-      is_admin_credential: true,
+      user: {
+        session_id: adminRow.session_id,
+        id: adminRow.admin_id,
+        username: adminRow.username,
+        name: adminRow.username,
+        email: `${adminRow.username}@admin.local`,
+        role: 'admin',
+        is_admin: true,
+        is_admin_credential: true,
+      },
+      reason: null,
     };
   }
 
-  // 2. Check participant sessions
+  // 2. Check participant sessions (rolling 30-day TTL)
   const row = await env.DB.prepare(`
     SELECT s.id AS session_id, s.expires_at, s.last_seen_at, p.id, p.email, p.name, p.surname, p.avatar_url, p.avatar_id, p.role, p.email_verified, p.created_at, pic.version AS picture_version
     FROM sessions s JOIN profiles p ON p.id = s.user_id
     LEFT JOIN profile_pictures pic ON pic.user_id = p.id
     WHERE s.id = ?`).bind(token).first();
-  if (!row) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) {
+  if (!row) return { user: null, reason: 'session_invalid' };
+
+  const expMs = Date.parse(row.expires_at);
+  if (!Number.isFinite(expMs) || expMs < nowMs) {
     await env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(token).run();
-    return null;
+    return { user: null, reason: 'session_expired' };
   }
-  // Throttle rolling refresh of last_seen to >= 15 min to avoid D1 write burn on chat polls
+
+  // Throttle rolling renewal (last_seen_at + expires_at) to >= 15 min to avoid D1 write burn on chat polls
   const memSeenMs = row.last_seen_at ? Date.parse(row.last_seen_at) : 0;
-  const memNowMs = typeof env.NOW_MS === 'number' ? env.NOW_MS : Date.now();
-  if (!memSeenMs || (memNowMs - memSeenMs) >= 15 * 60 * 1000) {
-    await env.DB.prepare("UPDATE sessions SET last_seen_at = ? WHERE id = ?").bind(new Date(memNowMs).toISOString(), token).run();
+  if (!Number.isFinite(memSeenMs) || !memSeenMs || (nowMs - memSeenMs) >= 15 * 60 * 1000) {
+    const newSeenIso = new Date(nowMs).toISOString();
+    const newExpiresIso = new Date(nowMs + SESSION_TTL_MS).toISOString();
+    await env.DB.prepare('UPDATE sessions SET last_seen_at = ?, expires_at = ? WHERE id = ?')
+      .bind(newSeenIso, newExpiresIso, token).run();
   }
 
   // Part B Rule 4: Retire email-based admin. No email OTP login can ever grant admin rights.
   // Profile accounts are strictly participants.
   return {
-    ...row,
-    role: 'member',
-    is_admin: false,
-    is_admin_credential: false,
+    user: {
+      ...row,
+      role: 'member',
+      is_admin: false,
+      is_admin_credential: false,
+    },
+    reason: null,
   };
 }
 
+// Resolve the session cookie to a user or admin. Returns null when unauthenticated.
+export async function getUser(request, env) {
+  const { user } = await resolveSession(request, env);
+  return user;
+}
+
 export async function requireUser(request, env) {
-  const user = await getUser(request, env);
-  if (!user) return { user: null, response: new Response(JSON.stringify({ error: 'Not authenticated' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
-  return { user, response: null };
+  try {
+    const { user, reason } = await resolveSession(request, env);
+    if (!user) {
+      return {
+        user: null,
+        response: json({
+          error: reason === 'session_expired' ? 'Session expired. Please sign in again.' : 'Not authenticated',
+          reason: reason || 'session_invalid',
+        }, 401),
+      };
+    }
+    return { user, response: null };
+  } catch (err) {
+    console.error('Session verification error:', err);
+    return {
+      user: null,
+      response: unavailable('Server problem, please try again', 'db_error'),
+    };
+  }
 }
 
 export function requireAdmin(user) {

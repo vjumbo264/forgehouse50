@@ -1,14 +1,12 @@
 // GET /api/users/:id/picture?v=<version>
 // Returns raw profile photo bytes with ETag and immutable caching.
 // Authenticated participants and admins only (HTTP 401 if unauthenticated).
-import { unauthorized, notFound } from '../../../lib/http.mjs';
-import { getUser } from '../../../lib/auth.mjs';
+import { notFound } from '../../../lib/http.mjs';
+import { requireUser } from '../../../lib/auth.mjs';
 
 export async function onRequestGet({ request, env, params }) {
-  const user = await getUser(request, env);
-  if (!user) {
-    return unauthorized('Authentication required to view profile pictures');
-  }
+  const { response } = await requireUser(request, env);
+  if (response) return response;
 
   const targetUserId = String(params.id || '').trim();
   if (!targetUserId) {

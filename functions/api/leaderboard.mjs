@@ -46,7 +46,7 @@ const AGG_SQL = `
     COALESCE((SELECT COUNT(*) FROM notes n2 WHERE n2.user_id = pr.id AND n2.note_type = 'question'), 0) AS questions
   FROM profiles pr
   LEFT JOIN profile_pictures pic ON pic.user_id = pr.id
-  WHERE pr.email_verified = 1 AND pr.role != 'admin'`;
+  WHERE pr.email_verified = 1 AND pr.role != 'admin' AND COALESCE(pr.is_smoke_test, 0) = 0`;
 
 export async function onRequestGet({ request, env }) {
   const { user, response } = await requireUser(request, env);

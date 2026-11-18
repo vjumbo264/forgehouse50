@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email_verified  INTEGER NOT NULL DEFAULT 0,    -- boolean 0/1
   programme_start_date TEXT,                     -- per_user_calendar_and_quiz_v1: this user's Day-1 anchor (ISO date),
                                                  -- set at OTP verification; existing users backfilled to 2026-09-07
+  is_smoke_test   INTEGER NOT NULL DEFAULT 0,    -- excluded from leaderboards, chat directory, counts, analytics
   created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );

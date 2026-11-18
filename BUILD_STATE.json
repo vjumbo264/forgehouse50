@@ -2224,6 +2224,12 @@
     "master_file": "BUILD_STATE.json",
     "note": "Master build state for Oct 30 contract (i0-i11) lives in vjumbo264/forgehouse50-android/BUILD_STATE.json."
   },
-  "last_updated": "2026-10-31T07:03:00Z",
-  "note": "Master contract state lives in vjumbo264/forgehouse50-android/BUILD_STATE.json (fixes_oct30_v1). Deployed i9 Community Chat v2 (group chat, private admin<->member direct threads, moderation, zero-write idle cursor polling, and D1 v2 migration)."
+  "emergency_login_nov18_pointer": {
+    "master_repo": "vjumbo264/forgehouse50-android",
+    "master_file": "BUILD_STATE.json",
+    "section": "emergency_login_nov18",
+    "note": "Emergency Nov 18 member login & rolling 30-day session fixes (e1-e3) fixed on backend: rolling expires_at renewal in functions/lib/auth.mjs, strict 401 vs 503 error/reason separation, is_smoke_test exclusion, test/auth_login_session_test.mjs, and post-deploy smoke_auth.mjs."
+  },
+  "last_updated": "2026-11-18T00:00:00Z",
+  "note": "Master contract state lives in vjumbo264/forgehouse50-android/BUILD_STATE.json (emergency_login_nov18 + fixes_oct30_v1)."
 }

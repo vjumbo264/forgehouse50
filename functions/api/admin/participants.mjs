@@ -15,7 +15,7 @@ export async function onRequestGet({ request, env }) {
             COALESCE((SELECT SUM(rp.reading_seconds) FROM reading_progress rp WHERE rp.user_id = pr.id),0) AS reading_seconds,
             COALESCE((SELECT SUM(p.points) FROM points p WHERE p.user_id = pr.id),0) AS points,
             COALESCE((SELECT COUNT(*) FROM notes n WHERE n.user_id = pr.id),0) AS notes_count
-     FROM profiles pr LEFT JOIN profile_pictures pic ON pic.user_id = pr.id WHERE pr.email_verified = 1
+     FROM profiles pr LEFT JOIN profile_pictures pic ON pic.user_id = pr.id WHERE pr.email_verified = 1 AND COALESCE(pr.is_smoke_test, 0) = 0
      ORDER BY points DESC LIMIT 500`
   ).all();
 

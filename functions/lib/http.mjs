@@ -8,11 +8,11 @@ export function json(data, status = 200, extraHeaders = {}) {
 }
 
 export function badRequest(message) { return json({ error: message }, 400); }
-export function unauthorized(message = 'Not authenticated') { return json({ error: message }, 401); }
+export function unauthorized(message = 'Not authenticated', reason = 'unauthenticated') { return json({ error: message, reason }, 401); }
 export function forbidden(message = 'Forbidden') { return json({ error: message }, 403); }
 export function notFound(message = 'Not found') { return json({ error: message }, 404); }
 export function conflict(message) { return json({ error: message }, 409); }
-export function unavailable(message = 'Service temporarily unavailable') { return json({ error: message, unavailable: true }, 503); }
+export function unavailable(message = 'Server problem, please try again', reason = 'server_error') { return json({ error: message, reason, unavailable: true }, 503); }
 
 export async function readJson(request) {
   try { return await request.json(); } catch { return null; }

@@ -99,7 +99,8 @@ export async function onRequestGet({ request, env }) {
      FROM profiles p
      LEFT JOIN profile_pictures pic ON pic.user_id = p.id
      LEFT JOIN community_chat_members cm ON cm.user_id = p.id
-     WHERE EXISTS (
+     WHERE COALESCE(p.is_smoke_test, 0) = 0
+       AND EXISTS (
        SELECT 1 FROM community_chat_messages m
        WHERE m.channel_type = 'direct' AND m.direct_thread_id = p.id
      )
@@ -132,7 +133,7 @@ export async function onRequestGet({ request, env }) {
      FROM profiles p
      LEFT JOIN profile_pictures pic ON pic.user_id = p.id
      LEFT JOIN community_chat_members cm ON cm.user_id = p.id
-     WHERE p.email_verified = 1
+     WHERE p.email_verified = 1 AND COALESCE(p.is_smoke_test, 0) = 0
      ORDER BY p.name COLLATE NOCASE ASC, p.surname COLLATE NOCASE ASC`
   ).all();
 

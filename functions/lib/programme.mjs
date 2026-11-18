@@ -175,7 +175,7 @@ export async function computeProgrammeEndDate(db, cfg) {
   let end = day50Date(lastJoinDay);
 
   const { results: users } = await db.prepare(
-    "SELECT id, programme_start_date FROM profiles WHERE email_verified = 1 AND role != 'admin'"
+    "SELECT id, programme_start_date FROM profiles WHERE email_verified = 1 AND role != 'admin' AND COALESCE(is_smoke_test, 0) = 0"
   ).all();
   const { results: d50rows } = await db.prepare(
     'SELECT user_id, date FROM user_reading_days WHERE day_number = 50'
@@ -196,7 +196,7 @@ export async function takeFinalSnapshot(db, cfg) {
             (SELECT rp.completed_at FROM reading_progress rp
               WHERE rp.user_id = pr.id AND rp.day_number = 50 AND rp.completed = 1) AS finished_at
      FROM profiles pr
-     WHERE pr.email_verified = 1 AND pr.role != 'admin'
+     WHERE pr.email_verified = 1 AND pr.role != 'admin' AND COALESCE(pr.is_smoke_test, 0) = 0
        AND EXISTS (SELECT 1 FROM reading_progress rp2
                     WHERE rp2.user_id = pr.id AND rp2.day_number = 50 AND rp2.completed = 1)`
   ).all();

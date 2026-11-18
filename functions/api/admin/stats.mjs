@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env }) {
   const today = utcToday();
 
   const [total, active, chapters, perDay, quizStats] = await Promise.all([
-    env.DB.prepare('SELECT COUNT(*) AS c FROM profiles WHERE email_verified = 1').first(),
+    env.DB.prepare('SELECT COUNT(*) AS c FROM profiles WHERE email_verified = 1 AND COALESCE(is_smoke_test, 0) = 0').first(),
     env.DB.prepare('SELECT COUNT(DISTINCT user_id) AS c FROM reading_progress WHERE completed = 1').first(),
     env.DB.prepare('SELECT COALESCE(SUM(chapters_read),0) AS c FROM reading_progress WHERE completed = 1').first(),
     env.DB.prepare('SELECT day_number, COUNT(*) AS completions FROM reading_progress WHERE completed = 1 GROUP BY day_number ORDER BY day_number').all(),
@@ -32,7 +32,7 @@ export async function onRequestGet({ request, env }) {
     `SELECT urd.user_id, urd.day_number, urd.date
      FROM user_reading_days urd
      JOIN profiles pr ON pr.id = urd.user_id
-     WHERE pr.email_verified = 1 AND urd.date <= ?`
+     WHERE pr.email_verified = 1 AND COALESCE(pr.is_smoke_test, 0) = 0 AND urd.date <= ?`
   ).bind(today).all();
 
   const dueByUser = new Map();   // user_id -> latest due day_number

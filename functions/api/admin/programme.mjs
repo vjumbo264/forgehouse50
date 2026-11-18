@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env }) {
 
   const cfg = await refreshProgrammeState(env.DB);
   const eligible = await env.DB.prepare(
-    "SELECT COUNT(*) AS c FROM profiles WHERE email_verified = 1 AND role != 'admin'"
+    "SELECT COUNT(*) AS c FROM profiles WHERE email_verified = 1 AND role != 'admin' AND COALESCE(is_smoke_test, 0) = 0"
   ).first();
 
   let endDatePreview = null;
